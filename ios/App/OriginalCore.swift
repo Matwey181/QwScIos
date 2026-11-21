@@ -41,6 +41,8 @@ import UIKit
 @MainActor final class OriginalPlayRuntime:NSObject {
     weak var editor:Editor?
     var target:[String:Double]=[:]
+    let links = InteractionRuntime()
+    private var activeSourceID: String?
     var shown:[String:Double]=[:]
     private var kinds:[String:String]=[:]
     private var link:CADisplayLink?
@@ -60,12 +62,20 @@ import UIKit
             target=[:];kinds=[:];visibility=[:]
             for w in result["widgets"] as? [[String:Any]] ?? [] { if let group=w["group"] as? String { target[group]=(w["value"] as? NSNumber)?.doubleValue ?? 0;kinds[group]=w["kind"] as? String } }
             shown=target;startTime=CACurrentMediaTime();editor.selection=[];editor.playing=true
+            links.onWidgetProgress = { [weak self] group,value in
+                guard let self else {return}
+                self.target[group]=value
+                self.shown[group]=value
+            }
+            links.start(editor.project)
             refresh()
             let link=CADisplayLink(target:self,selector:#selector(frame));link.preferredFramesPerSecond=30;link.add(to:.main,forMode:.common);self.link=link
         } catch { editor.error=error.localizedDescription }
     }
     func stop() {
         link?.invalidate();link=nil
+        activeSourceID=nil
+        links.stop()
         guard let editor else { return }
         do { let final=try OriginalCore.shared.project("stop",values:["shown":target]);if final.nodes != editor.project.nodes { editor.edit { $0.nodes=final.nodes } } } catch { editor.error=error.localizedDescription }
         editor.playing=false;target=[:];shown=[:];rendered=nil;editor.objectWillChange.send()
@@ -78,17 +88,20 @@ import UIKit
             if abs(value-current)>0.001 { shown[group]=current+(value-current)*0.4;changed=true }
             if kinds[group]=="press",(shown[group] ?? 0)>0.9,value>0.5 { target[group]=0 }
         }
+        if links.tick() { changed=true }
         if changed { refresh() }
     }
     private func refresh() {
         guard let editor else { return }
-        do { var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":CACurrentMediaTime()-startTime]);result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n };rendered=result;editor.objectWillChange.send() }
+        do { var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":CACurrentMediaTime()-startTime]);result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n };rendered=links.displayed(result);editor.objectWillChange.send() }
         catch { editor.error=error.localizedDescription;link?.invalidate();link=nil }
     }
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
     func tap(_ p:CGPoint) {
         guard let editor else { return }
-        if let n=editor.project.nodes.reversed().first(where:{($0.visible || visibility[$0.id]==true) && visibility[$0.id] != false && !$0.action.isEmpty && $0.contains(p)}) {
+        if let n=editor.project.nodes.reversed().first(where:{($0.visible || visibility[$0.id]==true) && visibility[$0.id] != false && !$0.mask && $0.contains(p) && (!$0.action.isEmpty || editor.project.links.contains(where:{$0.enabled && $0.sourceID == $0.id}))}) {
+            links.fire("tap",sourceID:n.id)
+            refresh()
             if n.action.hasPrefix("goto:"),let i=editor.project.pages.firstIndex(where:{$0.id==String(n.action.dropFirst(5))}) { let previous=editor.project.active;stop();back.append(previous);editor.page(i);start();return }
             if n.action=="back",let page=back.popLast() { stop();editor.page(page);start();return }
             if n.action.hasPrefix("toggle:") { let id=String(n.action.dropFirst(7));let old=visibility[id] ?? editor.project.nodes.first(where:{$0.id==id})?.visible ?? false;visibility[id] = !old;refresh();return }
@@ -99,8 +112,20 @@ import UIKit
         if ["slider","progress"].contains(widget["kind"] as? String ?? "") { target[group]=(widget["value"] as? NSNumber)?.doubleValue ?? 0;shown[group]=target[group];refresh();return }
         do { let result=try OriginalCore.shared.request(["op":"tap","group":group,"x":p.x,"y":p.y,"shown":target]);target=result.compactMapValues{($0 as? NSNumber)?.doubleValue} } catch { editor.error=error.localizedDescription }
     }
-    func begin(_ p:CGPoint) { activeHit=hit(p);initial=p;lastStep=0;if ["slider","progress"].contains(activeHit?["kind"] as? String ?? "") { tap(p) } }
+    func begin(_ p:CGPoint) {
+        activeHit=hit(p);initial=p;lastStep=0
+        activeSourceID=editor?.project.nodes.reversed().first(where: { n in
+            n.visible && !n.mask && n.contains(p) && (editor?.project.links.contains(where:{$0.enabled && $0.sourceID==n.id && ["dragStart","drag","dragEnd"].contains($0.event)}) ?? false)
+        })?.id
+        if let id=activeSourceID {links.fire("dragStart",sourceID:id);refresh()}
+        if ["slider","progress"].contains(activeHit?["kind"] as? String ?? "") { tap(p) }
+    }
     func drag(_ p:CGPoint) {
+        if let id=activeSourceID,let source=editor?.project.nodes.first(where:{$0.id==id}) {
+            let f=Double(min(1,max(0,(p.x-source.x)/max(1,source.w))))
+            links.fire("drag",sourceID:id,fraction:f)
+            refresh()
+        }
         guard let widget=activeHit,let group=widget["group"] as? String,let kind=widget["kind"] as? String else { return }
         if ["slider","progress"].contains(kind) {
             // Reuse the original component captured at touch-down even when the
@@ -116,5 +141,14 @@ import UIKit
             if step != lastStep { let d=step>lastStep ? 1:-1;lastStep=step;if let result=try? OriginalCore.shared.request(["op":"swipe","group":group,"direction":d,"shown":target]) { target=result.compactMapValues{($0 as? NSNumber)?.doubleValue} } }
         }
     }
-    func end(_ p:CGPoint) { activeHit=nil }
+    func end(_ p:CGPoint) {
+        if let id=activeSourceID {
+            let source=editor?.project.nodes.first(where:{$0.id==id})
+            let f=source.map{Double(min(1,max(0,(p.x-$0.x)/max(1,$0.w))))}
+            links.fire("dragEnd",sourceID:id,fraction:f)
+            refresh()
+        }
+        activeSourceID=nil
+        activeHit=nil
+    }
 }
