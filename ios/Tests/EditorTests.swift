@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import QuartzCore
 import ZIPFoundation
 @testable import QwelIos
 
@@ -164,5 +165,75 @@ final class EditorTests:XCTestCase {
         let nodes=try SVGImport.parse(data)
         XCTAssertEqual(nodes.count,2);XCTAssertEqual(nodes[0].x,10);XCTAssertEqual(nodes[0].y,20)
         XCTAssertTrue(SVGExport.make({ var p=Project();p.nodes=nodes;return p }(),root:FileManager.default.temporaryDirectory).contains("#FF0000"))
+    }
+
+    @MainActor func testLinkedModeTapDragTextAndExport() throws {
+        var p=Project()
+        var button=Node()
+        button.kind="RECT";button.name="Кнопка";button.x=10;button.y=10;button.w=100;button.h=40
+        var target=Node()
+        target.kind="TEXT";target.name="Надпись";target.text="Было"
+        p.nodes=[button,target]
+
+        var textRule=InteractionLink()
+        textRule.sourceID=button.id
+        textRule.targetID=target.id
+        textRule.event="tap"
+        textRule.mode="text"
+        textRule.text="Стало"
+        var dragRule=InteractionLink()
+        dragRule.sourceID=button.id
+        dragRule.targetID=target.id
+        dragRule.event="drag"
+        dragRule.mode="bind"
+        dragRule.property="rotation"
+        dragRule.from=0
+        dragRule.to=180
+        p.links=[textRule,dragRule]
+
+        let copy=try JSONDecoder().decode(Project.self,from:JSONEncoder().encode(p))
+        XCTAssertEqual(copy.links.count,2)
+        let runtime=InteractionRuntime()
+        runtime.start(copy)
+        runtime.fire("tap",sourceID:button.id)
+        XCTAssertEqual(runtime.displayed(copy).nodes[1].text,"Стало")
+        runtime.fire("drag",sourceID:button.id,fraction:0.5)
+        XCTAssertEqual(runtime.displayed(copy).nodes[1].rotation,90,accuracy:0.001)
+
+        let exported=SwiftExport.make(copy,root:FileManager.default.temporaryDirectory)
+        XCTAssertTrue(exported.contains("QwelRule(source:"))
+        XCTAssertTrue(exported.contains("DragGesture(minimumDistance: 2)"))
+        XCTAssertTrue(exported.contains("QwelExportRuntime"))
+    }
+    @MainActor func testTimedProgressAndEchoBindings() throws {
+        var p=Project()
+        var source=Node()
+        source.kind="RECT"
+        var target=Node()
+        target.kind="RECT";target.w=200;target.h=30
+        p.nodes=[source,target]
+        var timed=InteractionLink()
+        timed.sourceID=source.id
+        timed.targetID=target.id
+        timed.event="tap"
+        timed.mode="animate"
+        timed.property="progress"
+        timed.duration=15
+        var echo=InteractionLink()
+        echo.sourceID=source.id
+        echo.targetID=target.id
+        echo.event="tap"
+        echo.mode="echo"
+        echo.duration=1
+        p.links=[timed,echo]
+        let runtime=InteractionRuntime()
+        runtime.start(p)
+        runtime.fire("tap",sourceID:source.id)
+        runtime.tick(at:CACurrentMediaTime()+7.5)
+        let middle=runtime.displayed(p,at:CACurrentMediaTime()+0.3)
+        XCTAssertGreaterThan(middle.nodes.count,2)
+        let animated=try XCTUnwrap(middle.nodes.first(where:{$0.id==target.id}))
+        XCTAssertLessThan(animated.w,200)
+        XCTAssertGreaterThan(animated.w,0)
     }
 }
