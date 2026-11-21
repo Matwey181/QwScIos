@@ -931,7 +931,7 @@ static std::vector<SpriteInfo> parse_shapes(
         size_t start = p;
         size_t end = p + (size_t)len;
 
-        if ((tag == 2 || tag == 18) &&
+        if ((tag == 2 || tag == 18 || tag == 19) &&
             end - start >= 4) {
 
             uint16_t sh_id = r16();
@@ -939,7 +939,7 @@ static std::vector<SpriteInfo> parse_shapes(
             uint16_t draw_c = r16();
 
             uint16_t point_c =
-                (tag == 18 && p + 2 <= end)
+                ((tag == 18 || tag == 19) && p + 2 <= end)
                 ? r16()
                 : (uint16_t)(draw_c * 4);
 
