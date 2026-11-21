@@ -85,13 +85,13 @@ struct InteractionLinkRow: View {
                 DisclosureGroup(isExpanded: $expanded) {
                     Toggle("Включена", isOn: boolean(\.enabled))
                     Picker("Когда", selection: string(\.event)) {
-                        ForEach(InteractionLink.events,id: \.0) { option in
-                            Text(option.1).tag(option.0)
+                        ForEach(InteractionLink.events.indices,id: \.self) { index in
+                            Text(InteractionLink.events[index].1).tag(InteractionLink.events[index].0)
                         }
                     }
                     Picker("Действие", selection: string(\.mode)) {
-                        ForEach(InteractionLink.effects,id: \.0) { option in
-                            Text(option.1).tag(option.0)
+                        ForEach(InteractionLink.effects.indices,id: \.self) { index in
+                            Text(InteractionLink.effects[index].1).tag(InteractionLink.effects[index].0)
                         }
                     }
                     Picker("Изменить слой",selection: string(\.targetID)) {
