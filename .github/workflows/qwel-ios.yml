@@ -3,6 +3,9 @@ on:
   push:
     branches: [codex/qwel-ios]
   workflow_dispatch:
+concurrency:
+  group: qwel-ios-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
