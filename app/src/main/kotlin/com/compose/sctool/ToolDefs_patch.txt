@@ -1,5 +1,0 @@
-png2sctx:
-  inputs: только PNG файл, без шаблона и rotate
-
-png2ktx:
-  inputs: только PNG файл, без rotate

@@ -1,0 +1,40 @@
+package com.qwenz.qwel.ui.common
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.vector.PathParser
+
+// Те же контуры, что в ic_launcher_foreground.xml (холст 512)
+private val LogoShapes = listOf(
+    "M290.39 219.84 C 290.39 225.85, 288.23 231.86, 283.92 236.62 C 279.52 241.46, 277.2 247.83, 277.46 254.36 C 277.95 267.21, 268.62 278.33, 255.89 280.07 C 249.41 280.96, 243.54 284.35, 239.53 289.51 C 231.66 299.67, 217.36 302.19, 206.48 295.34 C 200.95 291.85, 194.28 290.68, 187.89 292.06 C 175.32 294.78, 162.75 287.52, 158.82 275.28 C 156.83 269.06, 152.47 263.86, 146.69 260.81 C 135.31 254.82, 130.35 241.18, 135.21 229.28 C 137.68 223.23, 137.68 216.45, 135.21 210.4 C 130.35 198.5, 135.31 184.85, 146.69 178.86 C 152.47 175.81, 156.83 170.62, 158.82 164.4 C 162.75 152.16, 175.32 144.9, 187.89 147.62 C 194.28 149, 200.95 147.82, 206.48 144.34 C 217.36 137.49, 231.66 140.01, 239.53 150.16 C 243.54 155.33, 249.41 158.72, 255.89 159.61 C 268.62 161.35, 277.95 172.47, 277.46 185.31 C 277.2 191.85, 279.52 198.22, 283.92 203.06 C 288.23 207.82, 290.39 213.83, 290.39 219.84 Z" to Color(0xFF2E4D4D),
+    "M185.11 284.53 C 183.03 274.67, 183.76 264.23, 187.55 254.44 C 191.59 244, 201.88 233.7, 222.48 213.11 C 243.07 192.52, 253.37 182.22, 263.8 178.18 C 283.38 170.6, 305.59 175.29, 320.43 190.13 C 335.28 204.98, 339.97 227.18, 332.39 246.76 C 328.35 257.2, 318.05 267.5, 297.46 288.09 C 276.86 308.68, 266.57 318.98, 256.13 323.02 C 236.55 330.6, 214.34 325.91, 199.5 311.07 C 192.08 303.65, 187.19 294.38, 185.11 284.53 Z" to Color(0xFF407D7C),
+    "M255.55 245.35 C 263.21 237.69, 273.79 232.95, 285.48 232.95 C 304.29 232.95, 323.11 232.95, 341.92 232.95 C 365.3 232.95, 384.25 251.9, 384.25 275.28 C 384.25 294.09, 384.25 312.91, 384.25 331.72 C 384.25 355.1, 365.3 374.05, 341.92 374.05 C 323.11 374.05, 304.29 374.05, 285.48 374.05 C 262.1 374.05, 243.15 355.1, 243.15 331.72 C 243.15 312.91, 243.15 294.09, 243.15 275.28 C 243.15 263.59, 247.89 253.01, 255.55 245.35 Z" to Color(0xFFC8EBEA),
+)
+
+/** Логотип Vexel - точно та же иконка, что и у приложения. */
+@Composable
+fun QwelLogo(
+    modifier: Modifier = Modifier,
+    tile: Color = Color(0xFF151D1D),
+) {
+    val paths = remember { LogoShapes.map { (d, c) -> PathParser().parsePathString(d).toPath() to c } }
+    Canvas(modifier) {
+        val s = size.minDimension
+        drawRoundRect(tile, Offset.Zero, Size(s, s), CornerRadius(s * 0.3f))
+        // 512 -> 108dp иконки (масштаб 0.24, сдвиг) -> видимая область 72dp на всю плитку
+        val k = 0.24f / 72f * s
+        withTransform({
+            translate((-8.3f - 18f) / 72f * s, (-7.68f - 18f) / 72f * s)
+            scale(k, k, Offset.Zero)
+        }) {
+            for ((p, c) in paths) drawPath(p, c)
+        }
+    }
+}
