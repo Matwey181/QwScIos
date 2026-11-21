@@ -81,17 +81,57 @@ struct LinkRulesEditor: View {
                 }
             } else {
                 Button {
-                    var new=InteractionLink()
-                    new.sourceID=source.id
-                    new.targetID=source.id
-                    draft=new
-                    adding=true
+                    preset("custom")
                 } label: {
                     Label("Добавить связку",systemImage:"plus.circle.fill")
                         .frame(maxWidth:.infinity)
                 }.buttonStyle(.bordered)
+                Text("Быстрые примеры").font(.system(size:12,weight:.medium))
+                    .foregroundStyle(.secondary)
+                ScrollView(.horizontal,showsIndicators:false) {
+                    HStack(spacing:6) {
+                        Button("▶ 15 секунд") {preset("progress")}
+                        Button("Текст") {preset("text")}
+                        Button("Размер от жеста") {preset("scale")}
+                        Button("Эхо") {preset("echo")}
+                    }
+                    .font(.system(size:12))
+                    .buttonStyle(.bordered)
+                }
             }
         }
+    }
+
+    private func preset(_ kind:String) {
+        var new=InteractionLink()
+        new.sourceID=source.id
+        new.targetID=source.id
+        switch kind {
+        case "progress":
+            new.event="tap"
+            new.mode="animate"
+            new.property="progress"
+            new.duration=15
+            new.easing="linear"
+        case "text":
+            new.event="tap"
+            new.mode="text"
+            new.text="Новый текст"
+        case "scale":
+            new.event="drag"
+            new.mode="bind"
+            new.property="scale"
+            new.from=0.7
+            new.to=1.5
+        case "echo":
+            new.event="drag"
+            new.mode="echo"
+            new.duration=1
+            new.value=1
+        default:break
+        }
+        draft=new
+        adding=true
     }
 
     private func summary(_ link:InteractionLink)->String {
