@@ -33,10 +33,13 @@ struct FileItem: Identifiable {
     @Published var files: [FileItem] = []
     @Published var error: String?
     @Published var busy = false
+    @Published private(set) var importing = false
+    @Published private(set) var importProgress = ""
+    private var importSession: FileImportSession?
     let documents: URL
-    init() {
-        documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        try? FileManager.default.createDirectory(at: documents.appendingPathComponent("Imports"), withIntermediateDirectories: true)
+    init(documents: URL? = nil) {
+        self.documents = documents ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        try? FileManager.default.createDirectory(at: self.documents.appendingPathComponent("Imports"), withIntermediateDirectories: true)
         reload()
     }
     func reload() {
@@ -48,20 +51,32 @@ struct FileItem: Identifiable {
             return FileItem(url: url)
         }.sorted { $0.url.path > $1.url.path }
     }
-    func importFiles(_ urls: [URL]) throws -> [URL] {
-        let folder = documents.appendingPathComponent("Imports").appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        var copies: [URL] = []
-        for url in urls {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let destination = folder.appendingPathComponent(url.lastPathComponent)
-            try FileManager.default.copyItem(at: url, to: destination)
-            copies.append(destination)
+    func importFiles(_ urls: [URL]) async throws -> [URL] {
+        guard !busy else { throw FileImportError.busy }
+        guard !urls.isEmpty else { return [] }
+        let session = FileImportSession()
+        let id = UUID().uuidString
+        let staging = FileManager.default.temporaryDirectory.appendingPathComponent("QwScImport-" + id)
+        let folder = documents.appendingPathComponent("Imports").appendingPathComponent(id)
+        importSession = session; busy = true; importing = true; importProgress = "Подготовка файлов…"
+        defer { importSession = nil; busy = false; importing = false; importProgress = "" }
+        let copies = try await session.run(abandoned: { try? FileManager.default.removeItem(at: staging) }) { session in
+            try CoordinatedFileImport.copy(urls, to: staging, session: session) { text in
+                Task { @MainActor [weak self] in
+                    if self?.importSession === session { self?.importProgress = text }
+                }
+            }
+        }
+        do {
+            try FileManager.default.moveItem(at: staging, to: folder)
+        } catch {
+            try? FileManager.default.removeItem(at: staging)
+            throw error
         }
         reload()
-        return copies
+        return copies.map { folder.appendingPathComponent($0.lastPathComponent) }
     }
+    func cancelImport() { importSession?.cancel() }
     func resultFolder() throws -> URL {
         let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
         let url = documents.appendingPathComponent("Results").appendingPathComponent(stamp + "-" + UUID().uuidString.prefix(6))

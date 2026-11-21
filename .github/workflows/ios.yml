@@ -27,8 +27,14 @@ jobs:
           ctest --test-dir build/host --output-on-failure
       - name: Build arm64 iPhone IPA
         run: bash ios/build.sh
-      - name: Build, install and launch in iOS Simulator
+      - name: Verify import, cancellation and multiple file selection in iOS Simulator
         run: bash ios/smoke_simulator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Import-test-results
+          path: build/ImportTests.xcresult
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: QwScIos-IPA

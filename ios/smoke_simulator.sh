@@ -21,4 +21,18 @@ xcrun simctl launch "$sim_id" com.matwey181.qwscios
 sleep 5
 xcrun simctl spawn "$sim_id" launchctl list | grep 'com.matwey181.qwscios'
 xcrun simctl io "$sim_id" screenshot build/iOS-launch.png
+app_data="$(xcrun simctl get_app_container "$sim_id" com.matwey181.qwscios data)"
+python3 - "$app_data" <<'PY'
+import base64, pathlib, sys
+folder = pathlib.Path(sys.argv[1]) / 'Documents'
+folder.mkdir(exist_ok=True)
+png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aR5sAAAAASUVORK5CYII=')
+for name in ('import-test-a.png', 'import-test-b.png'):
+    (folder / name).write_bytes(png)
+PY
+xcodebuild -project ios/QwScIos.xcodeproj -scheme QwScIos -configuration Debug \
+  -sdk iphonesimulator -destination "platform=iOS Simulator,id=$sim_id" \
+  -derivedDataPath build/SimDerivedData -resultBundlePath build/ImportTests.xcresult \
+  -parallel-testing-enabled NO \
+  "LIBRARY_SEARCH_PATHS=$(pwd)/build/sim-native" "ARCHS=$sim_arch" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO test
 xcrun simctl shutdown "$sim_id"

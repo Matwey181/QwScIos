@@ -175,7 +175,6 @@ struct FilePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     let multiple: Bool
     let selected: ([URL]) -> Void
-    @State private var importing = false
     @State private var chosen: Set<URL> = []
     @State private var search = ""
     @State private var error = ""
@@ -183,7 +182,10 @@ struct FilePickerSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Button("Импортировать из «Файлов»", systemImage: "square.and.arrow.down") { importing = true }
+                    ImportFilesButton { copied in
+                        if multiple { chosen.formUnion(copied) }
+                        else if copied.count == 1, let first = copied.first { selected([first]); dismiss() }
+                    }
                     Text("SC и связанные *_tex.sc / SCTX импортируй вместе, чтобы сохранить соседние файлы.").font(.caption).foregroundStyle(.secondary)
                 }
                 if !error.isEmpty { Text(error).foregroundStyle(.red) }
@@ -208,20 +210,13 @@ struct FilePickerSheet: View {
                     ToolbarItem(placement: .cancellationAction) { Button("Отмена") { dismiss() } }
                     if multiple { ToolbarItem(placement: .confirmationAction) { Button("Готово") { selected(chosen.sorted { $0.path < $1.path }); dismiss() }.disabled(chosen.isEmpty) } }
                 }
-                .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
-                    do {
-                        let copied = try store.importFiles(result.get())
-                        if multiple { chosen.formUnion(copied) }
-                        else if copied.count == 1, let first = copied.first { selected([first]); dismiss() }
-                    } catch { self.error = error.localizedDescription }
-                }
+                .safeAreaInset(edge: .bottom) { ImportStatusView() }
         }
     }
 }
 
 struct FilesView: View {
     @EnvironmentObject private var store: FileStore
-    @State private var importing = false
     @State private var preview: FileItem?
     @State private var search = ""
     @State private var error = ""
@@ -233,17 +228,15 @@ struct FilesView: View {
                 ForEach(store.files.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) }) { item in
                     Button { preview = item } label: {
                         Label(item.title, systemImage: ["png", "jpg", "gif"].contains(item.url.pathExtension.lowercased()) ? "photo" : "doc")
-                    }.contextMenu {
+                    }.accessibilityIdentifier("file-" + item.title).contextMenu {
                         ShareLink(item: item.url)
                         Button("Скопировать путь") { UIPasteboard.general.string = item.url.path }
                     }
                 }
             }.navigationTitle("Файлы").searchable(text: $search)
                 .refreshable { store.reload() }
-                .toolbar { Button { importing = true } label: { Image(systemName: "plus") }.disabled(store.busy) }
-                .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
-                    do { _ = try store.importFiles(result.get()) } catch { self.error = error.localizedDescription }
-                }
+                .toolbar { ImportFilesButton(compact: true) }
+                .safeAreaInset(edge: .bottom) { ImportStatusView() }
                 .sheet(item: $preview) { Preview(url: $0.url) }
         }
     }
@@ -275,7 +268,7 @@ struct AboutView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("QwSc iOS · 0.1") {
+                Section("QwSc iOS · 0.1.1") {
                     Text("Инструменты Supercell: SC, SCTX, KTX, PNG и GIF. Неофициальное приложение.")
                     Text("Обработка выполняется на устройстве. Исходные файлы сохраняются; результат записывается отдельно.")
                 }
