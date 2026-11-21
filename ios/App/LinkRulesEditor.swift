@@ -221,7 +221,7 @@ private struct LinkRuleForm: View {
                     numeric("Сила эха",value:$link.value)
                 }
             }
-            if link.mode=="bind" {LinkCurveEditor(easing:$link.easing)}
+            if link.mode=="bind" {LinkCurveEditor(easing:Binding(get:{link.easing.hasPrefix("mapped:") ? String(link.easing.dropFirst(7)):"linear"},set:{link.easing="mapped:"+$0}))}
             if link.mode != "bind" {
                 numeric("Задержка, секунд",value:$link.delay)
             }

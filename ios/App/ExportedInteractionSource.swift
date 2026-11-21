@@ -174,7 +174,8 @@ private struct QwelEcho: Identifiable {
                     if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
                 }
             case "bind":
-                let t=ease(min(1,max(0,fraction ?? 0)),rule.easing)
+                let raw=min(1,max(0,fraction ?? 0))
+                let t=rule.easing.hasPrefix("mapped:") ? ease(raw,rule.easing):raw
                 motions.removeAll {$0.target==id && $0.property==property}
                 current[idKey]=isColor ? Double(mixColor(Int64(base[idKey] ?? 0),rule.color,t)):rule.from + (rule.to-rule.from)*t
             case "set":
@@ -239,6 +240,7 @@ private struct QwelEcho: Identifiable {
         path.closeSubpath();return path
     }
     private func ease(_ raw:Double,_ kind:String)->Double {
+        if kind.hasPrefix("mapped:"){return ease(raw,String(kind.dropFirst(7)))}
         let t=min(1,max(0,raw))
         if kind.hasPrefix("bezier:"),case let points=kind.dropFirst(7).split(separator:",").compactMap({Double($0)}),points.count==4,points.allSatisfy(\.isFinite) {
             func cubic(_ p:Double,_ a:Double,_ b:Double)->Double {3*(1-p)*(1-p)*p*a+3*(1-p)*p*p*b+p*p*p}

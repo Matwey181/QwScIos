@@ -48,6 +48,7 @@ struct InteractionLink: Codable, Identifiable, Equatable {
     ]
 
     static func eased(_ raw: Double, _ kind: String) -> Double {
+        if kind.hasPrefix("mapped:"){return eased(raw,String(kind.dropFirst(7)))}
         let t = min(1, max(0, raw))
         if kind.hasPrefix("bezier:"),case let points=kind.dropFirst(7).split(separator:",").compactMap({Double($0)}),points.count==4,points.allSatisfy(\.isFinite) {
             func cubic(_ p:Double,_ a:Double,_ b:Double)->Double {3*(1-p)*(1-p)*p*a+3*(1-p)*p*p*b+p*p*p}

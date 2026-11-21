@@ -119,6 +119,9 @@ final class EditorTests:XCTestCase {
         XCTAssertEqual(Double(runtime.displayed(document).nodes[1].opacity),0.25,accuracy:0.001)
         runtime.stop()
         XCTAssertEqual(runtime.displayed(document).nodes[1].text,"До")
+        document.links[1].easing="mapped:easeOut"
+        runtime.start(document);runtime.fire("drag",sourceID:source.id,fraction:0.25)
+        XCTAssertEqual(Double(runtime.displayed(document).nodes[1].opacity),0.578125,accuracy:0.001)
     }
     @MainActor func testTextAlignmentPersistsThroughArchiveAndOriginalCore() throws {
         var node=Node();node.kind="TEXT";node.text="Test";node.w=240;node.textAlign="center"

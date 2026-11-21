@@ -108,7 +108,8 @@ import QuartzCore
                 if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
             }
         case "bind":
-            let t = InteractionLink.eased(min(1, max(0, fraction ?? 0)),link.easing)
+            let raw=min(1,max(0,fraction ?? 0))
+            let t=link.easing.hasPrefix("mapped:") ? InteractionLink.eased(raw,link.easing):raw
             if colorProperty {set(target,link.property,Double(mixColor(Int64(baseValue(node,link.property)),link.color,t)))}
             else {set(target, link.property, link.from + (link.to-link.from)*t)}
         case "set":
