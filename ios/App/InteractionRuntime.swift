@@ -11,6 +11,7 @@ import QuartzCore
         var start: Double
         var duration: Double
         var from: Double
+        var initialFrom: Double
         var to: Double
         var easing: String
         var repeats: Bool
@@ -54,7 +55,7 @@ import QuartzCore
 
     func fire(_ event: String, sourceID: String, fraction: Double? = nil) {
         let matching = project.links.filter {
-            $0.enabled && $0.event == event && ($0.sourceID == sourceID || ($0.event == "start" && $0.sourceID.isEmpty))
+            $0.enabled && $0.event == event && ($0.sourceID == sourceID || event == "start")
         }
         for link in matching { execute(link, fraction: fraction) }
     }
@@ -85,7 +86,7 @@ import QuartzCore
             motions.removeAll { $0.targetID == target && $0.property == link.property }
             motions.append(Motion(sourceID: link.sourceID, targetID: target,
                                   property: link.property, start: now + max(0,link.delay),
-                                  duration: max(0.01,link.duration), from: from,
+                                  duration: max(0.01,link.duration), from: from, initialFrom: from,
                                   to: to, easing: link.easing, repeats: link.repeats,
                                   colorFrom: Int64(from), colorTo: Int64(to)))
             if link.property == "progress" { set(target, "progress", 0) }
@@ -145,10 +146,8 @@ import QuartzCore
             if t>=1 {
                 if motion.repeats {
                     motion.start = now
-                    motion.from = motion.to
-                    motion.to = motion.property == "progress" ? 0 : motion.from
-                    // Progress repeats from the beginning rather than freezing at 100%.
-                    if motion.property == "progress" {motion.from=0;motion.to=1}
+                    // Repeat the full forward animation, not a frozen final frame.
+                    motion.from = motion.initialFrom
                     kept.append(motion)
                 } else {
                     finished.append(motion.targetID)
