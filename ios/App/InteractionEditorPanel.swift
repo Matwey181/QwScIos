@@ -101,8 +101,8 @@ struct InteractionLinkRow: View {
                     }
                     if ["animate","set","bind"].contains(rule.mode) {
                         Picker("Свойство",selection: string(\.property)) {
-                            ForEach(InteractionLink.properties,id: \.0) { option in
-                                Text(option.1).tag(option.0)
+                            ForEach(InteractionLink.properties.indices,id: \.self) { index in
+                                Text(InteractionLink.properties[index].1).tag(InteractionLink.properties[index].0)
                             }
                         }
                         if rule.mode == "bind" {
@@ -153,8 +153,8 @@ struct InteractionLinkRow: View {
                         }
                         if rule.mode=="animate" {
                             Picker("Плавность", selection: string(\.easing)) {
-                                ForEach(InteractionLink.easings,id: \.0) { option in
-                                    Text(option.1).tag(option.0)
+                                ForEach(InteractionLink.easings.indices,id: \.self) { index in
+                                    Text(InteractionLink.easings[index].1).tag(InteractionLink.easings[index].0)
                                 }
                             }
                             Toggle("Повторять",isOn:boolean(\.repeats))
