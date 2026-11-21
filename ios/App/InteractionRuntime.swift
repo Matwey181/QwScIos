@@ -54,8 +54,13 @@ import QuartzCore
     }
 
     func fire(_ event: String, sourceID: String, fraction: Double? = nil) {
-        let matching = project.links.filter {
-            $0.enabled && $0.event == event && ($0.sourceID == sourceID || event == "start")
+        let group = project.nodes.first(where: {$0.id == sourceID})?.group ?? ""
+        let matching = project.links.filter { rule in
+            guard rule.enabled && rule.event == event else { return false }
+            if event == "start" { return true }
+            if rule.sourceID == sourceID { return true }
+            return !group.isEmpty &&
+                project.nodes.first(where:{$0.id == rule.sourceID})?.group == group
         }
         for link in matching { execute(link, fraction: fraction) }
     }
