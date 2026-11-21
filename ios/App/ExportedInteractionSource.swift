@@ -32,6 +32,11 @@ private struct QwelMotion {
     var ease: String
     var repeats: Bool
 }
+private struct QwelPending {
+    var rule:QwelRule
+    var at:Double
+    var fraction:Double?
+}
 private struct QwelEcho: Identifiable {
     var id = UUID()
     var target: String
@@ -48,6 +53,7 @@ private struct QwelEcho: Identifiable {
     private var visibility: [String:Bool] = [:]
     private var motions: [QwelMotion] = []
     private var echoes: [QwelEcho] = []
+    private var pending: [QwelPending] = []
     private var clock: CADisplayLink?
     private var running = false
     private var updating = false
@@ -67,6 +73,7 @@ private struct QwelEcho: Identifiable {
         visibility=[:]
         motions=[:]
         echoes=[]
+        pending=[]
         draggingSources=[]
         emit("start",source:"")
         let ticker=CADisplayLink(target:self,selector:#selector(frame))
@@ -84,6 +91,9 @@ private struct QwelEcho: Identifiable {
     }
     @objc private func frame() {
         let now=CACurrentMediaTime()
+        let due=pending.filter{$0.at<=now}
+        pending.removeAll{$0.at<=now}
+        for item in due {apply(item.rule,fraction:item.fraction,now:now)}
         let completed=motions.filter { !$0.repeats && now >= $0.start + $0.duration }
         for m in completed {
             current[key(m.target,m.property)]=m.to
@@ -124,6 +134,17 @@ private struct QwelEcho: Identifiable {
         let now=CACurrentMediaTime()
         for rule in rules where rule.enabled && rule.event == event &&
                 (rule.source == source || event == "start") {
+            if rule.delay>0 && !["animate","echo"].contains(rule.mode) {
+                var waiting=rule
+                waiting.delay=0
+                pending.append(QwelPending(rule:waiting,at:now+rule.delay,fraction:fraction))
+            } else {
+                apply(rule,fraction:fraction,now:now)
+            }
+        }
+        version &+= 1
+    }
+    private func apply(_ rule:QwelRule,fraction:Double?,now:Double) {
             let id=rule.target, property=rule.property
             let idKey=key(id,property)
             switch rule.mode {
@@ -154,7 +175,6 @@ private struct QwelEcho: Identifiable {
                 if property == "progress" {current[idKey]=0}
             }
         }
-        version &+= 1
     }
     func value(_ id:String,_ property:String,base fallback:Double)->Double {
         // Access to this property establishes an observable dependency for SwiftUI.
