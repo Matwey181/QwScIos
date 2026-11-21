@@ -11,7 +11,7 @@ cmake --build build/sim-native --parallel 3
 xcodebuild -project ios/QwScIos.xcodeproj -scheme QwScIos -configuration Debug \
   -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath build/SimDerivedData \
-  "LIBRARY_SEARCH_PATHS=$(pwd)/build/sim-native" CODE_SIGNING_ALLOWED=NO build
+  "LIBRARY_SEARCH_PATHS=$(pwd)/build/sim-native" "ARCHS=$sim_arch" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
 sim_id="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')"
 xcrun simctl boot "$sim_id"
 xcrun simctl bootstatus "$sim_id" -b

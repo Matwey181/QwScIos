@@ -18,7 +18,9 @@ struct Sprite: Identifiable {
                 guard xy.count == 2, let x = Double(xy[0]), let y = Double(xy[1]), x.isFinite, y.isFinite else { return nil }
                 return CGPoint(x: x, y: y)
             }
-            return points.count >= 3 ? points : nil
+            guard points.count >= 3 else { return nil }
+            let center = CGPoint(x: points.map(\.x).reduce(0, +) / CGFloat(points.count), y: points.map(\.y).reduce(0, +) / CGFloat(points.count))
+            return points.sorted { atan2($0.y - center.y, $0.x - center.x) < atan2($1.y - center.y, $1.x - center.x) }
         }
     }
     func image(from atlas: UIImage) -> UIImage? {
