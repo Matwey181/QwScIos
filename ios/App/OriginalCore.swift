@@ -87,7 +87,7 @@ import UIKit
         for (group,value) in target {
             let current=shown[group] ?? value
             if abs(value-current)>0.001 { shown[group]=current+(value-current)*0.4;changed=true }
-            if kinds[group]=="press",(shown[group] ?? 0)>0.9,value>0.5 { target[group]=0 }
+            if kinds[group]=="press",(shown[group] ?? 0)>0.9,value>0.5 { target[group]=0;notifyWidget(group,value:0) }
         }
         if links.tick() { changed=true }
         if changed { refresh() }
@@ -121,10 +121,31 @@ import UIKit
         }
         let widget=hit(p)
         guard let group=widget["group"] as? String else { return }
-        if ["slider","progress"].contains(widget["kind"] as? String ?? "") { target[group]=(widget["value"] as? NSNumber)?.doubleValue ?? 0;shown[group]=target[group];refresh();return }
-        do { let result=try OriginalCore.shared.request(["op":"tap","group":group,"x":p.x,"y":p.y,"shown":target]);target=result.compactMapValues{($0 as? NSNumber)?.doubleValue} } catch { editor.error=error.localizedDescription }
+        if ["slider","progress"].contains(widget["kind"] as? String ?? "") {
+            let value=(widget["value"] as? NSNumber)?.doubleValue ?? 0
+            target[group]=value;shown[group]=value;notifyWidget(group,value:value);refresh();return
+        }
+        do { let result=try OriginalCore.shared.request(["op":"tap","group":group,"x":p.x,"y":p.y,"shown":target]);target=result.compactMapValues{($0 as? NSNumber)?.doubleValue};notifyWidget(group,value:target[group] ?? 0);refresh() } catch { editor.error=error.localizedDescription }
+    }
+    private func notifyWidget(_ group:String,value:Double) {
+        guard let node=editor?.project.nodes.first(where:{$0.group==group}) else{return}
+        var fraction=value
+        if kinds[group]=="pick",let nodes=editor?.project.nodes {
+            let indices=Set(nodes.filter{$0.group==group && $0.widget.hasPrefix("pick:i")}.compactMap{Int($0.widget.dropFirst(6).split(separator:"/").first ?? "")})
+            fraction=value/Double(max(1,indices.count-1))
+        }
+        links.fire("valueChanged",sourceID:node.id,fraction:fraction)
+    }
+    private func widgetFraction(_ p:CGPoint,_ widget:[String:Any])->Double {
+        let x=CGFloat((widget["x"] as? NSNumber)?.doubleValue ?? 0),y=CGFloat((widget["y"] as? NSNumber)?.doubleValue ?? 0)
+        let w=CGFloat((widget["w"] as? NSNumber)?.doubleValue ?? 1),h=CGFloat((widget["h"] as? NSNumber)?.doubleValue ?? 1)
+        let point=CGPoint(x:min(x+w,max(x,p.x)),y:min(y+h,max(y,p.y)))
+        let state=hit(point)
+        if state["group"] as? String==widget["group"] as? String {return (state["value"] as? NSNumber)?.doubleValue ?? 0}
+        return Double(min(1,max(0,(p.x-x)/max(1,w))))
     }
     private func dragFraction(_ p:CGPoint, sourceID:String)->Double? {
+        if let widget=activeHit,["slider","progress"].contains(widget["kind"] as? String ?? "") {return widgetFraction(p,widget)}
         guard let editor,let source=editor.project.nodes.first(where:{$0.id==sourceID}) else {return nil}
         let group: [Node] = source.group.isEmpty ? [source] :
             editor.project.nodes.filter{$0.group == source.group}
@@ -134,9 +155,15 @@ import UIKit
     }
     func begin(_ p:CGPoint) {
         activeHit=hit(p);initial=p;lastStep=0
-        activeSourceID=(rendered?.nodes ?? editor?.project.nodes ?? []).reversed().first(where: { n in
-            n.visible && !n.mask && n.contains(p) && linked(n,events:["dragStart","drag","dragEnd"])
-        })?.id
+        let events=["dragStart","drag","dragEnd","valueChanged"]
+        if let group=activeHit?["group"] as? String {
+            activeSourceID=editor?.project.nodes.first(where:{$0.group==group && linked($0,events:events)})?.id
+        } else {activeSourceID=nil}
+        if activeSourceID==nil {
+            activeSourceID=(rendered?.nodes ?? editor?.project.nodes ?? []).reversed().first(where: { n in
+                n.visible && !n.mask && n.contains(p) && linked(n,events:events)
+            })?.id
+        }
         if let id=activeSourceID {links.fire("dragStart",sourceID:id,fraction:dragFraction(p,sourceID:id));refresh()}
         if ["slider","progress"].contains(activeHit?["kind"] as? String ?? "") { tap(p) }
     }
@@ -147,17 +174,14 @@ import UIKit
         }
         guard let widget=activeHit,let group=widget["group"] as? String,let kind=widget["kind"] as? String else { return }
         if ["slider","progress"].contains(kind) {
-            // Reuse the original component captured at touch-down even when the
-            // finger goes outside its bounds.
-            var clamped=p
-            let left=CGFloat((widget["x"] as? NSNumber)?.doubleValue ?? 0),width=CGFloat((widget["w"] as? NSNumber)?.doubleValue ?? 1)
-            let top=CGFloat((widget["y"] as? NSNumber)?.doubleValue ?? 0),height=CGFloat((widget["h"] as? NSNumber)?.doubleValue ?? 1)
-            clamped.x=min(left+width,max(left,p.x));clamped.y=min(top+height,max(top,p.y))
-            let new=hit(clamped)
-            if new["group"] as? String==group { target[group]=(new["value"] as? NSNumber)?.doubleValue ?? 0;shown[group]=target[group];refresh() }
+            // Keep the captured component even when the finger leaves its bounds.
+            let value=widgetFraction(p,widget)
+            target[group]=value;shown[group]=value
+            if activeSourceID==nil {notifyWidget(group,value:value)}
+            refresh()
         } else if kind=="pick" {
             let step=Int((initial.x-p.x)/40)
-            if step != lastStep { let d=step>lastStep ? 1:-1;lastStep=step;if let result=try? OriginalCore.shared.request(["op":"swipe","group":group,"direction":d,"shown":target]) { target=result.compactMapValues{($0 as? NSNumber)?.doubleValue} } }
+            if step != lastStep { let d=step>lastStep ? 1:-1;lastStep=step;if let result=try? OriginalCore.shared.request(["op":"swipe","group":group,"direction":d,"shown":target]) { target=result.compactMapValues{($0 as? NSNumber)?.doubleValue};notifyWidget(group,value:target[group] ?? 0);refresh() } }
         }
     }
     func end(_ p:CGPoint) {

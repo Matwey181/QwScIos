@@ -23,6 +23,8 @@ import QuartzCore
         var started: Double
         var duration: Double
         var size: Double
+        var easing:String = "easeOut"
+        var repeats:Bool = false
     }
 
     private(set) var project = Project()
@@ -104,7 +106,7 @@ import QuartzCore
         case "echo":
             if !(echoes.last(where:{$0.nodeID==target}).map{now-$0.started<0.08} ?? false) {
                 echoes.append(EchoPulse(nodeID: target, started: now + max(0,link.delay),
-                                        duration: max(0.15,link.duration), size: max(0.1,link.value)))
+                                        duration: max(0.15,link.duration), size: max(0.1,link.value),easing:link.easing,repeats:link.repeats))
                 if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
             }
         case "bind":
@@ -215,7 +217,7 @@ import QuartzCore
         var budget=64
         while !valueEvents.isEmpty && budget>0 {let event=valueEvents.removeFirst();budget-=1;fire("valueChanged",sourceID:event.0,fraction:event.1)}
         valueEvents=[]
-        echoes.removeAll { now > $0.started+$0.duration }
+        echoes.removeAll { !$0.repeats && now > $0.started+$0.duration }
         // Completion can start new animations, but don't recursively call completion.
         for id in Set(finished) { fire("finished",sourceID:id) }
         return hadMotion || !motions.isEmpty
@@ -276,11 +278,14 @@ import QuartzCore
         for pulse in echoes {
             guard now>=pulse.started,
                   let original=output.nodes.first(where:{$0.id==pulse.nodeID}) else {continue}
-            let progress=min(1,max(0,(now-pulse.started)/pulse.duration))
+            let elapsed=max(0,now-pulse.started)
+            let phase=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration)/pulse.duration:elapsed/pulse.duration
+            let progress=min(1,max(0,phase))
+            let curved=InteractionLink.eased(progress,pulse.easing)
             for index in 1...3 {
                 let stagger=max(0, progress-Double(index-1)*0.13)
                 guard stagger>0 else { continue }
-                let size=1+CGFloat(stagger*pulse.size*0.3)
+                let size=1+CGFloat(max(0,curved-Double(index-1)*0.13)*pulse.size*0.3)
                 var copy=original
                 copy.id = "echo-\(original.id)-\(index)"
                 copy.name = "Эхо"

@@ -1,180 +1,21 @@
 import SwiftUI
 
-/// Editor for connections of the form "event on this layer -> effect on any layer".
-/// Every change goes through Editor.edit and is saved to the .qwel archive.
-struct InteractionEditorPanel: View {
-    @ObservedObject var editor: Editor
-    var sourceID: String
+/// A single styled entry point for all project links; no system Forms or Pickers.
+struct InteractionEditorPanel:View {
+    @ObservedObject var editor:Editor
+    var sourceID:String
     @Environment(\.dismiss) private var dismiss
-
-    private var sourceName: String {
-        editor.project.nodes.first(where: { $0.id == sourceID })?.name ?? "Слой"
-    }
-    private var connections: [InteractionLink] {
-        editor.project.links.filter { $0.sourceID == sourceID }
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Text("Источник: \(sourceName)")
-                    Text("Выберите событие и действие, укажите целевой слой. Можно создавать несколько связок для одной кнопки или ползунка.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                ForEach(connections) { item in
-                    InteractionLinkRow(editor: editor, id: item.id)
-                }
-
-                Section {
-                    Button {
-                        var link=InteractionLink()
-                        link.sourceID=sourceID
-                        link.targetID=sourceID
-                        editor.edit { $0.links.append(link) }
-                    } label: {
-                        Label("Добавить связку", systemImage: "plus.circle.fill")
-                    }
-                }
-            }
-            .navigationTitle("Связки и анимации")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Готово") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-struct InteractionLinkRow: View {
-    @ObservedObject var editor: Editor
-    let id: String
-    @State private var expanded=true
-
-    private var link: InteractionLink? {
-        editor.project.links.first(where: { $0.id == id })
-    }
-
-    private func update(_ modify: @escaping (inout InteractionLink) -> Void) {
-        editor.edit { project in
-            guard let index=project.links.firstIndex(where: { $0.id == id }) else { return }
-            modify(&project.links[index])
-        }
-    }
-    private func string(_ key: WritableKeyPath<InteractionLink,String>) -> Binding<String> {
-        Binding(get: { link?[keyPath:key] ?? "" },
-                set: { value in update { $0[keyPath:key]=value } })
-    }
-    private func number(_ key: WritableKeyPath<InteractionLink,Double>) -> Binding<Double> {
-        Binding(get: { link?[keyPath:key] ?? 0 },
-                set: { value in update { $0[keyPath:key]=value.isFinite ? value : 0 } })
-    }
-    private func boolean(_ key: WritableKeyPath<InteractionLink,Bool>) -> Binding<Bool> {
-        Binding(get: { link?[keyPath:key] ?? false },
-                set: { value in update { $0[keyPath:key]=value } })
-    }
-    private var targetNodes: [Node] { editor.project.nodes }
-
-    var body: some View {
-        if let rule=link {
-            Section {
-                DisclosureGroup(isExpanded: $expanded) {
-                    Toggle("Включена", isOn: boolean(\.enabled))
-                    Picker("Когда", selection: string(\.event)) {
-                        ForEach(InteractionLink.events.indices,id: \.self) { index in
-                            Text(InteractionLink.events[index].1).tag(InteractionLink.events[index].0)
-                        }
-                    }
-                    Picker("Действие", selection: string(\.mode)) {
-                        ForEach(InteractionLink.effects.indices,id: \.self) { index in
-                            Text(InteractionLink.effects[index].1).tag(InteractionLink.effects[index].0)
-                        }
-                    }
-                    Picker("Изменить слой",selection: string(\.targetID)) {
-                        ForEach(targetNodes) { node in
-                            Text(node.name).tag(node.id)
-                        }
-                    }
-                    if ["animate","set","bind"].contains(rule.mode) {
-                        Picker("Свойство",selection: string(\.property)) {
-                            ForEach(InteractionLink.properties.indices,id: \.self) { index in
-                                Text(InteractionLink.properties[index].1).tag(InteractionLink.properties[index].0)
-                            }
-                        }
-                        if rule.mode == "bind" {
-                            HStack {
-                                Text("От")
-                                Spacer()
-                                TextField("0",value:number(\.from),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                            }
-                            HStack {
-                                Text("До")
-                                Spacer()
-                                TextField("1",value:number(\.to),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                            }
-                        } else if rule.property=="fill" {
-                            Text("Цвет цели указывается в ARGB как целое число")
-                                .font(.caption).foregroundStyle(.secondary)
-                            TextField("ARGB",value:Binding(get:{rule.color},set:{v in update{$0.color=v}}),format:.number)
-                                .keyboardType(.numbersAndPunctuation)
-                        } else {
-                            HStack {
-                                Text("Значение")
-                                Spacer()
-                                TextField("1",value:number(\.value),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                            }
-                        }
-                    }
-                    if rule.mode=="text" {
-                        TextField("Новый текст",text:string(\.text),axis:.vertical)
-                            .lineLimit(2...5)
-                    }
-                    if rule.mode=="echo" {
-                        HStack {
-                            Text("Сила эха")
-                            Spacer()
-                            TextField("1",value:number(\.value),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                        }
-                    }
-                    if rule.mode=="animate" || rule.mode=="echo" {
-                        HStack {
-                            Text("Длительность (сек.)")
-                            Spacer()
-                            TextField("0.45",value:number(\.duration),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                        }
-                        HStack {
-                            Text("Задержка (сек.)")
-                            Spacer()
-                            TextField("0",value:number(\.delay),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                        }
-                        if rule.mode=="animate" {
-                            Picker("Плавность", selection: string(\.easing)) {
-                                ForEach(InteractionLink.easings.indices,id: \.self) { index in
-                                    Text(InteractionLink.easings[index].1).tag(InteractionLink.easings[index].0)
-                                }
-                            }
-                            Toggle("Повторять",isOn:boolean(\.repeats))
-                        }
-                    }
-                    Button(role:.destructive) {
-                        editor.edit { $0.links.removeAll { $0.id==id } }
-                    } label: {
-                        Label("Удалить связку",systemImage:"trash")
-                    }
-                } label: {
-                    VStack(alignment:.leading,spacing:3) {
-                        Text(InteractionLink.events.first(where:{$0.0==rule.event})?.1 ?? rule.event)
-                            .font(.headline)
-                        Text((InteractionLink.effects.first(where:{$0.0==rule.mode})?.1 ?? rule.mode) + " → " +
-                             (editor.project.nodes.first(where:{$0.id==rule.targetID})?.name ?? "слой"))
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
+    @Environment(\.q) private var q
+    private var source:Node {editor.project.nodes.first{$0.id==sourceID} ?? Node()}
+    var body:some View {
+        VStack(spacing:0){
+            HStack(spacing:12){
+                QIconButton(icon:"Back",label:"Закрыть связки"){dismiss()}.qSurface(26,"surfaceContainerHigh")
+                VStack(alignment:.leading,spacing:3){Text("Связки").font(qfont(25,.semibold));Text("Движение и реакции").font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"))}
+                Spacer(minLength:0)
+                Button{dismiss()}label:{Text("Готово").font(qfont(14,.semibold)).padding(.horizontal,20).padding(.vertical,14).qSurface(26,"primaryContainer")}.buttonStyle(.plain)
+            }.padding(16)
+            ScrollView{LinkRulesEditor(editor:editor,source:source).padding(.horizontal,16).padding(.bottom,28)}.scrollDismissesKeyboard(.interactively)
+        }.background(q.color("surfaceContainer").ignoresSafeArea()).foregroundStyle(q.color("onSurface"))
     }
 }

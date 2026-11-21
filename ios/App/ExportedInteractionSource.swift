@@ -49,6 +49,8 @@ private struct QwelEcho: Identifiable {
     var start: Double
     var duration: Double
     var strength: Double
+    var easing:String = "easeOut"
+    var repeats:Bool = false
 }
 @MainActor private final class QwelExportRuntime: NSObject, ObservableObject {
     @Published private var version: Int = 0
@@ -116,7 +118,7 @@ private struct QwelEcho: Identifiable {
             motions[i].start=now
             current[key(m.target,m.property)]=m.from
         }
-        echoes.removeAll { now > $0.start + $0.duration }
+        echoes.removeAll { !$0.repeats && now > $0.start + $0.duration }
         emittedThisFrame=0
         for id in Set(completed.map(\.target)) {
             emit("finished",source:id)
@@ -170,7 +172,7 @@ private struct QwelEcho: Identifiable {
                 if !(echoes.last(where:{$0.target==id}).map{now-$0.start<0.08} ?? false) {
                     echoes.append(QwelEcho(target:id,start:now+max(0,rule.delay),
                                            duration:max(0.1,rule.duration),
-                                           strength:max(0.01,rule.value)))
+                                           strength:max(0.01,rule.value),easing:rule.easing,repeats:rule.repeats))
                     if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
                 }
             case "bind":
@@ -225,7 +227,9 @@ private struct QwelEcho: Identifiable {
         _ = version
         let now=CACurrentMediaTime()
         guard let pulse=echoes.last(where:{$0.target==id && now >= $0.start}) else {let strength=value(id,"echo",base:0);return strength>0 ? min(1,strength):nil}
-        return min(1,max(0,(now-pulse.start)/pulse.duration))
+        let elapsed=max(0,now-pulse.start)
+        let raw=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration)/pulse.duration:elapsed/pulse.duration
+        return ease(min(1,max(0,raw)),pulse.easing)
     }
     func gradientPoint(_ id:String,base:Double,end:Bool)->UnitPoint {
         let angle=value(id,"gradAngle",base:base) * .pi/180,k=end ? 0.5 : -0.5

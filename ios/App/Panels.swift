@@ -51,9 +51,9 @@ struct InspectorPanel:View {
                 } label: {
                     HStack(spacing:8) {
                         Image(systemName:"point.3.connected.trianglepath.dotted")
-                        Text("Связки и анимации")
+                        Text("Связки проекта")
                         Spacer()
-                        Text("\(editor.project.links.filter{$0.sourceID == n.id}.count)")
+                        Text("\(editor.project.links.count)")
                         Image(systemName:"chevron.right")
                     }
                     .font(qfont(14,.semibold))
@@ -61,23 +61,8 @@ struct InspectorPanel:View {
                     .qSurface(16,"secondaryContainer")
                 }
                 .buttonStyle(.plain)
-                .sheet(isPresented:$showInteractions) {
-                    NavigationStack {
-                        ScrollView {
-                            LinkRulesEditor(editor:editor,source:n)
-                                .padding(16)
-                                .font(qfont(14))
-                                .foregroundStyle(q.color("onSurface"))
-                        }
-                        .background(q.color("surfaceContainer"))
-                        .navigationTitle("Связки и анимации")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement:.topBarTrailing) {
-                                Button("Готово") {showInteractions=false}
-                            }
-                        }
-                    }
+                .fullScreenCover(isPresented:$showInteractions) {
+                    InteractionEditorPanel(editor:editor,sourceID:n.id).modifier(OriginalTheme())
                 }
                 if n.kind=="SHAPE"{title("Фигура");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(Catalog.shared.shapes){shape in Button{editor.change{$0.shapeId=shape.id}}label:{ShapePreview(shape:shape).fill(q.color(n.shapeId==shape.id ? "onPrimaryContainer":"primary")).frame(width:34,height:34).frame(width:56,height:56).qSurface(n.shapeId==shape.id ? 28:16,n.shapeId==shape.id ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}}}}
                 if n.kind=="TEXT"{slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}

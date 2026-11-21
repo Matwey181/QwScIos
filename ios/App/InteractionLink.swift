@@ -26,7 +26,7 @@ struct InteractionLink: Codable, Identifiable, Equatable {
     var enabled: Bool = true
 
     static let events: [(String, String)] = [
-        ("tap", "Нажатие"), ("valueChanged", "Изменение значения ползунка"), ("dragStart", "Начало перетаскивания"),
+        ("tap", "Нажатие"), ("valueChanged", "Изменение значения компонента"), ("dragStart", "Начало перетаскивания"),
         ("drag", "Движение пальца"), ("dragEnd", "Отпускание"),
         ("finished", "Завершение анимации"), ("start", "Запуск игры")
     ]
@@ -39,7 +39,7 @@ struct InteractionLink: Codable, Identifiable, Equatable {
         ("morph", "Форма / число лучей"), ("echo", "Сила контурного эха"), ("weight", "Толщина шрифта"), ("strokeWidth", "Толщина обводки"), ("stroke", "Цвет обводки"), ("fill2", "Второй цвет"), ("gradAngle", "Угол градиента"), ("shadowBlur", "Размытие тени"), ("shadowDx", "Тень по X"), ("shadowDy", "Тень по Y"), ("shadowColor", "Цвет тени"), ("backgroundBlur", "Размытие фона"), ("opacity", "Непрозрачность"), ("x", "Позиция X"), ("y", "Позиция Y"),
         ("scale", "Масштаб"), ("rotation", "Поворот"),
         ("width", "Ширина"), ("height", "Высота"),
-        ("progress", "Прогресс (0–1)"), ("fontSize", "Размер текста"),
+        ("progress", "Значение ползунка / прогресс"), ("fontSize", "Размер текста"),
         ("corner", "Скругление"), ("blur", "Размытие"), ("fill", "Цвет заливки")
     ]
     static let easings: [(String, String)] = [
