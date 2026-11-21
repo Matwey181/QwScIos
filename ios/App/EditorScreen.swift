@@ -123,6 +123,7 @@ struct EditorScreen:View {
             menuItem("Style","Тон проекта…"){panel="document"}
             menuItem("Import","Импорт SVG"){importer=true}
             menuItem("Code","Код Compose"){export("kt")}
+            menuItem("Code","Код SwiftUI"){export("swift")}
             menuItem("Code","Проект Compose"){export("module")}
             menuItem("Code","Проект CodeAssist"){export("codeassist")}
             menuItem("Export","Экспорт"){dialog="export"}
@@ -138,6 +139,7 @@ struct EditorScreen:View {
             try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
             let url=folder.appendingPathComponent(safeName(editor.project.name)+"."+kind)
             if kind=="kt" { try OriginalCore.shared.compose(editor.project).write(to:url,atomically:true,encoding:.utf8) }
+            else if kind=="swift" { try SwiftExport.make(editor.project,root:editor.store.root).write(to:url,atomically:true,encoding:.utf8) }
             else if kind=="svg" { try SVGExport.make(editor.project,root:editor.store.root).write(to:url,atomically:true,encoding:.utf8) }
             else { guard let data=editor.renderer.png(editor.project,scale:CGFloat(pngScale)) else { throw CocoaError(.fileWriteOutOfSpace) };try data.write(to:url) }
             shared=SharedFile(url:url)

@@ -4,6 +4,18 @@ import ZIPFoundation
 @testable import QwelIos
 
 final class EditorTests:XCTestCase {
+    @MainActor func testSwiftExportSource() throws {
+        var project=try XCTUnwrap(Catalog.shared.components.first{$0.id=="slider"}).project
+        for kind in ["TEXT","IMAGE","ELLIPSE","RECT","SHAPE","PATH"] {
+            var n=Node();n.kind=kind;n.text="Quote \" \\ and newline\nNext";n.textAlign="center";n.gradKind=1;n.strokeWidth=2;n.shadowBlur=4
+            n.path="M0 0L1 0L1 1Z";n.shapeId=Catalog.shared.shapes.first?.id ?? ""
+            project.nodes.append(n)
+        }
+        let code=SwiftExport.make(project,root:FileManager.default.temporaryDirectory)
+        XCTAssertTrue(code.contains("public struct QwelExportedView"))
+        XCTAssertTrue(code.contains("multilineTextAlignment(.center)"))
+        try code.write(to:FileManager.default.temporaryDirectory.appendingPathComponent("QwelExportValidation.swift"),atomically:true,encoding:.utf8)
+    }
     @MainActor func testTextAlignmentPersistsThroughArchiveAndOriginalCore() throws {
         var node=Node();node.kind="TEXT";node.text="Test";node.w=240;node.textAlign="center"
         var project=Project();project.nodes=[node]
