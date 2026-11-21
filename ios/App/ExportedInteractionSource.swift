@@ -71,7 +71,7 @@ private struct QwelEcho: Identifiable {
         current=[:]
         textValues=[:]
         visibility=[:]
-        motions=[:]
+        motions=[]
         echoes=[]
         pending=[]
         draggingSources=[]
@@ -125,7 +125,7 @@ private struct QwelEcho: Identifiable {
         draggingSources.remove(source)
     }
     func toggle(target id:String) {
-        visibility[id]=!(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
+        visibility[id] = !(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
         version &+= 1
     }
     func emit(_ event:String, source:String, fraction:Double?=nil) {
@@ -149,7 +149,7 @@ private struct QwelEcho: Identifiable {
             let idKey=key(id,property)
             switch rule.mode {
             case "toggle":
-                visibility[id]=!(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
+                visibility[id] = !(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
             case "text":
                 textValues[id]=rule.text
             case "echo":
