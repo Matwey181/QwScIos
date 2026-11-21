@@ -52,6 +52,7 @@ private struct QwelEcho: Identifiable {
     private var running = false
     private var updating = false
     private var emittedThisFrame = 0
+    private var draggingSources: Set<String> = []
 
     private func key(_ node:String,_ property:String)->String {
         node + "|" + property
@@ -66,6 +67,7 @@ private struct QwelEcho: Identifiable {
         visibility=[:]
         motions=[:]
         echoes=[]
+        draggingSources=[]
         emit("start",source:"")
         let ticker=CADisplayLink(target:self,selector:#selector(frame))
         ticker.preferredFramesPerSecond=30
@@ -78,6 +80,7 @@ private struct QwelEcho: Identifiable {
         running=false
         motions=[]
         echoes=[]
+        draggingSources=[]
     }
     @objc private func frame() {
         let now=CACurrentMediaTime()
@@ -100,6 +103,16 @@ private struct QwelEcho: Identifiable {
         if !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty {
             version &+= 1
         }
+    }
+    func dragChanged(source:String,fraction:Double) {
+        if draggingSources.insert(source).inserted {
+            emit("dragStart",source:source,fraction:fraction)
+        }
+        emit("drag",source:source,fraction:fraction)
+    }
+    func dragEnded(source:String,fraction:Double) {
+        emit("dragEnd",source:source,fraction:fraction)
+        draggingSources.remove(source)
     }
     func toggle(target id:String) {
         visibility[id]=!(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
