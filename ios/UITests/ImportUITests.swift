@@ -34,7 +34,8 @@ final class ImportUITests: XCTestCase {
         // copy in Imports. Seeing only the originals must not pass this test.
         let a = app.buttons.matching(identifier: "file-import-test-a.png")
         let imported = expectation(for: NSPredicate(format: "count == 2"), evaluatedWith: a)
-        wait(for: [imported], timeout: 20)
+        let outcome = XCTWaiter.wait(for: [imported], timeout: 20)
+        XCTAssertEqual(outcome, .completed, app.debugDescription)
         XCTAssertEqual(app.buttons.matching(identifier: "file-import-test-b.png").count, 2, app.debugDescription)
         XCTAssertTrue(app.buttons["importFiles"].isEnabled)
         XCTAssertTrue(app.buttons["importFiles"].isHittable)

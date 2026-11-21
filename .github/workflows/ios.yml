@@ -19,11 +19,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: brew install xcodegen cmake
-      - name: Start iOS Simulator while compiling
-        run: |
-          mkdir -p build
-          xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))' > build/simulator-id
-          xcrun simctl boot "$(cat build/simulator-id)"
       - name: Test portable core
         run: |
           python3 ios/generate_bridge.py

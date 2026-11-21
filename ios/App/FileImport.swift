@@ -2,6 +2,12 @@ import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
+func importTrace(_ stage: String) {
+    #if DEBUG
+    NSLog("[FileImport] %@", stage)
+    #endif
+}
+
 enum FileImportError: LocalizedError {
     case busy, cancelled, timedOut, notAFile(String)
     var errorDescription: String? {
@@ -146,10 +152,12 @@ struct DocumentPicker: UIViewControllerRepresentable {
         init(selected: @escaping ([URL]) -> Void) { self.selected = selected }
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard !delivered else { return }; delivered = true
+            importTrace("Picker selected \(urls.count) files")
             selected(urls)
         }
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
             guard !delivered else { return }; delivered = true
+            importTrace("Picker cancelled")
             selected([])
         }
     }
@@ -160,25 +168,34 @@ struct ImportFilesButton: View {
     var compact = false
     var selected: ([URL]) -> Void = { _ in }
     @State private var presenting = false
-    @State private var pending: [URL] = []
     @State private var error: String?
     var body: some View {
-        Button { pending = []; presenting = true } label: {
+        Button { presenting = true } label: {
             if compact { Image(systemName: "plus").accessibilityLabel("Импортировать файлы") }
             else { Label("Импортировать из «Файлов»", systemImage: "square.and.arrow.down") }
         }.disabled(store.busy).accessibilityIdentifier("importFiles")
-            .sheet(isPresented: $presenting, onDismiss: importSelection) {
-                DocumentPicker { urls in pending = urls; presenting = false }
+            .sheet(isPresented: $presenting) {
+                DocumentPicker { urls in
+                    presenting = false
+                    importSelection(urls)
+                }
             }
             .alert("Не удалось импортировать", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("OK") { error = nil }
             } message: { Text(error ?? "") }
     }
-    private func importSelection() {
-        let urls = pending; pending = []
+    private func importSelection(_ urls: [URL]) {
+        importTrace("Received selection: \(urls.count) files")
         guard !urls.isEmpty else { return }
         Task { @MainActor in
-            do { selected(try await store.importFiles(urls)) }
+            // Leave the delegate callback before coordinating any File Provider
+            // reads. Capture the URLs directly: onDismiss can observe stale State.
+            await Task.yield()
+            do {
+                let copies = try await store.importFiles(urls)
+                importTrace("Imported \(copies.count) files")
+                selected(copies)
+            }
             catch FileImportError.cancelled {}
             catch { self.error = error.localizedDescription }
         }
