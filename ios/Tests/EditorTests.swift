@@ -145,6 +145,28 @@ final class EditorTests:XCTestCase {
         }
         XCTAssertTrue(store.projects.isEmpty)
     }
+    @MainActor func testAndroidTemplatesKeepTheirTextPositionsAndExplicitLineBreaks() throws {
+        let templates=Catalog.shared.templates
+        XCTAssertEqual(templates.count,15)
+        var total=0
+        for item in templates {
+            let original=item.project
+            let rendered=DocumentRenderer(root:FileManager.default.temporaryDirectory)
+            XCTAssertNotNil(rendered.png(original,scale:0.2),item.id)
+            for node in original.nodes where node.kind=="TEXT" && !node.text.isEmpty {
+                total += 1
+                XCTAssertTrue(TextLayout.isAndroidCatalogText(node),"\(item.id): \(node.text)")
+                let font=rendered.font(node)
+                let layout=TextLayout(node,font:font)
+                XCTAssertEqual(layout.lines.count,node.text.components(separatedBy:"\\n").count,
+                               "\(item.id): unexpected wrapped line in \(node.text)")
+            }
+            let exported=SwiftExport.make(original,root:FileManager.default.temporaryDirectory)
+            XCTAssertTrue(exported.contains("fixedSize(horizontal: true, vertical: true)"),
+                          item.id)
+        }
+        XCTAssertGreaterThan(total,150)
+    }
     @MainActor func testArchiveContainsEveryPageAndPreservesAssets() async throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:root) }
