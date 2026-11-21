@@ -54,18 +54,17 @@ targets:
   ImportFixtureSource:
     type: application
     platform: iOS
-    sources: [FixtureSource]
+    sources:
+      - path: FixtureSource
+        excludes: [Info.plist]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.matwey181.qwscios.fixtures
         PRODUCT_NAME: QwScImportSource
         CURRENT_PROJECT_VERSION: "1"
         MARKETING_VERSION: "1.0"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Import Fixtures
-        INFOPLIST_KEY_UIFileSharingEnabled: YES
-        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: FixtureSource/Info.plist
 schemes:
   ImportFixtureSource:
     build:

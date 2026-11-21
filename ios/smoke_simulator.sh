@@ -29,6 +29,14 @@ xcodebuild -project ios/QwScIos.xcodeproj -scheme ImportFixtureSource -configura
   -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath build/SimDerivedData "ARCHS=$sim_arch" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
 xcrun simctl install "$sim_id" build/SimDerivedData/Build/Products/Debug-iphonesimulator/QwScImportSource.app
+python3 - <<'PY'
+import plistlib
+with open('build/SimDerivedData/Build/Products/Debug-iphonesimulator/QwScImportSource.app/Info.plist', 'rb') as handle:
+    info = plistlib.load(handle)
+assert info.get('UIFileSharingEnabled') is True, info
+assert info.get('LSSupportsOpeningDocumentsInPlace') is True, info
+print('Fixture app file sharing enabled')
+PY
 app_data="$(xcrun simctl get_app_container "$sim_id" com.matwey181.qwscios.fixtures data)"
 python3 - "$app_data" <<'PY'
 import pathlib, struct, sys, zlib
