@@ -31,9 +31,15 @@ import QuartzCore
     private(set) var visibility: [String: Bool] = [:]
     private var motions: [Motion] = []
     private var echoes: [EchoPulse] = []
+    private struct Pending {
+        var link:InteractionLink
+        var at:Double
+        var fraction:Double?
+    }
+    private var pending:[Pending]=[]
     var onWidgetProgress: ((String, Double) -> Void)?
 
-    var active: Bool { !motions.isEmpty || !echoes.isEmpty }
+    var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty }
 
     func start(_ document: Project) {
         project = document
@@ -42,12 +48,14 @@ import QuartzCore
         visibility.removeAll()
         motions.removeAll()
         echoes.removeAll()
+        pending.removeAll()
         fire("start", sourceID: "")
     }
 
     func stop() {
         motions.removeAll()
         echoes.removeAll()
+        pending.removeAll()
         number.removeAll()
         text.removeAll()
         visibility.removeAll()
@@ -69,14 +77,23 @@ import QuartzCore
         guard let node = project.nodes.first(where: { $0.id == link.targetID }) else { return }
         let target = node.id
         let now = CACurrentMediaTime()
+        if link.delay > 0 && !["animate","echo"].contains(link.mode) {
+            var delayed=link
+            delayed.delay=0
+            pending.append(Pending(link:delayed,at:now+link.delay,fraction:fraction))
+            return
+        }
         switch link.mode {
         case "toggle":
             visibility[target] = !(visibility[target] ?? node.visible)
         case "text":
             text[target] = link.text
         case "echo":
-            echoes.append(EchoPulse(nodeID: target, started: now + max(0,link.delay),
-                                    duration: max(0.15,link.duration), size: max(0.1,link.value)))
+            if !(echoes.last(where:{$0.nodeID==target}).map{now-$0.started<0.08} ?? false) {
+                echoes.append(EchoPulse(nodeID: target, started: now + max(0,link.delay),
+                                        duration: max(0.15,link.duration), size: max(0.1,link.value)))
+                if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
+            }
         case "bind":
             let t = min(1, max(0, fraction ?? 0))
             set(target, link.property, link.from + (link.to-link.from)*t)
@@ -129,7 +146,10 @@ import QuartzCore
 
     /// Advance active animations. Returns true while a frame must be redrawn.
     @discardableResult func tick(at now: Double = CACurrentMediaTime()) -> Bool {
-        let hadMotion = !motions.isEmpty || !echoes.isEmpty
+        let hadMotion = active
+        let due=pending.filter{$0.at<=now}
+        pending.removeAll{$0.at<=now}
+        for entry in due {execute(entry.link,fraction:entry.fraction)}
         var finished: [String] = []
         var kept: [Motion] = []
         for var motion in motions {
@@ -209,7 +229,8 @@ import QuartzCore
                 copy.name = "Эхо"
                 copy.w *= size;copy.h *= size
                 copy.x=original.center.x-copy.w/2;copy.y=original.center.y-copy.h/2
-                copy.opacity *= CGFloat(max(0, (1-stagger)*0.25))
+                let fadeIn=min(1,stagger*6)
+                copy.opacity *= CGFloat(max(0,fadeIn*(1-stagger)*0.25))
                 copy.stroke=original.fill
                 copy.fill=0
                 copy.strokeWidth=max(1,original.strokeWidth)
