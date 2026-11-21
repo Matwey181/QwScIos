@@ -86,12 +86,16 @@ final class ImportTests: XCTestCase {
         gate.signal()
         await fulfillment(of: [abandoned], timeout: 2)
     }
-    @MainActor func testPickerOpensFilesInPlaceAndDeliversSelectionOnce() {
+    @MainActor func testPickerCollectsSelectionCallbacksAndDeliversOnce() async {
         var received: [[URL]] = []
-        let coordinator = DocumentPicker.Coordinator { received.append($0) }
+        let ready = expectation(description: "Complete picker selection")
+        let coordinator = DocumentPicker.Coordinator { received.append($0); ready.fulfill() }
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: false)
         let urls = [URL(fileURLWithPath: "/a.png"), URL(fileURLWithPath: "/b.png")]
-        coordinator.documentPicker(picker, didPickDocumentsAt: urls)
+        coordinator.documentPicker(picker, didPickDocumentsAt: [urls[0]])
+        coordinator.documentPicker(picker, didPickDocumentsAt: [urls[1]])
+        coordinator.documentPicker(picker, didPickDocumentsAt: [urls[0]])
+        await fulfillment(of: [ready], timeout: 2)
         coordinator.documentPicker(picker, didPickDocumentsAt: urls)
         XCTAssertEqual(received, [urls])
     }

@@ -25,7 +25,11 @@ xcrun simctl launch "$sim_id" com.matwey181.qwscios
 sleep 5
 xcrun simctl spawn "$sim_id" launchctl list | grep 'com.matwey181.qwscios'
 xcrun simctl io "$sim_id" screenshot build/iOS-launch.png
-app_data="$(xcrun simctl get_app_container "$sim_id" com.matwey181.qwscios data)"
+xcodebuild -project ios/QwScIos.xcodeproj -scheme ImportFixtureSource -configuration Debug \
+  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath build/SimDerivedData "ARCHS=$sim_arch" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+xcrun simctl install "$sim_id" build/SimDerivedData/Build/Products/Debug-iphonesimulator/QwScImportSource.app
+app_data="$(xcrun simctl get_app_container "$sim_id" com.matwey181.qwscios.fixtures data)"
 python3 - "$app_data" <<'PY'
 import pathlib, struct, sys, zlib
 folder = pathlib.Path(sys.argv[1]) / 'Documents'
@@ -39,6 +43,7 @@ def png(color):
 for name, color in [('import-test-a.png', (220, 60, 30, 255)), ('import-test-b.png', (30, 70, 220, 255))]:
     (folder / name).write_bytes(png(color))
 PY
+xcrun simctl launch "$sim_id" com.matwey181.qwscios.fixtures
 xcodebuild -project ios/QwScIos.xcodeproj -scheme QwScIos -configuration Debug \
   -sdk iphonesimulator -destination "platform=iOS Simulator,id=$sim_id" \
   -derivedDataPath build/SimDerivedData -resultBundlePath build/ImportTests.xcresult \

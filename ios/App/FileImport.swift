@@ -149,14 +149,28 @@ struct DocumentPicker: UIViewControllerRepresentable {
     final class Coordinator: NSObject, UIDocumentPickerDelegate {
         let selected: ([URL]) -> Void
         private var delivered = false
+        private var pending: [URL] = []
+        private var delivery: DispatchWorkItem?
         init(selected: @escaping ([URL]) -> Void) { self.selected = selected }
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            guard !delivered else { return }; delivered = true
-            importTrace("Picker selected \(urls.count) files")
-            selected(urls)
+            importTrace("Picker callback: \(urls.count) files, delivered=\(delivered)")
+            guard !delivered else { return }
+            for url in urls where !pending.contains(url) { pending.append(url) }
+            // Some providers deliver multiple callbacks. Collect them before
+            // closing the picker; never discard later files from the same batch.
+            delivery?.cancel()
+            let work = DispatchWorkItem {
+                guard !self.delivered else { return }
+                self.delivered = true; self.delivery = nil
+                importTrace("Delivering selection: \(self.pending.count) files")
+                self.selected(self.pending)
+            }
+            delivery = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
         }
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
             guard !delivered else { return }; delivered = true
+            delivery?.cancel(); delivery = nil; pending = []
             importTrace("Picker cancelled")
             selected([])
         }

@@ -9,6 +9,12 @@ final class ImportUITests: XCTestCase {
         app.buttons["importFiles"].tap()
         let browser = app.collectionViews["File View"]
         XCTAssertTrue(browser.waitForExistence(timeout: 30), app.debugDescription)
+        let back = app.buttons.matching(NSPredicate(format: "label IN %@", ["On My iPhone", "На iPhone"])).firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 10), app.debugDescription)
+        back.tap()
+        let folder = browser.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "Import Fixtures")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 30), app.debugDescription)
+        folder.tap()
         let select = app.buttons.matching(NSPredicate(format: "label IN %@", ["Select", "Выбрать"])).firstMatch
         if select.exists { select.tap() }
         else {
@@ -30,13 +36,10 @@ final class ImportUITests: XCTestCase {
         XCTAssertTrue(open.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(open.isEnabled)
         open.tap()
-        // Fixtures exist at the Documents root; successful import adds a second
-        // copy in Imports. Seeing only the originals must not pass this test.
-        let a = app.buttons.matching(identifier: "file-import-test-a.png")
-        let imported = expectation(for: NSPredicate(format: "count == 2"), evaluatedWith: a)
-        let outcome = XCTWaiter.wait(for: [imported], timeout: 20)
-        XCTAssertEqual(outcome, .completed, app.debugDescription)
-        XCTAssertEqual(app.buttons.matching(identifier: "file-import-test-b.png").count, 2, app.debugDescription)
+        // Inputs belong to a separate app, just like files in Downloads or a
+        // different Files provider. Neither may already exist in this app.
+        XCTAssertTrue(app.buttons["file-import-test-a.png"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.buttons["file-import-test-b.png"].waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(app.buttons["importFiles"].isEnabled)
         XCTAssertTrue(app.buttons["importFiles"].isHittable)
         let attachment = XCTAttachment(screenshot: app.screenshot())
