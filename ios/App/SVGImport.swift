@@ -55,7 +55,7 @@ final class SVGImport:NSObject,XMLParserDelegate {
     private static func number(_ value:String?)->CGFloat? { guard let s=value else { return nil };return numbers(s).first }
     static func numbers(_ s:String)->[CGFloat] {
         let re=try! NSRegularExpression(pattern:"[-+]?(?:[0-9]*\\.[0-9]+|[0-9]+\\.?[0-9]*)(?:[eE][-+]?[0-9]+)?"),ns=s as NSString
-        return re.matches(in:s,range:NSRange(location:0,length:ns.length)).compactMap { Double(ns.substring(with:$0.range)) }.filter(\.isFinite).map(CGFloat.init)
+        return re.matches(in:s,range:NSRange(location:0,length:ns.length)).compactMap { Double(ns.substring(with:$0.range)) }.filter { $0.isFinite }.map { CGFloat($0) }
     }
     private static func color(_ value:String)->Int64 {
         let s=value.trimmingCharacters(in:.whitespaces).lowercased()

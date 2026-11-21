@@ -68,7 +68,7 @@ struct InspectorPanel:View {
         }
     }
     private func number(_ title:String,_ key:WritableKeyPath<Node,CGFloat>)->some View {
-        HStack { Text(title);Spacer();TextField("0",value:value(key,fallback:0),format:.number.precision(.fractionLength(0...2))).keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).frame(maxWidth:120) }
+        HStack { Text(title);Spacer();TextField("0",value:Binding<Double>(get:{Double(node?[keyPath:key] ?? 0)},set:{v in editor.change{$0[keyPath:key]=CGFloat(v)}}),format:.number.precision(.fractionLength(0...2))).keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).frame(maxWidth:120) }
     }
 }
 struct LayersPanel:View {
@@ -104,7 +104,8 @@ struct AlignPanel:View {
 }
 struct DocumentPanel:View {
     @ObservedObject var editor:Editor
-    @State private var seed=Color.teal,dark=false
+    @State private var seed=Color.teal
+    @State private var dark=false
     var body:some View {
         Form {
             Section("Холст") {

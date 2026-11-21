@@ -119,7 +119,8 @@ struct AddPanel:View {
     @Binding var photoItems:[PhotosPickerItem]
     var importFile:()->Void
     @Environment(\.dismiss) var dismiss
-    @State private var category=0,query=""
+    @State private var category=0
+    @State private var query=""
     var body:some View {
         VStack {
             Picker("Каталог",selection:$category) { Text("Основа").tag(0);Text("Фигуры").tag(1);Text("Компоненты").tag(2);Text("Иконки").tag(3) }.pickerStyle(.segmented).padding(.horizontal)

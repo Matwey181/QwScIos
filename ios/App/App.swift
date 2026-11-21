@@ -14,7 +14,9 @@ import UniformTypeIdentifiers
 }
 struct ProjectsView:View {
     @EnvironmentObject var store:ProjectStore
-    @State private var creating=false,settings=false,importing=false
+    @State private var creating=false
+    @State private var settings=false
+    @State private var importing=false
     @State private var opened:Project?
     @State private var query=""
     @State private var shared:SharedFile?
@@ -78,7 +80,9 @@ struct NewProjectView:View {
     @EnvironmentObject var store:ProjectStore
     @Environment(\.dismiss) var dismiss
     var created:(Project)->Void
-    @State private var name="Новый проект",width:Double=390,height:Double=844
+    @State private var name="Новый проект"
+    @State private var width:Double=390
+    @State private var height:Double=844
     @State private var template:String=""
     var body:some View {
         NavigationStack {
