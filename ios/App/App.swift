@@ -107,9 +107,10 @@ struct ProjectsView:View {
 struct ProjectThumbnail:View {
     var project:Project
     var root:URL
+    var inset:CGFloat = 14
     @State private var image:UIImage?
     var body:some View {
-        Group { if let image { Image(uiImage:image).resizable().scaledToFit().padding(14) } else { ProgressView() } }
+        Group { if let image { Image(uiImage:image).resizable().scaledToFit().padding(inset) } else { ProgressView() } }
             .task(id:project.updated) { image=DocumentRenderer(root:root).preview(project) }
     }
 }
