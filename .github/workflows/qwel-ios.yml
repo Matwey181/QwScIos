@@ -38,7 +38,7 @@ jobs:
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build/Simulator -parallel-testing-enabled NO -resultBundlePath build/Tests.xcresult CODE_SIGNING_ALLOWED=NO test > test.log 2>&1 || { tail -200 test.log; exit 1; }
-          SWIFT_EXPORT=$(rg --files --hidden "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" | rg '/QwelExportValidation.swift$' | head -1)
+          SWIFT_EXPORT=$(find "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" -type f -name QwelExportValidation.swift -print -quit)
           test -n "$SWIFT_EXPORT"
           xcrun --sdk iphonesimulator swiftc -typecheck -target arm64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" "$SWIFT_EXPORT"
           xcrun simctl launch "$DEVICE" com.matwey181.qwelios
