@@ -110,7 +110,7 @@ private struct QwelEcho: Identifiable {
         for id in Set(completed.map(\.target)) {
             emit("finished",source:id)
         }
-        if !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty {
+        if !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty || !due.isEmpty {
             version &+= 1
         }
     }
@@ -153,9 +153,12 @@ private struct QwelEcho: Identifiable {
             case "text":
                 textValues[id]=rule.text
             case "echo":
-                echoes.append(QwelEcho(target:id,start:now+max(0,rule.delay),
-                                       duration:max(0.1,rule.duration),
-                                       strength:max(0.01,rule.value)))
+                if !(echoes.last(where:{$0.target==id}).map{now-$0.start<0.08} ?? false) {
+                    echoes.append(QwelEcho(target:id,start:now+max(0,rule.delay),
+                                           duration:max(0.1,rule.duration),
+                                           strength:max(0.01,rule.value)))
+                    if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
+                }
             case "bind":
                 let t=min(1,max(0,fraction ?? 0))
                 motions.removeAll {$0.target==id && $0.property==property}
