@@ -64,7 +64,7 @@ struct InspectorPanel:View {
                 .sheet(isPresented:$showInteractions) {
                     InteractionEditorPanel(editor:editor,sourceID:n.id)
                 }
-                if editor.selected.count==1 { LinkRulesEditor(editor:editor,source:n) }
+                LinkRulesEditor(editor:editor,source:n)
                 if n.kind=="SHAPE"{title("Фигура");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(Catalog.shared.shapes){shape in Button{editor.change{$0.shapeId=shape.id}}label:{ShapePreview(shape:shape).fill(q.color(n.shapeId==shape.id ? "onPrimaryContainer":"primary")).frame(width:34,height:34).frame(width:56,height:56).qSurface(n.shapeId==shape.id ? 28:16,n.shapeId==shape.id ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}}}}
                 if n.kind=="TEXT"{slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
             }
