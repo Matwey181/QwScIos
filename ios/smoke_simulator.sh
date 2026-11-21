@@ -12,8 +12,12 @@ xcodebuild -project ios/QwScIos.xcodeproj -scheme QwScIos -configuration Debug \
   -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath build/SimDerivedData \
   "LIBRARY_SEARCH_PATHS=$(pwd)/build/sim-native" "ARCHS=$sim_arch" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
-sim_id="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')"
-xcrun simctl boot "$sim_id"
+if [ -f build/simulator-id ]; then
+  sim_id="$(cat build/simulator-id)"
+else
+  sim_id="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')"
+  xcrun simctl boot "$sim_id"
+fi
 xcrun simctl bootstatus "$sim_id" -b
 xcrun simctl install "$sim_id" build/SimDerivedData/Build/Products/Debug-iphonesimulator/QwScIos.app
 xcrun simctl launch "$sim_id" com.matwey181.qwscios

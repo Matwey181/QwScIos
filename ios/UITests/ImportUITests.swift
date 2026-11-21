@@ -7,10 +7,22 @@ final class ImportUITests: XCTestCase {
         app.launch()
         app.tabBars.buttons["Файлы"].tap()
         app.buttons["importFiles"].tap()
+        let browser = app.collectionViews["File View"]
+        XCTAssertTrue(browser.waitForExistence(timeout: 30), app.debugDescription)
         let select = app.buttons.matching(NSPredicate(format: "label IN %@", ["Select", "Выбрать"])).firstMatch
-        if select.waitForExistence(timeout: 3) { select.tap() }
+        if select.exists { select.tap() }
+        else {
+            let menu = app.buttons["DOC.itemCollectionMenuButton.Icons"]
+            if menu.exists {
+                menu.tap()
+                if select.waitForExistence(timeout: 2) { select.tap() }
+                else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap() }
+            }
+        }
         for name in ["import-test-a", "import-test-b"] {
-            let file = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+            // The app's own list is still in the AX tree behind the modal.
+            // Only interact with the system picker's collection cells.
+            let file = browser.cells.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
             XCTAssertTrue(file.waitForExistence(timeout: 20), app.debugDescription)
             file.tap()
         }
