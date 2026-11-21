@@ -124,18 +124,25 @@ import UIKit
         if ["slider","progress"].contains(widget["kind"] as? String ?? "") { target[group]=(widget["value"] as? NSNumber)?.doubleValue ?? 0;shown[group]=target[group];refresh();return }
         do { let result=try OriginalCore.shared.request(["op":"tap","group":group,"x":p.x,"y":p.y,"shown":target]);target=result.compactMapValues{($0 as? NSNumber)?.doubleValue} } catch { editor.error=error.localizedDescription }
     }
+    private func dragFraction(_ p:CGPoint, sourceID:String)->Double? {
+        guard let editor,let source=editor.project.nodes.first(where:{$0.id==sourceID}) else {return nil}
+        let group: [Node] = source.group.isEmpty ? [source] :
+            editor.project.nodes.filter{$0.group == source.group}
+        let x0=group.map(\.x).min() ?? source.x
+        let x1=group.map{$0.x+$0.w}.max() ?? source.x+source.w
+        return Double(min(1,max(0,(p.x-x0)/max(1,x1-x0))))
+    }
     func begin(_ p:CGPoint) {
         activeHit=hit(p);initial=p;lastStep=0
         activeSourceID=editor?.project.nodes.reversed().first(where: { n in
             n.visible && !n.mask && n.contains(p) && linked(n,events:["dragStart","drag","dragEnd"])
         })?.id
-        if let id=activeSourceID {links.fire("dragStart",sourceID:id);refresh()}
+        if let id=activeSourceID {links.fire("dragStart",sourceID:id,fraction:dragFraction(p,sourceID:id));refresh()}
         if ["slider","progress"].contains(activeHit?["kind"] as? String ?? "") { tap(p) }
     }
     func drag(_ p:CGPoint) {
-        if let id=activeSourceID,let source=editor?.project.nodes.first(where:{$0.id==id}) {
-            let f=Double(min(1,max(0,(p.x-source.x)/max(1,source.w))))
-            links.fire("drag",sourceID:id,fraction:f)
+        if let id=activeSourceID {
+            links.fire("drag",sourceID:id,fraction:dragFraction(p,sourceID:id))
             refresh()
         }
         guard let widget=activeHit,let group=widget["group"] as? String,let kind=widget["kind"] as? String else { return }
@@ -155,9 +162,7 @@ import UIKit
     }
     func end(_ p:CGPoint) {
         if let id=activeSourceID {
-            let source=editor?.project.nodes.first(where:{$0.id==id})
-            let f=source.map{Double(min(1,max(0,(p.x-$0.x)/max(1,$0.w))))}
-            links.fire("dragEnd",sourceID:id,fraction:f)
+            links.fire("dragEnd",sourceID:id,fraction:dragFraction(p,sourceID:id))
             refresh()
         }
         activeSourceID=nil
