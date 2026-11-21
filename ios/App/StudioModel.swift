@@ -10,6 +10,13 @@ struct TextRun:Codable,Equatable,Identifiable {
     var color:Int64?=nil
 }
 struct LayerExtras:Codable,Equatable {
+    var hugWidth:Bool?=nil
+    var hugHeight:Bool?=nil
+    var anchorX:String?=nil
+    var anchorY:String?=nil
+    var reference:Bool?=nil
+    var colorStyleID:String?=nil
+    var textStyleID:String?=nil
     var tracking:CGFloat=0
     var lineSpacing:CGFloat=0
     var autoFit=false
@@ -29,6 +36,9 @@ struct VisualState:Codable,Equatable,Identifiable {
     var pageID:String=""
 }
 struct StudioDocument:Codable,Equatable {
+    var layouts:[AutoLayoutFrame]?=nil
+    var colorStyles:[ProjectColorStyle]?=nil
+    var textStyles:[ProjectTextStyle]?=nil
     var states:[VisualState]=[]
     var guidesX:[CGFloat]=[]
     var guidesY:[CGFloat]=[]

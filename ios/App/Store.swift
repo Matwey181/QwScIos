@@ -90,7 +90,7 @@ import CoreText
                 }
                 func map(_ list:[Node])->[Node] { list.map { n in var n=n;n.asset=assets[n.asset] ?? n.asset;n.font=fonts[n.font] ?? n.font;return n } }
                 p.nodes=map(p.nodes);p.pages=p.pages.map { pg in var pg=pg;pg.nodes=map(pg.nodes);return pg }
-                if var studio=p.studio{studio.states=studio.states.map{state in var state=state;state.nodes=map(state.nodes);return state};p.studio=studio}
+                if var studio=p.studio{studio.states=studio.states.map{state in var state=state;state.nodes=map(state.nodes);return state};studio.textStyles=studio.textStyles?.map{style in var style=style;style.font=fonts[style.font] ?? style.font;return style};p.studio=studio}
                 return p
             }.value
             var imported=p;imported.id=UUID().uuidString

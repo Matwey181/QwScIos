@@ -73,6 +73,7 @@ import UIKit
                 self.target[group]=value
                 self.shown[group]=value
             }
+            links.layoutRenderer=editor.renderer
             links.start(editor.project,widgetValues:shown)
             refresh()
             let link=CADisplayLink(target:self,selector:#selector(frame));link.preferredFramesPerSecond=60;link.add(to:.main,forMode:.common);self.link=link

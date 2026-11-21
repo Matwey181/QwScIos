@@ -10,6 +10,9 @@ import SwiftUI
     @Published var requestPanel:String?
     @Published var requestTextEdit:String?
     @Published var eyedropTarget:WritableKeyPath<Node,Int64>?
+    @Published var isolatedIDs:Set<String>?
+    @Published var overlapIDs:[String]=[]
+    @Published var showLayerPicker=false
     @Published var showGrid=true
     @Published var snapGuidesX:[CGFloat]=[]
     @Published var snapGuidesY:[CGFloat]=[]
@@ -33,10 +36,10 @@ import SwiftUI
     }
     func pendingSaveForTestingCleanup() { pendingSave?.cancel() }
     func saveNow() { do { try store.save(project) } catch { self.error=error.localizedDescription } }
-    func edit(_ block:(inout Project)->Void) { checkpoint();block(&project);saveSoon() }
+    func edit(_ block:(inout Project)->Void) { checkpoint();block(&project);DesignLayoutEngine.resolve(&project,renderer:renderer);saveSoon() }
     func reflowText(_ node:inout Node) {
         guard node.kind=="TEXT" else{return}
-        if node.extras?.autoFit != true{node.h=TextLayout(node,font:renderer.font(node)).height}
+        if node.extras?.autoFit != true && node.extras?.hugHeight != false{node.h=TextLayout(node,font:renderer.font(node)).height}
     }
     func commitText(_ id:String,text:String) {
         guard let index=project.nodes.firstIndex(where:{$0.id==id && $0.kind=="TEXT"}),project.nodes[index].text != text else{return}
@@ -45,6 +48,8 @@ import SwiftUI
     func change(_ block:(inout Node)->Void) {
         edit { p in for i in p.nodes.indices where selection.contains(p.nodes[i].id) {
             let old=p.nodes[i];block(&p.nodes[i]);let n=p.nodes[i]
+            if old.fill != n.fill && old.extras?.colorStyleID==n.extras?.colorStyleID{p.nodes[i].extras?.colorStyleID=nil}
+            if old.extras?.textStyleID==n.extras?.textStyleID && (old.fontSize != n.fontSize || old.font != n.font || old.weight != n.weight || old.textAlign != n.textAlign || old.extras?.tracking != n.extras?.tracking || old.extras?.lineSpacing != n.extras?.lineSpacing){p.nodes[i].extras?.textStyleID=nil}
             if n.kind=="TEXT" && (old.text != n.text || old.w != n.w || old.fontSize != n.fontSize || old.font != n.font || old.weight != n.weight || old.extras != n.extras) {reflowText(&p.nodes[i])}
         } }
     }

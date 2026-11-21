@@ -98,7 +98,7 @@ enum SwiftExport {
 
         for (page,nodes) in pages.enumerated() {
             var layers:[String]=[]
-            for (i,n) in nodes.enumerated() where !n.mask {
+            for (i,n) in nodes.enumerated() where !n.mask && n.extras?.reference != true {
                 let name="layer\(page)_\(i)"
                 let identifier=literal(n.id)
                 let alignment=n.textAlign=="center" ? "center":n.textAlign=="right" ? "trailing":"leading"

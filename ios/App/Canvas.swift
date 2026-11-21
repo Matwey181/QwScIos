@@ -6,7 +6,7 @@ struct EditorCanvas:UIViewRepresentable {
     func makeUIView(context:Context)->CanvasView { CanvasView(editor:editor) }
     func updateUIView(_ view:CanvasView,context:Context) {
         if view.lastFit != editor.fitVersion { view.lastFit=editor.fitVersion;view.zoom=1;view.pan = .zero }
-        view.palette=q;view.backgroundColor=UIColor(argb:q.argb("surfaceContainer"));view.setNeedsDisplay()
+        view.palette=q;view.backgroundColor=UIColor(argb:q.argb("surfaceContainer"));view.setNeedsDisplay();view.setNeedsLayout()
     }
 }
 @MainActor final class CanvasView:UIView,UIGestureRecognizerDelegate {
@@ -16,9 +16,11 @@ struct EditorCanvas:UIViewRepresentable {
     private var initialZoom:CGFloat=1,initialPan=CGPoint.zero
     private var startNodes:[Node]=[],startPoint=CGPoint.zero
     private var mode="",handle=0
+    private let ratioButton=UIButton(type:.system)
     init(editor:Editor) {
         self.editor=editor;super.init(frame:.zero)
         backgroundColor=UIColor.secondarySystemBackground;isMultipleTouchEnabled=true
+        ratioButton.addTarget(self,action:#selector(toggleRatio),for:.touchUpInside);ratioButton.layer.cornerRadius=18;ratioButton.accessibilityLabel="Сохранение пропорций";addSubview(ratioButton)
         let tap=UITapGestureRecognizer(target:self,action:#selector(tap(_:)));addGestureRecognizer(tap)
         let double=UITapGestureRecognizer(target:self,action:#selector(doubleTap(_:)));double.numberOfTapsRequired=2;addGestureRecognizer(double);tap.require(toFail:double)
         let long=UILongPressGestureRecognizer(target:self,action:#selector(longPress(_:)));addGestureRecognizer(long)
@@ -29,6 +31,7 @@ struct EditorCanvas:UIViewRepresentable {
         let pinch=UIPinchGestureRecognizer(target:self,action:#selector(pinching(_:)));pinch.delegate=self;addGestureRecognizer(pinch)
         // A two/three-finger tap must lose to any canvas navigation gesture.
         for tap in [undo,redo] {tap.require(toFail:pinch);tap.require(toFail:pan)}
+        for recognizer in gestureRecognizers ?? []{recognizer.delegate=self}
     }
     required init?(coder:NSCoder) { fatalError() }
     var scale:CGFloat { max(0.01,min((bounds.width-48)/editor.project.w,(bounds.height-240)/editor.project.h))*zoom }
@@ -54,7 +57,7 @@ struct EditorCanvas:UIViewRepresentable {
             for y in (editor.project.studio?.guidesY ?? [])+editor.snapGuidesY{ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))}
             ctx.strokePath();ctx.restoreGState()
         }
-        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.project,in:ctx,background:false);ctx.restoreGState()
+        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.canvasProject,in:ctx,background:false,includeReferences:!editor.playing);ctx.restoreGState()
         ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).cgColor);ctx.setLineWidth(1/scale);ctx.stroke(page)
         if !editor.playing,let box=editor.bounds {
             ctx.setLineWidth(2/scale);ctx.setStrokeColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.setFillColor(UIColor(argb:palette.argb("surface")).cgColor);ctx.stroke(box)
@@ -66,21 +69,38 @@ struct EditorCanvas:UIViewRepresentable {
             ctx.setFillColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.fillEllipse(in:CGRect(x:box.midX-3/scale,y:box.minY-39/scale,width:6/scale,height:6/scale))
         }
         if abs(editor.canvasScale-scale)>0.001 { let value=scale;DispatchQueue.main.async{[weak self] in self?.editor.canvasScale=value} }
-        ctx.restoreGState()
+        ctx.restoreGState();positionRatioButton()
     }
+    override func layoutSubviews(){super.layoutSubviews();positionRatioButton()}
+    private func positionRatioButton(){
+        guard !editor.playing,let box=editor.bounds,editor.selected.count != 1 || editor.selected.first?.kind != "TEXT" else{ratioButton.isHidden=true;return}
+        ratioButton.isHidden=false
+        ratioButton.frame=CGRect(x:min(max(8,origin.x+box.maxX*scale-36),bounds.width-48),y:min(max(74,origin.y+box.minY*scale-42),bounds.height-50),width:40,height:36)
+        let locked=editor.selected.allSatisfy(\.ratioLock)
+        ratioButton.setImage(UIImage(systemName:locked ? "lock.fill":"lock.open"),for:.normal)
+        ratioButton.tintColor=UIColor(argb:palette.argb("primary"));ratioButton.backgroundColor=UIColor(argb:palette.argb("surfaceContainerHighest"))
+        ratioButton.accessibilityValue=locked ? "Включено":"Выключено"
+    }
+    @objc private func toggleRatio(){let lock = !editor.selected.allSatisfy(\.ratioLock);editor.change{$0.ratioLock=lock};positionRatioButton()}
     private func gestureOn(_ id:String)->Bool {(UserDefaults.standard.object(forKey:"gesture_"+id) as? Bool) ?? true}
     @objc func twoTap(){if gestureOn("UNDO_TAP"){editor.undo()}}
     @objc func threeTap(){if gestureOn("REDO_TAP"){editor.redo()}}
-    @objc func longPress(_ g:UILongPressGestureRecognizer){guard g.state == .began,!editor.playing else{return};let point=document(g.location(in:self));let hit=editor.project.nodes.reversed().first{$0.visible && !$0.locked && $0.contains(point)};if let hit,gestureOn("LONG_LAYER"){editor.choose(hit);editor.requestPanel="style"}else if hit==nil,gestureOn("LONG_EMPTY"){editor.requestPanel="add"}}
-    @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.project.nodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
+    @objc func longPress(_ g:UILongPressGestureRecognizer){
+        guard g.state == .began,!editor.playing else{return}
+        let point=document(g.location(in:self)),hits=editor.editableNodes.reversed().filter{$0.visible && !$0.locked && !$0.mask && $0.contains(point)}
+        if hits.count>1{editor.overlapIDs=hits.map(\.id);editor.showLayerPicker=true}
+        else if let hit=hits.first,gestureOn("LONG_LAYER"){editor.choose(hit);editor.requestPanel="style"}
+        else if hits.isEmpty,gestureOn("LONG_EMPTY"){editor.requestPanel="add"}
+    }
+    @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.editableNodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
         if let key=editor.eyedropTarget {
-            if let color=editor.renderer.sample(editor.project,at:point){editor.change{n in n[keyPath:key]=color;if key==\Node.fill{n.fillToken = -1};if key==\Node.stroke{n.strokeToken = -1}}}
+            if let color=editor.renderer.sample(editor.canvasProject,at:point){RecentColors.shared.record(color);editor.change{n in n[keyPath:key]=color;if key==\Node.fill{n.fillToken = -1};if key==\Node.stroke{n.strokeToken = -1}}}
             editor.eyedropTarget=nil;return
         }
         if editor.playing { editor.interact(at:point) }
-        else { editor.choose(editor.project.nodes.reversed().first { $0.visible && !$0.locked && !$0.mask && $0.contains(point) }) }
+        else { editor.choose(editor.editableNodes.reversed().first { $0.visible && !$0.locked && !$0.mask && $0.contains(point) }) }
     }
     @objc func panning(_ g:UIPanGestureRecognizer) {
         if g.state == .began { initialPan=pan }
@@ -90,6 +110,7 @@ struct EditorCanvas:UIViewRepresentable {
         if g.state == .began { initialZoom=zoom }
         zoom=min(12,max(0.15,initialZoom*g.scale));setNeedsDisplay()
     }
+    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {!(touch.view?.isDescendant(of:ratioButton) ?? false)}
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool {
         let pair=[gestureRecognizer,otherGestureRecognizer]
         return pair.contains{$0 is UIPinchGestureRecognizer} && pair.contains{($0 as? UIPanGestureRecognizer)?.minimumNumberOfTouches==2}
@@ -103,8 +124,8 @@ struct EditorCanvas:UIViewRepresentable {
                 let corners=[CGPoint(x:box.minX,y:box.minY),CGPoint(x:box.maxX,y:box.minY),CGPoint(x:box.maxX,y:box.maxY),CGPoint(x:box.minX,y:box.maxY),CGPoint(x:box.midX,y:box.minY),CGPoint(x:box.maxX,y:box.midY),CGPoint(x:box.midX,y:box.maxY),CGPoint(x:box.minX,y:box.midY)]
                 if let i=corners.firstIndex(where:{hypot($0.x-p.x,$0.y-p.y)<18/scale}) { mode="resize";handle=i }
                 else if hypot(box.midX-p.x,box.minY-36/scale-p.y)<18/scale { mode="rotate" }
-                else if !box.insetBy(dx:-8/scale,dy:-8/scale).contains(p) { editor.choose(editor.project.nodes.reversed().first { $0.visible && !$0.locked && $0.contains(p) });startNodes=editor.selected }
-            } else { editor.choose(editor.project.nodes.reversed().first { $0.visible && !$0.locked && $0.contains(p) });startNodes=editor.selected }
+                else if !box.insetBy(dx:-8/scale,dy:-8/scale).contains(p) { editor.choose(editor.editableNodes.reversed().first { $0.visible && !$0.locked && $0.contains(p) });startNodes=editor.selected }
+            } else { editor.choose(editor.editableNodes.reversed().first { $0.visible && !$0.locked && $0.contains(p) });startNodes=editor.selected }
             if startNodes.isEmpty { mode="pan";initialPan=pan } else { editor.checkpoint() }
         }
         if g.state == .changed {
@@ -149,6 +170,7 @@ struct EditorCanvas:UIViewRepresentable {
             editor.project.nodes=editor.project.nodes.map{originals[$0.id] ?? $0}
             _ = editor.undoStack.popLast()
         }
+        if g.state == .ended{editor.finishLayoutGesture(original:startNodes)}
         if g.state == .ended || g.state == .cancelled { editor.saveSoon();startNodes=[];editor.snapGuidesX=[];editor.snapGuidesY=[] }
     }
 }

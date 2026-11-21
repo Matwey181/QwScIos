@@ -4,7 +4,7 @@ import UIKit
     func snapOffset(_ moving:[Node])->CGPoint {
         guard snap,!moving.isEmpty else{snapGuidesX=[];snapGuidesY=[];return .zero}
         let box=moving.reduce(CGRect.null){$0.union($1.rect)},ids=Set(moving.map(\.id)),threshold=6/max(0.01,canvasScale)
-        let others=project.nodes.filter{$0.visible && !ids.contains($0.id)}.map(\.rect)
+        let others=editableNodes.filter{$0.visible && !ids.contains($0.id)}.map(\.rect)
         let studio=project.studio ?? StudioDocument()
         var xs=[CGFloat(0),project.w/2,project.w]+studio.guidesX
         var ys=[CGFloat(0),project.h/2,project.h]+studio.guidesY

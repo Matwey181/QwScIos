@@ -7,7 +7,7 @@ enum SVGExport {
         func alpha(_ value:Int64)->Double { Double((UInt32(truncatingIfNeeded:value)>>24)&255)/255 }
         var definitions="",body=""
         if alpha(p.bg)>0 { body += "<rect width=\"100%\" height=\"100%\" fill=\"\(color(p.bg))\" fill-opacity=\"\(alpha(p.bg))\"/>" }
-        for (i,n) in p.nodes.enumerated() where n.visible && !n.mask {
+        for (i,n) in p.nodes.enumerated() where n.visible && !n.mask && n.extras?.reference != true {
             let key="n\(i)",transform="translate(\(n.center.x) \(n.center.y)) rotate(\(n.rotation)) translate(\(-n.w/2) \(-n.h/2))"
             var fill=color(n.fill),filter="",clip=""
             if n.gradKind != 0 {

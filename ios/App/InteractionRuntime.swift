@@ -43,6 +43,7 @@ import QuartzCore
     }
     private var pending:[Pending]=[]
     private var valueEvents:[(String,Double)]=[]
+    var layoutRenderer:DocumentRenderer?
     let playback=PlaybackRuntime()
     var onWidgetProgress: ((String, Double) -> Void)?
 
@@ -298,6 +299,17 @@ import QuartzCore
             if let value=text[node.id],node.kind=="TEXT" { node.text=value }
             if let value=visibility[node.id] { node.visible=value }
             output.nodes[i]=node
+        }
+        if let renderer=layoutRenderer,!(output.studio?.layouts ?? []).isEmpty || output.nodes.contains(where:{$0.extras?.hugWidth==true}) {
+            if var studio=output.studio,var frames=studio.layouts {
+                for i in frames.indices where frames[i].children.contains(where:{id in number[id]?.keys.contains(where:{["x","y","width","height","scale"].contains($0)}) ?? false}){frames[i].enabled=false}
+                studio.layouts=frames;output.studio=studio
+            }
+            for i in output.nodes.indices {
+                if number[output.nodes[i].id]?["width"] != nil{var x=output.nodes[i].extras ?? LayerExtras();x.hugWidth=false;output.nodes[i].extras=x}
+                if number[output.nodes[i].id]?["height"] != nil{var x=output.nodes[i].extras ?? LayerExtras();x.hugHeight=false;output.nodes[i].extras=x}
+            }
+            DesignLayoutEngine.resolve(&output,renderer:renderer,applyStyles:false)
         }
         for original in output.nodes {
             guard let strength=number[original.id]?["echo"],strength>0 else{continue}

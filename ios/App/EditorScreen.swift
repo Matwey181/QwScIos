@@ -17,6 +17,7 @@ struct EditorScreen:View {
     @State private var dockOpen=false
     @State private var dialog:String?
     @State private var history=false
+    @State private var preview=false
     @AppStorage("pngScale") private var pngScale=2.0
     init(project:Project,store:ProjectStore) { _editor=StateObject(wrappedValue:Editor(project,store:store)) }
     var body:some View {
@@ -42,12 +43,15 @@ struct EditorScreen:View {
                 }.padding(.horizontal,28)
             }
         }
+        .sheet(isPresented:$editor.showLayerPicker){OverlapLayerPicker(editor:editor).modifier(OriginalTheme())}
+        .fullScreenCover(isPresented:$preview){DesignPreviewPanel(editor:editor).modifier(OriginalTheme())}
         .fullScreenCover(isPresented:$history){ProjectHistoryPanel(editor:editor).modifier(OriginalTheme())}
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
         .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in switch result { case .success(let urls):if let url=urls.first{importFile(url)};case .failure(let e):editor.error=e.localizedDescription } }
         .onChange(of:photos) { _,items in Task { for item in items{do{if let data=try await item.loadTransferable(type:Data.self){try editor.addImage(data,name:"Картинка")}}catch{editor.error=error.localizedDescription}};photos=[] } }
         .onChange(of:editor.requestPanel){_,value in if let value{panel=value;editor.requestPanel=nil}}
         .onChange(of:editor.requestTextEdit){_,id in if let id{editor.selection=[id];panel=nil;dockOpen=false;dialog="text";editor.requestTextEdit=nil}}
+        .onChange(of:editor.selection){_,ids in if let isolated=editor.isolatedIDs,!ids.isSubset(of:isolated){editor.isolatedIDs=nil}}
         .onChange(of:phase) { _,phase in if phase != .active { editor.saveNow() } }
         .onDisappear { if editor.playing{editor.originalPlay.stop()};editor.saveNow() }
         .alert("Не удалось выполнить действие",isPresented:Binding(get:{editor.error != nil},set:{if !$0{editor.error=nil}})){Button("OK"){editor.error=nil}}message:{Text(editor.error ?? "")}
@@ -117,6 +121,7 @@ struct EditorScreen:View {
     }
     private var menuContent:some View {
         ScrollView {VStack(spacing:0) {
+            menuItem("Eye","Чистый предпросмотр · экраны и темы"){preview=true}
             menuItem("Fit","Вписать в экран"){editor.fitVersion += 1}
             menuItem("Grid",editor.showGrid ? "Скрыть сетку":"Показать сетку"){editor.showGrid.toggle()}
             menuItem("Guides",editor.snap ? "Отключить привязки":"Включить привязки"){editor.snap.toggle()}

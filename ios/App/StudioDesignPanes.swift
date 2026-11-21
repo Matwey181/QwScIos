@@ -49,7 +49,9 @@ struct StudioText:View {
         VStack(alignment:.leading,spacing:12){
             QNumber(title:"Межбуквенный интервал",value:value(\.tracking))
             QNumber(title:"Дополнительный интервал строк",value:value(\.lineSpacing))
-            QToggle("Подбирать размер внутри рамки",isOn:Binding(get:{node?.extras?.autoFit ?? false},set:{v in editor.extras{$0.autoFit=v}}))
+            QToggle("Ширина по содержимому",isOn:Binding(get:{node?.extras?.hugWidth ?? false},set:{v in editor.extras{$0.hugWidth=v;if v{$0.autoFit=false}}}))
+            QToggle("Высота по содержимому",isOn:Binding(get:{node?.extras?.hugHeight ?? true},set:{v in editor.extras{$0.hugHeight=v}}))
+            QToggle("Подбирать размер внутри рамки",isOn:Binding(get:{node?.extras?.autoFit ?? false},set:{v in editor.extras{$0.autoFit=v;if v{$0.hugWidth=false;$0.hugHeight=false}}}))
             if node?.extras?.autoFit==true {
                 QNumber(title:"Высота текстовой рамки",value:Binding(get:{node?.h ?? 40},set:{v in editor.change{$0.h=max(1,v)}}))
             }
