@@ -101,6 +101,10 @@ private struct QwelEcho: Identifiable {
             version &+= 1
         }
     }
+    func toggle(target id:String) {
+        visibility[id]=!(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
+        version &+= 1
+    }
     func emit(_ event:String, source:String, fraction:Double?=nil) {
         guard emittedThisFrame < 64 else {return}
         emittedThisFrame += 1
