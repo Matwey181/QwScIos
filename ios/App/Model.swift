@@ -36,6 +36,7 @@ struct Node: Codable, Identifiable, Equatable {
     var mask: Bool = false
     var shapeId: String = ""
     var text: String = ""
+    var textAlign: String = "left"
     var group: String = ""
     var path: String = ""
     var asset: String = ""
@@ -78,6 +79,7 @@ struct Node: Codable, Identifiable, Equatable {
         case mask = "mask"
         case shapeId = "shape"
         case text = "text"
+        case textAlign = "ta"
         case group = "group"
         case path = "path"
         case asset = "asset"
@@ -121,6 +123,7 @@ struct Node: Codable, Identifiable, Equatable {
         mask = try c.decodeIfPresent(Bool.self, forKey: .mask) ?? false
         shapeId = try c.decodeIfPresent(String.self, forKey: .shapeId) ?? ""
         text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
+        textAlign = try c.decodeIfPresent(String.self, forKey: .textAlign) ?? "left"
         group = try c.decodeIfPresent(String.self, forKey: .group) ?? ""
         path = try c.decodeIfPresent(String.self, forKey: .path) ?? ""
         asset = try c.decodeIfPresent(String.self, forKey: .asset) ?? ""

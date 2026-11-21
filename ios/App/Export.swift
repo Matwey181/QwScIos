@@ -31,7 +31,10 @@ enum SVGExport {
                 if !n.font.isEmpty,let bytes=try? Data(contentsOf:root.appendingPathComponent("fonts").appendingPathComponent(n.font)) {
                     family="q\(key)";definitions += "<style>@font-face{font-family:'\(family)';src:url(data:font/ttf;base64,\(bytes.base64EncodedString()))}</style>"
                 }
-                content="<text font-family=\"\(family)\" font-size=\"\(n.fontSize)\" font-weight=\"\(n.weight)\">"+TextLayout(n,font:DocumentRenderer(root:root).font(n)).lines.enumerated().map { index,line in "<tspan x=\"0\" y=\"\(n.fontSize+CGFloat(index)*n.fontSize*1.25)\">\(xml(line))</tspan>" }.joined()+"</text>"
+                let font=DocumentRenderer(root:root).font(n),layout=TextLayout(n,font:DocumentRenderer(root:root).font(n))
+                let anchor=n.textAlign=="center" ? "middle":n.textAlign=="right" ? "end":"start"
+                let x:CGFloat=n.textAlign=="center" ? n.w/2:n.textAlign=="right" ? n.w:0
+                content="<text text-anchor=\"\(anchor)\" xml:space=\"preserve\" font-family=\"\(family)\" font-size=\"\(n.fontSize)\" font-weight=\"\(n.weight)\">"+layout.lines.enumerated().map { index,line in "<tspan x=\"\(x)\" y=\"\(font.ascender+CGFloat(index)*layout.lineHeight)\">\(xml(line))</tspan>" }.joined()+"</text>"
             } else if n.kind=="IMAGE" {
                 if let data=try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset)) {
                     let mime=n.asset.lowercased().hasSuffix("jpg") ? "image/jpeg":"image/png"

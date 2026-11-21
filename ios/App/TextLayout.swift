@@ -11,6 +11,7 @@ final class TextLayout {
         lineHeight=max(font.lineHeight,node.fontSize*1.25)
         let paragraph=NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byWordWrapping
+        paragraph.alignment = node.textAlign=="center" ? .center : node.textAlign=="right" ? .right : .left
         paragraph.minimumLineHeight=lineHeight
         paragraph.maximumLineHeight=lineHeight
         storage=NSTextStorage(string:node.text,attributes:[.font:font,.foregroundColor:UIColor(argb:node.fill),.paragraphStyle:paragraph])

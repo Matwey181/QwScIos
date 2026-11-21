@@ -6,6 +6,7 @@ import UIKit
     static let shared=OriginalCore()
     private let context:JSContext
     private let function:JSValue
+    private var textAlignments:[String:String]=[:]
     private init() {
         context=JSContext()!
         let source=try! String(contentsOf:Bundle.main.url(forResource:"qwelcore",withExtension:"js")!,encoding:.utf8)
@@ -16,7 +17,10 @@ import UIKit
     }
     func request(_ values:[String:Any],project:Project?=nil) throws -> [String:Any] {
         var request=values
-        if let project { request["project"]=try JSONSerialization.jsonObject(with:JSONEncoder().encode(project)) }
+        if let project {
+            textAlignments=Dictionary((project.pages.flatMap(\.nodes)+project.nodes).map{($0.id,$0.textAlign)},uniquingKeysWith: { _,new in new })
+            request["project"]=try JSONSerialization.jsonObject(with:JSONEncoder().encode(project))
+        }
         let data=try JSONSerialization.data(withJSONObject:request,options:[.sortedKeys])
         context.exception=nil
         guard let input=String(data:data,encoding:.utf8),let result=function.call(withArguments:[input]),context.exception==nil,let text=result.toString(),let data=text.data(using:.utf8),let object=try JSONSerialization.jsonObject(with:data) as? [String:Any] else { throw CocoaError(.coderInvalidValue) }
@@ -25,7 +29,11 @@ import UIKit
     func project(_ operation:String,project:Project?=nil,values:[String:Any]=[:]) throws -> Project {
         var request=values;request["op"]=operation
         let output=try self.request(request,project:project)
-        return try JSONDecoder().decode(Project.self,from:JSONSerialization.data(withJSONObject:output))
+        var decoded=try JSONDecoder().decode(Project.self,from:JSONSerialization.data(withJSONObject:output))
+        func restore(_ node:Node)->Node {var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;return n}
+        decoded.nodes=decoded.nodes.map(restore)
+        for i in decoded.pages.indices {decoded.pages[i].nodes=decoded.pages[i].nodes.map(restore)}
+        return decoded
     }
     func compose(_ project:Project) throws -> String { try request(["op":"compose"],project:project)["code"] as? String ?? "" }
 }

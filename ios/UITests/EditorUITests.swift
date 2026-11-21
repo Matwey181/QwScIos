@@ -31,6 +31,11 @@ final class EditorUITests:XCTestCase {
         XCTAssertTrue(rect.waitForExistence(timeout:10));rect.tap()
         let undo=app.buttons["undo"]
         XCTAssertTrue(undo.waitForExistence(timeout:10));XCTAssertTrue(undo.isEnabled)
+        let canvas=app.otherElements["editorCanvas"]
+        canvas.pinch(withScale:1.5,velocity:1)
+        canvas.pinch(withScale:0.75,velocity:-1)
+        XCTAssertTrue(undo.isEnabled,"Pinching must not undo the inserted rectangle")
+        XCTAssertFalse(app.buttons["Повторить"].isEnabled,"Pinching must not change redo history")
         undo.tap()
         let attachment=XCTAttachment(screenshot:app.screenshot());attachment.name="Qwel iOS editor";attachment.lifetime = .keepAlways;add(attachment)
         app.buttons["Закрыть редактор"].tap()

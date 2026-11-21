@@ -4,6 +4,23 @@ import ZIPFoundation
 @testable import QwelIos
 
 final class EditorTests:XCTestCase {
+    @MainActor func testTextAlignmentPersistsThroughArchiveAndOriginalCore() throws {
+        var node=Node();node.kind="TEXT";node.text="Test";node.w=240;node.textAlign="center"
+        var project=Project();project.nodes=[node]
+        let decoded=try JSONDecoder().decode(Project.self,from:JSONEncoder().encode(project))
+        XCTAssertEqual(decoded.nodes[0].textAlign,"center")
+        let font=UIFont.systemFont(ofSize:node.fontSize)
+        let centered=TextLayout(node,font:font)
+        let centerX=centered.manager.boundingRect(forGlyphRange:NSRange(location:0,length:1),in:centered.container).minX
+        node.textAlign="right"
+        let right=TextLayout(node,font:font)
+        XCTAssertGreaterThan(right.manager.boundingRect(forGlyphRange:NSRange(location:0,length:1),in:right.container).minX,centerX)
+        XCTAssertTrue(SVGExport.make(project,root:FileManager.default.temporaryDirectory).contains("text-anchor=\"middle\""))
+        _ = try OriginalCore.shared.request(["op":"set"],project:project)
+        XCTAssertEqual(try OriginalCore.shared.project("apply",values:["shown":[:]]).nodes[0].textAlign,"center")
+        let old=try JSONDecoder().decode(Node.self,from:Data("{\"kind\":\"TEXT\"}".utf8))
+        XCTAssertEqual(old.textAlign,"left")
+    }
     @MainActor func testTextReflowsWithoutShrinkingAndUndoRestoresEdit() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let e=Editor(Project(),store:ProjectStore(root:root))

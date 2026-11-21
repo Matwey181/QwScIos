@@ -15,6 +15,12 @@ struct InspectorPanel:View {
                         TextField("Текст",text:bind(\.text,""),axis:.vertical).lineLimit(2...5).font(qfont(16)).padding(16).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
                         Button("Редактировать текст"){editor.requestTextEdit=n.id}.font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))
                         QNumber(title:"Ширина текста",value:bind(\.w,180))
+                        HStack(spacing:8){
+                            ForEach(["left","center","right"],id:\.self){alignment in
+                                QChip(title:alignment=="left" ? "Слева":alignment=="center" ? "По центру":"Справа",selected:n.textAlign==alignment){editor.change{$0.textAlign=alignment}}
+                            }
+                        }
+
                     }
                     HStack(spacing:8){QNumber(title:"X",value:bind(\.x,0));QNumber(title:"Y",value:bind(\.y,0))}
                     if n.kind != "TEXT"{HStack(spacing:8){QNumber(title:"Ширина",value:bind(\.w,100));QNumber(title:"Высота",value:bind(\.h,100))}}

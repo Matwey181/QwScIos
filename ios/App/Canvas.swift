@@ -27,6 +27,8 @@ struct EditorCanvas:UIViewRepresentable {
         let drag=UIPanGestureRecognizer(target:self,action:#selector(drag(_:)));drag.maximumNumberOfTouches=1;addGestureRecognizer(drag)
         let pan=UIPanGestureRecognizer(target:self,action:#selector(panning(_:)));pan.minimumNumberOfTouches=2;pan.delegate=self;addGestureRecognizer(pan)
         let pinch=UIPinchGestureRecognizer(target:self,action:#selector(pinching(_:)));pinch.delegate=self;addGestureRecognizer(pinch)
+        // A two/three-finger tap must lose to any canvas navigation gesture.
+        for tap in [undo,redo] {tap.require(toFail:pinch);tap.require(toFail:pan)}
     }
     required init?(coder:NSCoder) { fatalError() }
     var scale:CGFloat { max(0.01,min((bounds.width-48)/editor.project.w,(bounds.height-240)/editor.project.h))*zoom }
@@ -82,7 +84,10 @@ struct EditorCanvas:UIViewRepresentable {
         if g.state == .began { initialZoom=zoom }
         zoom=min(12,max(0.15,initialZoom*g.scale));setNeedsDisplay()
     }
-    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool { true }
+    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool {
+        let pair=[gestureRecognizer,otherGestureRecognizer]
+        return pair.contains{$0 is UIPinchGestureRecognizer} && pair.contains{($0 as? UIPanGestureRecognizer)?.minimumNumberOfTouches==2}
+    }
     @objc func drag(_ g:UIPanGestureRecognizer) {
         let p=document(g.location(in:self))
         if editor.playing { if g.state == .began { editor.originalPlay.begin(p) };if g.state == .changed { editor.originalPlay.drag(p) };if g.state == .ended || g.state == .cancelled { editor.originalPlay.end(p) };return }
@@ -131,6 +136,11 @@ struct EditorCanvas:UIViewRepresentable {
                 }
             }
             let map=Dictionary(uniqueKeysWithValues:out.map { ($0.id,$0) });editor.project.nodes=editor.project.nodes.map { map[$0.id] ?? $0 }
+        }
+        if g.state == .cancelled && !startNodes.isEmpty {
+            let originals=Dictionary(uniqueKeysWithValues:startNodes.map{($0.id,$0)})
+            editor.project.nodes=editor.project.nodes.map{originals[$0.id] ?? $0}
+            _ = editor.undoStack.popLast()
         }
         if g.state == .ended || g.state == .cancelled { editor.saveSoon();startNodes=[] }
     }
