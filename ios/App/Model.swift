@@ -164,7 +164,8 @@ struct Project: Codable, Identifiable, Equatable {
     var bgToken = -1
     var pages: [Page] = []
     var active = 0
-    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active }
+    var links: [InteractionLink] = []
+    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links }
     init() {}
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy:CodingKeys.self)
@@ -179,9 +180,10 @@ struct Project: Codable, Identifiable, Equatable {
         tone = try c.decodeIfPresent(Tone.self,forKey:.tone) ?? Tone()
         bgToken = try c.decodeIfPresent(Int.self,forKey:.bgToken) ?? -1
         pages = try c.decodeIfPresent([Page].self,forKey:.pages) ?? []
+        links = try c.decodeIfPresent([InteractionLink].self,forKey:.links) ?? []
         active = min(max(0,try c.decodeIfPresent(Int.self,forKey:.active) ?? 0),max(0,pages.count-1))
         let all = nodes + pages.flatMap(\.nodes)
-        guard all.count <= 10000, all.allSatisfy({ n in [n.x,n.y,n.w,n.h,n.rotation,n.opacity,n.fontSize].allSatisfy(\.isFinite) && n.w >= 0 && n.h >= 0 }) else { throw CocoaError(.fileReadCorruptFile) }
+        guard links.count <= 2000, all.count <= 10000, all.allSatisfy({ n in [n.x,n.y,n.w,n.h,n.rotation,n.opacity,n.fontSize].allSatisfy(\.isFinite) && n.w >= 0 && n.h >= 0 }) else { throw CocoaError(.fileReadCorruptFile) }
     }
     mutating func syncPage() { if pages.indices.contains(active) { pages[active].nodes = nodes } }
 }
