@@ -30,6 +30,8 @@ import QuartzCore
     private(set) var text: [String: String] = [:]
     private(set) var visibility: [String: Bool] = [:]
     private var motions: [Motion] = []
+    private var toggled:Set<String>=[]
+    private var morphs:[String:LinkMorph]=[:]
     private var echoes: [EchoPulse] = []
     private struct Pending {
         var link:InteractionLink
@@ -37,12 +39,19 @@ import QuartzCore
         var fraction:Double?
     }
     private var pending:[Pending]=[]
+    private var valueEvents:[(String,Double)]=[]
     var onWidgetProgress: ((String, Double) -> Void)?
 
     var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty }
 
     func start(_ document: Project) {
         project = document
+        toggled=[];morphs=[:];valueEvents=[]
+        for rule in document.links where rule.enabled && rule.property=="morph" {
+            if let node=document.nodes.first(where:{$0.id==rule.targetID}),let target=rule.shapeID {
+                morphs[node.id]=LinkMorph(from:node.shapeId,to:target)
+            }
+        }
         number.removeAll()
         text.removeAll()
         visibility.removeAll()
@@ -64,7 +73,7 @@ import QuartzCore
     func fire(_ event: String, sourceID: String, fraction: Double? = nil) {
         let group = project.nodes.first(where: {$0.id == sourceID})?.group ?? ""
         let matching = project.links.filter { rule in
-            guard rule.enabled && rule.event == event else { return false }
+            guard rule.enabled && (rule.event == event || event=="drag" && rule.event=="valueChanged") else { return false }
             if event == "start" { return true }
             if rule.sourceID == sourceID { return true }
             return !group.isEmpty &&
@@ -83,11 +92,15 @@ import QuartzCore
             pending.append(Pending(link:delayed,at:now+link.delay,fraction:fraction))
             return
         }
+        let returning=link.alternate==true && toggled.contains(link.id)
+        if link.alternate==true {if returning{toggled.remove(link.id)}else{toggled.insert(link.id)}}
+        let colorProperty=["fill","stroke","fill2","shadowColor"].contains(link.property)
+        if ["bind","set","toggle","text"].contains(link.mode) {motions.removeAll{$0.targetID==target && $0.property==link.property}}
         switch link.mode {
         case "toggle":
             visibility[target] = !(visibility[target] ?? node.visible)
         case "text":
-            text[target] = link.text
+            text[target] = returning ? (link.reverseText ?? node.text):link.text
         case "echo":
             if !(echoes.last(where:{$0.nodeID==target}).map{now-$0.started<0.08} ?? false) {
                 echoes.append(EchoPulse(nodeID: target, started: now + max(0,link.delay),
@@ -95,28 +108,44 @@ import QuartzCore
                 if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
             }
         case "bind":
-            let t = min(1, max(0, fraction ?? 0))
-            set(target, link.property, link.from + (link.to-link.from)*t)
+            let t = InteractionLink.eased(min(1, max(0, fraction ?? 0)),link.easing)
+            if colorProperty {set(target,link.property,Double(mixColor(Int64(baseValue(node,link.property)),link.color,t)))}
+            else {set(target, link.property, link.from + (link.to-link.from)*t)}
         case "set":
-            set(target, link.property, link.property == "fill" ? Double(link.color) : link.value)
+            set(target, link.property, returning ? baseValue(node,link.property):colorProperty ? Double(link.color):link.property=="morph" ? 1:link.value)
         default:
             // Progress always fills from zero to one; other properties animate
             // from their currently rendered value.
-            let from = link.property == "progress" ? 0 : current(node, link.property)
-            let to = link.property == "fill" ? Double(link.color) :
-                     link.property == "progress" ? 1 : link.value
+            let from = link.property == "progress" && link.alternate != true ? 0 : current(node, link.property)
+            let to = returning ? baseValue(node,link.property) : colorProperty ? Double(link.color) : ["progress","morph"].contains(link.property) ? 1 : link.value
             motions.removeAll { $0.targetID == target && $0.property == link.property }
             motions.append(Motion(sourceID: link.sourceID, targetID: target,
                                   property: link.property, start: now + max(0,link.delay),
                                   duration: max(0.01,link.duration), from: from, initialFrom: from,
                                   to: to, easing: link.easing, repeats: link.repeats,
                                   colorFrom: Int64(from), colorTo: Int64(to)))
-            if link.property == "progress" { set(target, "progress", 0) }
+            if link.property == "progress" && link.alternate != true { set(target, "progress", 0) }
         }
     }
 
+    private func mixColor(_ first:Int64,_ last:Int64,_ t:Double)->Int64 {
+        let a=UInt32(truncatingIfNeeded:first),b=UInt32(truncatingIfNeeded:last)
+        var result:UInt32=0
+        for shift in [0,8,16,24] {let av=Double((a>>shift)&255),bv=Double((b>>shift)&255);result |= UInt32(max(0,min(255,(av+(bv-av)*t).rounded()))) << shift}
+        return Int64(Int32(bitPattern:result))
+    }
     private func baseValue(_ node: Node, _ property: String) -> Double {
         switch property {
+        case "stroke":return Double(node.stroke)
+        case "fill2":return Double(node.fill2)
+        case "shadowColor":return Double(node.shadowColor)
+        case "weight":return Double(node.weight)
+        case "strokeWidth":return Double(node.strokeWidth)
+        case "gradAngle":return Double(node.gradAngle)
+        case "shadowBlur":return Double(node.shadowBlur)
+        case "shadowDx":return Double(node.shadowDx)
+        case "shadowDy":return Double(node.shadowDy)
+        case "backgroundBlur":return Double(node.blur)
         case "opacity": return Double(node.opacity)
         case "x": return Double(node.x)
         case "y": return Double(node.y)
@@ -139,7 +168,9 @@ import QuartzCore
     private func set(_ id: String, _ property: String, _ value: Double) {
         guard value.isFinite else { return }
         if property == "visible" { visibility[id] = value >= 0.5; return }
+        let previous=number[id]?[property]
         number[id, default: [:]][property] = value
+        if property=="progress" && previous != value {valueEvents.append((id,min(1,max(0,value))))}
         if property == "progress",let node = project.nodes.first(where: {$0.id==id}),
            !node.group.isEmpty { onWidgetProgress?(node.group, min(1,max(0,value))) }
     }
@@ -156,7 +187,7 @@ import QuartzCore
             if now < motion.start { kept.append(motion); continue }
             let t = min(1, max(0,(now-motion.start)/motion.duration))
             let eased = InteractionLink.eased(t,motion.easing)
-            if motion.property == "fill" {
+            if ["fill","stroke","fill2","shadowColor"].contains(motion.property) {
                 let from = UInt32(truncatingIfNeeded:motion.colorFrom)
                 let to = UInt32(truncatingIfNeeded:motion.colorTo)
                 var rgba: UInt32 = 0
@@ -180,6 +211,9 @@ import QuartzCore
             } else { kept.append(motion) }
         }
         motions=kept
+        var budget=64
+        while !valueEvents.isEmpty && budget>0 {let event=valueEvents.removeFirst();budget-=1;fire("valueChanged",sourceID:event.0,fraction:event.1)}
+        valueEvents=[]
         echoes.removeAll { now > $0.started+$0.duration }
         // Completion can start new animations, but don't recursively call completion.
         for id in Set(finished) { fire("finished",sourceID:id) }
@@ -211,10 +245,32 @@ import QuartzCore
                 if let c=v["corner"] { node.corner=max(0,CGFloat(c)) }
                 if let size=v["fontSize"] { node.fontSize=max(1,CGFloat(size)) }
                 if let fill=v["fill"] { node.fill=Int64(fill) }
+                if let value=v["stroke"]{node.stroke=Int64(value)}
+                if let value=v["fill2"]{node.fill2=Int64(value)}
+                if let value=v["shadowColor"]{node.shadowColor=Int64(value)}
+                if let value=v["weight"]{node.weight=Int64(min(1000,max(100,value)))}
+                if let value=v["strokeWidth"]{node.strokeWidth=max(0,CGFloat(value))}
+                if let value=v["gradAngle"]{node.gradAngle=CGFloat(value)}
+                if let value=v["shadowBlur"]{node.shadowBlur=max(0,CGFloat(value))}
+                if let value=v["shadowDx"]{node.shadowDx=CGFloat(value)}
+                if let value=v["shadowDy"]{node.shadowDy=CGFloat(value)}
+                if let value=v["backgroundBlur"]{node.blur=max(0,CGFloat(value))}
+                if let value=v["morph"],let morph=morphs[node.id]{node.kind="PATH";node.path=morph.svg(value);node.shapeId=""}
             }
             if let value=text[node.id],node.kind=="TEXT" { node.text=value }
             if let value=visibility[node.id] { node.visible=value }
             output.nodes[i]=node
+        }
+        for original in output.nodes {
+            guard let strength=number[original.id]?["echo"],strength>0 else{continue}
+            for index in 1...3 {
+                var copy=original;let k=1+CGFloat(min(4,strength))*CGFloat(index)*0.12
+                copy.id="bound-echo-\(original.id)-\(index)";copy.w*=k;copy.h*=k
+                copy.x=original.center.x-copy.w/2;copy.y=original.center.y-copy.h/2
+                copy.fill=0;copy.stroke=original.fill;copy.strokeWidth=max(1,original.strokeWidth)
+                copy.opacity*=CGFloat(min(1,strength))*0.25/CGFloat(index);copy.shadowBlur=0
+                if let at=output.nodes.firstIndex(where:{$0.id==original.id}){output.nodes.insert(copy,at:at)}
+            }
         }
         for pulse in echoes {
             guard now>=pulse.started,

@@ -5,6 +5,48 @@ import ZIPFoundation
 @testable import QwelIos
 
 final class EditorTests:XCTestCase {
+    @MainActor func testReversibleAndroidShapeMorphAndPortableCurve() throws {
+        var source=Node();source.name="Кнопка"
+        var star=Node();star.kind="SHAPE";star.shapeId="star-5"
+        var label=Node();label.kind="TEXT";label.text="Старт"
+        var morph=InteractionLink();morph.sourceID=source.id;morph.targetID=star.id
+        morph.property="morph";morph.shapeID="star-8";morph.alternate=true;morph.duration=0.4;morph.easing="bezier:0.2,0,0,1"
+        var words=InteractionLink();words.sourceID=source.id;words.targetID=label.id;words.mode="text";words.text="Пауза";words.alternate=true
+        var p=Project();p.nodes=[source,star,label];p.links=[morph,words]
+        let runtime=InteractionRuntime();runtime.start(p)
+        runtime.fire("tap",sourceID:source.id)
+        runtime.tick(at:CACurrentMediaTime()+1)
+        let first=runtime.displayed(p)
+        XCTAssertEqual(first.nodes[2].text,"Пауза")
+        let expected=try XCTUnwrap(LinkMorph(from:"star-5",to:"star-8"))
+        XCTAssertEqual(first.nodes[1].path,expected.svg(1))
+        runtime.fire("tap",sourceID:source.id)
+        runtime.tick(at:CACurrentMediaTime()+1)
+        let second=runtime.displayed(p)
+        XCTAssertEqual(second.nodes[2].text,"Старт")
+        XCTAssertEqual(second.nodes[1].path,expected.svg(0))
+        XCTAssertEqual(InteractionLink.eased(0,morph.easing),0)
+        XCTAssertEqual(InteractionLink.eased(1,morph.easing),1)
+        XCTAssertGreaterThan(InteractionLink.eased(0.5,morph.easing),0.5)
+        let old=try JSONDecoder().decode(InteractionLink.self,from:JSONEncoder().encode(InteractionLink()))
+        XCTAssertNil(old.alternate)
+        let root=FileManager.default.temporaryDirectory
+        let code=SwiftExport.make(p,root:root)
+        XCTAssertTrue(code.contains("morphFrom: ["));XCTAssertTrue(code.contains("alternate: true"))
+        try code.write(to:root.appendingPathComponent("QwelMorphValidation.swift"),atomically:true,encoding:.utf8)
+    }
+    @MainActor func testColorBindingCancelsAnimationAndBoundEchoAppears() {
+        var source=Node();var target=Node();target.kind="RECT";target.fill = -16777216
+        var color=InteractionLink();color.sourceID=source.id;color.targetID=target.id;color.mode="bind";color.event="drag";color.property="fill";color.color = -1;color.easing="linear"
+        var echo=color;echo.id=UUID().uuidString;echo.property="echo";echo.from=0;echo.to=1
+        var p=Project();p.nodes=[source,target];p.links=[color,echo]
+        let runtime=InteractionRuntime();runtime.start(p)
+        runtime.fire("drag",sourceID:source.id,fraction:0.5)
+        let shown=runtime.displayed(p)
+        XCTAssertEqual(UInt32(truncatingIfNeeded:shown.nodes.first{$0.id==target.id}!.fill)&0xffffff,0x808080)
+        XCTAssertGreaterThan(shown.nodes.count,p.nodes.count)
+        runtime.stop();XCTAssertEqual(runtime.displayed(p),p)
+    }
     @MainActor func testSwiftExportSource() throws {
         var project=try XCTUnwrap(Catalog.shared.components.first{$0.id=="slider"}).project
         for kind in ["TEXT","IMAGE","ELLIPSE","RECT","SHAPE","PATH"] {
@@ -308,7 +350,9 @@ final class EditorTests:XCTestCase {
         echo.event="tap"
         echo.mode="echo"
         echo.duration=1
-        p.links=[timed,echo]
+        var follow=InteractionLink();follow.sourceID=target.id;follow.targetID=source.id
+        follow.event="valueChanged";follow.mode="bind";follow.property="rotation";follow.from=0;follow.to=180;follow.easing="linear"
+        p.links=[timed,echo,follow]
         let runtime=InteractionRuntime()
         runtime.start(p)
         runtime.fire("tap",sourceID:source.id)
@@ -319,5 +363,6 @@ final class EditorTests:XCTestCase {
         let animated=try XCTUnwrap(middle.nodes.first(where:{$0.id==target.id}))
         XCTAssertLessThan(animated.w,200)
         XCTAssertGreaterThan(animated.w,0)
+        XCTAssertEqual(middle.nodes.first{$0.id==source.id}!.rotation,90,accuracy:1)
     }
 }

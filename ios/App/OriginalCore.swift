@@ -69,7 +69,7 @@ import UIKit
             }
             links.start(editor.project)
             refresh()
-            let link=CADisplayLink(target:self,selector:#selector(frame));link.preferredFramesPerSecond=30;link.add(to:.main,forMode:.common);self.link=link
+            let link=CADisplayLink(target:self,selector:#selector(frame));link.preferredFramesPerSecond=60;link.add(to:.main,forMode:.common);self.link=link
         } catch { editor.error=error.localizedDescription }
     }
     func stop() {
@@ -111,7 +111,7 @@ import UIKit
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
     func tap(_ p:CGPoint) {
         guard let editor else { return }
-        if let n=editor.project.nodes.reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || linked(n,events:["tap"]))}) {
+        if let n=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || linked(n,events:["tap"]))}) {
             links.fire("tap",sourceID:n.id)
             refresh()
             if n.action.hasPrefix("goto:"),let i=editor.project.pages.firstIndex(where:{$0.id==String(n.action.dropFirst(5))}) { let previous=editor.project.active;stop();back.append(previous);editor.page(i);start();return }
@@ -134,7 +134,7 @@ import UIKit
     }
     func begin(_ p:CGPoint) {
         activeHit=hit(p);initial=p;lastStep=0
-        activeSourceID=editor?.project.nodes.reversed().first(where: { n in
+        activeSourceID=(rendered?.nodes ?? editor?.project.nodes ?? []).reversed().first(where: { n in
             n.visible && !n.mask && n.contains(p) && linked(n,events:["dragStart","drag","dragEnd"])
         })?.id
         if let id=activeSourceID {links.fire("dragStart",sourceID:id,fraction:dragFraction(p,sourceID:id));refresh()}

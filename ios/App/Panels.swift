@@ -66,7 +66,10 @@ struct InspectorPanel:View {
                         ScrollView {
                             LinkRulesEditor(editor:editor,source:n)
                                 .padding(16)
+                                .font(qfont(14))
+                                .foregroundStyle(q.color("onSurface"))
                         }
+                        .background(q.color("surfaceContainer"))
                         .navigationTitle("Связки и анимации")
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {

@@ -44,6 +44,9 @@ jobs:
           SWIFT_EXPORT=$(find "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" -type f -name QwelExportValidation.swift -print -quit)
           test -n "$SWIFT_EXPORT"
           xcrun --sdk iphonesimulator swiftc -typecheck -target arm64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" "$SWIFT_EXPORT"
+          MORPH_EXPORT=$(find "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" -type f -name QwelMorphValidation.swift -print -quit)
+          test -n "$MORPH_EXPORT"
+          xcrun --sdk iphonesimulator swiftc -typecheck -target arm64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" "$MORPH_EXPORT"
           xcrun simctl launch "$DEVICE" com.matwey181.qwelios
           xcrun simctl io "$DEVICE" screenshot build/Qwel-iOS.png
       - uses: actions/upload-artifact@v4
