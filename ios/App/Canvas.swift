@@ -40,7 +40,7 @@ struct EditorCanvas:UIViewRepresentable {
         let page=CGRect(x:0,y:0,width:editor.project.w,height:editor.project.h)
         ctx.setFillColor(UIColor(argb:editor.project.bg).cgColor);ctx.fill(page)
         ctx.saveGState();ctx.clip(to:page)
-        if editor.showGrid {
+        if editor.showGrid && !editor.playing {
             let step:CGFloat = 8*scale<7 ? 32:8
             if step*scale>=7 {
                 ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).withAlphaComponent(0.45).cgColor);ctx.setLineWidth(1/scale)
