@@ -53,6 +53,8 @@ import UIKit
     private var lastStep=0
     private var visibility:[String:Bool]=[:]
     private var back:[Int]=[]
+    private let interactions = InteractionRuntime()
+    private var dragSource: Node?
     init(editor:Editor) { self.editor=editor }
     var display:Project? { rendered }
     func start() {
@@ -78,11 +80,13 @@ import UIKit
         links.stop()
         guard let editor else { return }
         do { let final=try OriginalCore.shared.project("stop",values:["shown":target]);if final.nodes != editor.project.nodes { editor.edit { $0.nodes=final.nodes } } } catch { editor.error=error.localizedDescription }
-        editor.playing=false;target=[:];shown=[:];rendered=nil;editor.objectWillChange.send()
+        editor.playing=false;target=[:];shown=[:];rendered=nil;dragSource=nil
+        interactions.stop()
+        editor.objectWillChange.send()
     }
     @objc private func frame() {
         guard editor != nil else { link?.invalidate();link=nil;return }
-        var changed=kinds.values.contains("spin")
+        var changed=kinds.values.contains("spin") || interactions.tick()
         for (group,value) in target {
             let current=shown[group] ?? value
             if abs(value-current)>0.001 { shown[group]=current+(value-current)*0.4;changed=true }
@@ -99,6 +103,10 @@ import UIKit
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
     func tap(_ p:CGPoint) {
         guard let editor else { return }
+        if let n=linkedSource(at:p, events:["tap"]) {
+            interactions.fire("tap",sourceID:n.id)
+            refresh()
+        }
         if let n=editor.project.nodes.reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || editor.project.links.contains(where:{$0.enabled && $0.sourceID == n.id}))}) {
             links.fire("tap",sourceID:n.id)
             refresh()
