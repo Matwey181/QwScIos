@@ -38,7 +38,39 @@ struct NewProjectView:View {
     }
     private func templateTile(_ item:CatalogItem?)->some View {
         let id=item?.id ?? ""
-        return Button { template=id;if let item{name=item.name}else{name="Новый проект"} } label:{ VStack(spacing:6){Group{if let item { ProjectThumbnail(project:item.project,root:store.root) }else{Rectangle().fill(Color.white).padding(12)}}.frame(width:88,height:88).qSurface(12,"surfaceContainerHighest");Text(item?.name ?? "Пустой").font(qfont(12,.medium)).lineLimit(2).frame(height:32)}.padding(8).frame(width:104).qSurface(20).overlay(RoundedRectangle(cornerRadius:20).stroke(template==id ? q.color("primary"):q.color("outlineVariant"),lineWidth:template==id ? 3:1)) }.buttonStyle(QPressStyle())
+        return Button {
+            template=id
+            name=item?.name ?? "Новый проект"
+        } label: {
+            VStack(spacing:8) {
+                Group {
+                    if let item {
+                        // Keep the Android source template aspect ratio; do not
+                        // squeeze a portrait 360x800 design into a square tile.
+                        ProjectThumbnail(project:item.project,root:store.root,inset:3)
+                    } else {
+                        Rectangle().fill(Color.white).padding(3)
+                    }
+                }
+                .frame(width:98,height:150)
+                .qSurface(12,"surfaceContainerHighest")
+                .clipped()
+                Text(item?.name ?? "Пустой")
+                    .font(qfont(12,.medium))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(width:110,height:32)
+            }
+            .padding(8)
+            .frame(width:122)
+            .qSurface(20)
+            .overlay {
+                RoundedRectangle(cornerRadius:20)
+                    .stroke(template==id ? q.color("primary"):q.color("outlineVariant"),
+                            lineWidth:template==id ? 3:1)
+            }
+        }
+        .buttonStyle(QPressStyle())
     }
     private func create() {
         do {
