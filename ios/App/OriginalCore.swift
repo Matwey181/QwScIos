@@ -6,6 +6,9 @@ import UIKit
     static let shared=OriginalCore()
     private let context:JSContext
     private let function:JSValue
+    private var layerExtras:[String:LayerExtras]=[:]
+    private var studioDocument:StudioDocument?
+    private var savedLinks:[InteractionLink]=[]
     private var textAlignments:[String:String]=[:]
     private init() {
         context=JSContext()!
@@ -18,6 +21,8 @@ import UIKit
     func request(_ values:[String:Any],project:Project?=nil) throws -> [String:Any] {
         var request=values
         if let project {
+            layerExtras=Dictionary((project.pages.flatMap(\.nodes)+project.nodes).compactMap{n in n.extras.map{(n.id,$0)}},uniquingKeysWith:{_,new in new})
+            studioDocument=project.studio;savedLinks=project.links
             textAlignments=Dictionary((project.pages.flatMap(\.nodes)+project.nodes).map{($0.id,$0.textAlign)},uniquingKeysWith: { _,new in new })
             request["project"]=try JSONSerialization.jsonObject(with:JSONEncoder().encode(project))
         }
@@ -30,9 +35,10 @@ import UIKit
         var request=values;request["op"]=operation
         let output=try self.request(request,project:project)
         var decoded=try JSONDecoder().decode(Project.self,from:JSONSerialization.data(withJSONObject:output))
-        func restore(_ node:Node)->Node {var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;return n}
+        func restore(_ node:Node)->Node {var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;n.extras=layerExtras[n.id] ?? n.extras;return n}
         decoded.nodes=decoded.nodes.map(restore)
         for i in decoded.pages.indices {decoded.pages[i].nodes=decoded.pages[i].nodes.map(restore)}
+        decoded.studio=studioDocument;decoded.links=savedLinks
         return decoded
     }
     func compose(_ project:Project) throws -> String { try request(["op":"compose"],project:project)["code"] as? String ?? "" }

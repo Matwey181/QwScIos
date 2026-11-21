@@ -16,6 +16,7 @@ struct EditorScreen:View {
     @State private var menu=false
     @State private var dockOpen=false
     @State private var dialog:String?
+    @State private var studio=false
     @AppStorage("pngScale") private var pngScale=2.0
     init(project:Project,store:ProjectStore) { _editor=StateObject(wrappedValue:Editor(project,store:store)) }
     var body:some View {
@@ -41,6 +42,7 @@ struct EditorScreen:View {
                 }.padding(.horizontal,28)
             }
         }
+        .fullScreenCover(isPresented:$studio){StudioPanel(editor:editor).modifier(OriginalTheme())}
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
         .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in switch result { case .success(let urls):if let url=urls.first{importFile(url)};case .failure(let e):editor.error=e.localizedDescription } }
         .onChange(of:photos) { _,items in Task { for item in items{do{if let data=try await item.loadTransferable(type:Data.self){try editor.addImage(data,name:"Картинка")}}catch{editor.error=error.localizedDescription}};photos=[] } }
@@ -114,7 +116,8 @@ struct EditorScreen:View {
         }.padding(.leading,16).padding(.trailing,8).padding(.top,8).padding(.bottom,16).qSurface(28,"surfaceContainerLow",glass:true,alpha:0.985)
     }
     private var menuContent:some View {
-        VStack(spacing:0) {
+        ScrollView {VStack(spacing:0) {
+            menuItem("Style","Студия · компоненты и состояния"){studio=true}
             menuItem("Fit","Вписать в экран"){editor.fitVersion += 1}
             menuItem("Grid",editor.showGrid ? "Скрыть сетку":"Показать сетку"){editor.showGrid.toggle()}
             menuItem("Guides",editor.snap ? "Отключить привязки":"Включить привязки"){editor.snap.toggle()}
@@ -124,15 +127,17 @@ struct EditorScreen:View {
             menuItem("Import","Импорт SVG"){importer=true}
             menuItem("Code","Код Compose"){export("kt")}
             menuItem("Code","Код SwiftUI"){export("swift")}
+            menuItem("Code","Проект iOS / Xcode"){export("iosProject")}
             menuItem("Code","Проект Compose"){export("module")}
             menuItem("Code","Проект CodeAssist"){export("codeassist")}
             menuItem("Export","Экспорт"){dialog="export"}
             menuItem("Export","Сохранить .qwel"){export("qwel")}
-        }.padding(.vertical,8).qSurface(12,"surfaceContainerHigh").shadow(color:.black.opacity(0.2),radius:6,y:3)
+        }}.frame(maxHeight:560).padding(.vertical,8).qSurface(12,"surfaceContainerHigh").shadow(color:.black.opacity(0.2),radius:6,y:3)
     }
     private func menuItem(_ icon:String,_ title:String,_ action:@escaping()->Void)->some View { Button {menu=false;action()}label:{HStack(spacing:12){QIcon(id:icon);Text(title).font(qfont(14));Spacer()}.padding(.horizontal,12).frame(height:48)}.buttonStyle(.plain) }
     private func export(_ kind:String) {
         do {
+            if kind=="iosProject"{shared=SharedFile(url:try IOSProjectExport.make(editor.project,root:editor.store.root));return}
             if ["module","codeassist"].contains(kind){shared=SharedFile(url:try OriginalCore.shared.sourceArchive(editor.project,root:editor.store.root,kind:kind));return}
             if kind=="qwel" { shared=SharedFile(url:try editor.store.archive(editor.project));return }
             let folder=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

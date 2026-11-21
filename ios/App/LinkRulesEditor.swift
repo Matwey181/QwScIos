@@ -50,7 +50,7 @@ struct LinkRulesEditor:View {
                 mini("doc.on.doc","Дублировать"){var copy=link;copy.id=UUID().uuidString;editor.edit{$0.links.append(copy)};expandedID=copy.id}
                 mini("trash","Удалить"){editor.edit{$0.links.removeAll{$0.id==link.id}}}
             }
-            if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes)}
+            if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes,states:editor.project.studio?.states ?? [])}
         }.padding(18).qSurface(28,"surfaceContainerHigh")
     }
     private func mini(_ icon:String,_ label:String,action:@escaping()->Void)->some View {
@@ -93,6 +93,7 @@ struct LinkPill:View {
 private struct LinkRuleForm:View {
     @Binding var link:InteractionLink
     let layers:[Node]
+    let states:[VisualState]
     @Environment(\.q) private var q
     private var colorProperty:Bool{["fill","stroke","fill2","shadowColor"].contains(link.property)}
     private var nodeChoices:[(String,String)]{
@@ -113,6 +114,7 @@ private struct LinkRuleForm:View {
                 LinkChoiceField(title:"Какой слой изменить",selection:$link.targetID,items:nodeChoices)
                 propertyControls
                 textControls
+                if link.mode=="state"{LinkChoiceField(title:"Состояние",selection:Binding(get:{link.stateID ?? ""},set:{link.stateID=$0}),items:states.map{($0.id,$0.name)})}
                 if link.mode=="playback"{PlaybackLinkControls(link:$link,layers:layers)}
             }
             timingControls
@@ -130,7 +132,7 @@ private struct LinkRuleForm:View {
             else if link.property != "progress" {number("Значение",value:$link.value)}
             if link.mode=="bind" && link.property=="morph"{boundsControls}
         }
-        if ["animate","set","text"].contains(link.mode){QToggle("При повторном нажатии — обратно",isOn:Binding(get:{link.alternate ?? false},set:{link.alternate=$0}))}
+        if ["animate","set","text","state"].contains(link.mode){QToggle("При повторном нажатии — обратно",isOn:Binding(get:{link.alternate ?? false},set:{link.alternate=$0}))}
         if link.mode=="echo"{number("Сила пульсации",value:$link.value)}
     }
     private var boundsControls:some View {HStack(spacing:10){number("От",value:$link.from);number("До",value:$link.to)}}
@@ -141,7 +143,7 @@ private struct LinkRuleForm:View {
         }
     }
     @ViewBuilder private var timingControls:some View {
-        if ["animate","echo","bind"].contains(link.mode){
+        if ["animate","echo","bind","state"].contains(link.mode){
             section("03",title:link.mode=="bind" ? "Отклик":"Анимация"){
                 if link.mode != "bind"{
                     number("Длительность · секунды",value:$link.duration)

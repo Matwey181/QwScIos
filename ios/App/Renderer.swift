@@ -72,7 +72,18 @@ final class DocumentRenderer {
             TextLayout(n,font:font(n)).draw()
             return
         }
-        if n.kind=="IMAGE" { image(n.asset)?.draw(in:rect);return }
+        if n.kind=="IMAGE" {
+            if let image=image(n.asset){
+                let extras=n.extras ?? LayerExtras()
+                if extras.imageMode=="stretch"{image.draw(in:rect)}else{
+                    let sx=n.w/max(1,image.size.width),sy=n.h/max(1,image.size.height)
+                    let ratio=(extras.imageMode=="fit" ? min(sx,sy):max(sx,sy))*max(0.1,extras.imageZoom)
+                    let size=CGSize(width:image.size.width*ratio,height:image.size.height*ratio)
+                    let target=CGRect(x:(n.w-size.width)*extras.cropX,y:(n.h-size.height)*extras.cropY,width:size.width,height:size.height)
+                    ctx.clip(to:rect);image.draw(in:target)
+                }
+            };return
+        }
         let path=VectorPath.local(n)
         ctx.addPath(path)
         if n.gradKind != 0,let gradient=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:[UIColor(argb:n.fill).cgColor,UIColor(argb:n.fill2).cgColor] as CFArray,locations:[0,1]) {

@@ -34,6 +34,7 @@ import QuartzCore
     private var motions: [Motion] = []
     private var toggled:Set<String>=[]
     private var morphs:[String:LinkMorph]=[:]
+    private var stateLayers:[String:Node]=[:]
     private var echoes: [EchoPulse] = []
     private struct Pending {
         var link:InteractionLink
@@ -49,7 +50,7 @@ import QuartzCore
 
     func start(_ document: Project,widgetValues:[String:Double]=[:]) {
         project = document
-        toggled=[];morphs=[:];valueEvents=[]
+        toggled=[];morphs=[:];valueEvents=[];stateLayers=[:]
         for rule in document.links where rule.enabled && rule.property=="morph" {
             if let node=document.nodes.first(where:{$0.id==rule.targetID}),let target=rule.shapeID {
                 morphs[node.id]=LinkMorph(from:node.shapeId,to:target)
@@ -68,7 +69,7 @@ import QuartzCore
     }
 
     func stop() {
-        playback.stop()
+        playback.stop();stateLayers=[:]
         motions.removeAll()
         echoes.removeAll()
         pending.removeAll()
@@ -104,6 +105,10 @@ import QuartzCore
         let colorProperty=["fill","stroke","fill2","shadowColor"].contains(link.property)
         if ["bind","set","toggle","text"].contains(link.mode) {motions.removeAll{$0.targetID==target && $0.property==link.property}}
         switch link.mode {
+        case "state":
+            guard let state=project.studio?.states.first(where:{$0.id==link.stateID}) else{return}
+            let ids=Set(state.nodes.map(\.id))
+            transition(returning ? project.nodes.filter{ids.contains($0.id)}:state.nodes,rule:link,now:now)
         case "playback":
             let source=project.nodes.first{$0.id==link.sourceID}
             let ownSlider=source?.id==node.id || (!node.group.isEmpty && source?.group==node.group)
@@ -140,6 +145,25 @@ import QuartzCore
         }
     }
 
+    private func transition(_ nodes:[Node],rule:InteractionLink,now:Double){
+        let properties=["x","y","width","height","rotation","opacity","fill","fill2","stroke","strokeWidth","fontSize","weight","corner","blur","shadowBlur","shadowDx","shadowDy","shadowColor"]
+        for target in nodes {
+            guard let source=project.nodes.first(where:{$0.id==target.id}) else{continue}
+            stateLayers[target.id]=target;text[target.id]=target.text
+            if target.visible{visibility[target.id]=true}
+            for property in properties{
+                let from=current(source,property),to=property=="opacity" && !target.visible ? 0:baseValue(target,property)
+                motions.removeAll{$0.targetID==target.id && $0.property==property}
+                motions.append(Motion(sourceID:rule.sourceID,targetID:target.id,property:property,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:from,initialFrom:from,to:to,easing:rule.easing,repeats:false,colorFrom:Int64(from),colorTo:Int64(to)))
+            }
+            if !target.visible{var hide=rule;hide.id=UUID().uuidString;hide.targetID=target.id;hide.mode="set";hide.property="visible";hide.value=0;hide.alternate=false;hide.delay=0;pending.append(Pending(link:hide,at:now+max(0,rule.delay)+max(0.01,rule.duration),fraction:nil))}
+            if source.kind=="SHAPE" && target.kind=="SHAPE" && source.shapeId != target.shapeId,let morph=LinkMorph(from:source.shapeId,to:target.shapeId){
+                morphs[target.id]=morph;number[target.id,default:[:]]["morph"]=0
+                motions.removeAll{$0.targetID==target.id && $0.property=="morph"}
+                motions.append(Motion(sourceID:rule.sourceID,targetID:target.id,property:"morph",start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:0,initialFrom:0,to:1,easing:rule.easing,repeats:false,colorFrom:0,colorTo:1))
+            }
+        }
+    }
     private func mixColor(_ first:Int64,_ last:Int64,_ t:Double)->Int64 {
         let a=UInt32(truncatingIfNeeded:first),b=UInt32(truncatingIfNeeded:last)
         var result:UInt32=0
@@ -237,6 +261,7 @@ import QuartzCore
         var output=base
         for i in output.nodes.indices {
             var node=output.nodes[i]
+            if let state=stateLayers[node.id]{node.kind=state.kind;node.asset=state.asset;node.font=state.font;node.textAlign=state.textAlign;node.extras=state.extras;node.path=state.path;node.shapeId=state.shapeId;node.gradKind=state.gradKind}
             let original=node
             if let v=number[node.id] {
                 if let x=v["x"] { node.x=CGFloat(x) }

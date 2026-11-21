@@ -37,6 +37,16 @@ enum SwiftExport {
         return "Path { p in "+commands.joined(separator:"; ")+" }"
     }
 
+    private static func stateNumbers(_ nodes:[Node])->[String:Double]{
+        var result:[String:Double]=[:]
+        for n in nodes {
+            let values:[String:Double]=["x":Double(n.x),"y":Double(n.y),"width":Double(n.w),"height":Double(n.h),"rotation":Double(n.rotation),"opacity":Double(n.opacity),"fill":Double(n.fill),"stroke":Double(n.stroke),"strokeWidth":Double(n.strokeWidth),"fontSize":Double(n.fontSize),"corner":Double(n.corner),"blur":Double(n.softBlur),"visible":n.visible ? 1:0,"weight":Double(n.weight)]
+            for (key,value) in values{result[n.id+"|"+key]=value}
+        }
+        return result
+    }
+    private static func dictionary(_ values:[String:Double])->String {values.isEmpty ? "[:]":"["+values.keys.sorted().map{literal($0)+": "+String(values[$0]!)}.joined(separator:",")+"]"}
+    private static func strings(_ values:[String:String])->String {values.isEmpty ? "[:]":"["+values.keys.sorted().map{literal($0)+": "+literal(values[$0]!)}.joined(separator:",")+"]"}
     @MainActor private static func rules(_ project:Project)->String {
         project.links.map { link in
             let all=project.pages.flatMap(\.nodes)+project.nodes
@@ -45,14 +55,19 @@ enum SwiftExport {
             let node=all.first{$0.id==link.targetID}
             let targetAliases=node?.group.isEmpty==false ? Array(Set(all.filter{$0.group==node?.group}.map(\.id))):[link.targetID]
             let morph=link.property=="morph" ? LinkMorph(from:node?.shapeId ?? "",to:link.shapeID ?? "star-8"):nil
-            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))])"
+            let state=project.studio?.states.first{$0.id==link.stateID}
+            let numbers=stateNumbers(state?.nodes ?? [])
+            let stateLabels=Dictionary((state?.nodes ?? []).filter{$0.kind=="TEXT"}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
+            let reverseLabels=Dictionary(all.filter{stateLabels[$0.id] != nil}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
+            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))], stateNumbers: \(dictionary(numbers)), stateTexts: \(strings(stateLabels)), reverseTexts: \(strings(reverseLabels)))"
         }.joined(separator:",\n")
     }
     private static func bases(_ project:Project,_ pages:[[Node]])->String {
         let ids=Set(project.links.map(\.targetID) + project.nodes.compactMap {
             $0.action.hasPrefix("toggle:") ? String($0.action.dropFirst(7)) : nil
         })
-        let nodes=pages.flatMap{$0}.filter{ids.contains($0.id)}
+        let stateIDs=Set(project.studio?.states.flatMap(\.nodes).map(\.id) ?? [])
+        let nodes=pages.flatMap{$0}.filter{ids.contains($0.id) || stateIDs.contains($0.id)}
         let props: [(String,(Node)->Double)] = [
             ("x",{Double($0.x)}),("y",{Double($0.y)}),
             ("width",{Double($0.w)}),("height",{Double($0.h)}),
@@ -90,18 +105,29 @@ enum SwiftExport {
                 var view:String
                 let nodeColor="graph.fill(\(identifier), base: \(n.fill))"
                 if n.kind=="TEXT" {
-                    let textBase="Text(graph.label(\(identifier), base: \(literal(n.text)))).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(n.fontSize))), weight: (graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 700 ? .bold : graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 500 ? .medium : .regular))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment))"
+                    let runs=(n.extras?.runs ?? []).map{"QwelTextSpan(start: \($0.start), length: \($0.length), weight: \($0.weight), italic: \($0.italic), color: \($0.color.map(String.init) ?? "nil"))"}.joined(separator:",")
+                    let actualSize=n.extras?.autoFit==true ? TextLayout(n,font:DocumentRenderer(root:root).font(n)).resolvedFont.pointSize:n.fontSize
+                    let textBase="graph.styledLabel(\(identifier), base: \(literal(n.text)), runs: [\(runs)]).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize))), weight: (graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 700 ? .bold : graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 500 ? .medium : .regular))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment))"
+                    let fontName=DocumentRenderer(root:root).font(n).fontName
+                    let selectedFont=n.font.isEmpty ? textBase:textBase+".font(.custom(\(literal(fontName)), size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize)))))"
+                    let typography=selectedFont+".tracking(\(n.extras?.tracking ?? 0)).lineSpacing(\(n.extras?.lineSpacing ?? 0))"
                     if TextLayout.isAndroidCatalogText(n) {
                         // Android's template text is measured with a 0.55 character
                         // estimate and renders only explicit newlines. Its compact
                         // frame must not cause extra line breaks in exported SwiftUI.
-                        view=textBase+".fixedSize(horizontal: true, vertical: true).frame(width: \(n.w), height: \(n.h), alignment: .\(alignment))"
+                        view=typography+".fixedSize(horizontal: true, vertical: true).frame(width: \(n.w), height: \(n.h), alignment: .\(alignment))"
                     } else {
-                        view=textBase+".frame(width: \(n.w), alignment: .\(alignment)).fixedSize(horizontal: false, vertical: true)"
+                        view=typography+".frame(width: \(n.w), alignment: .\(alignment)).fixedSize(horizontal: false, vertical: true)"
                     }
                 } else if n.kind=="IMAGE" {
                     let bytes=(try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset))) ?? Data()
                     view="embeddedImage(\(literal(bytes.base64EncodedString()))).resizable()"
+                    if let extras=n.extras,extras.imageMode != "stretch",let image=UIImage(data:bytes){
+                        let sx=n.w/max(1,image.size.width),sy=n.h/max(1,image.size.height)
+                        let ratio=(extras.imageMode=="fit" ? min(sx,sy):max(sx,sy))*max(0.1,extras.imageZoom)
+                        let width=image.size.width*ratio,height=image.size.height*ratio
+                        view="ZStack(alignment: .topLeading) { Color.clear; embeddedImage(\(literal(bytes.base64EncodedString()))).resizable().frame(width: \(width), height: \(height)).offset(x: \((n.w-width)*extras.cropX), y: \((n.h-height)*extras.cropY)) }.frame(width: \(n.w), height: \(n.h)).clipped()"
+                    }
                 } else {
                     let shape=project.links.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
                     var fill=nodeColor

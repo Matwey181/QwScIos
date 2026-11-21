@@ -4,6 +4,7 @@ import CoreText
 
 @MainActor final class ProjectStore: ObservableObject {
     @Published var projects: [Project] = []
+    @Published var components:[ReusableComponent]=[]
     @Published var error: String?
     @Published var working = false
     let root: URL
@@ -13,7 +14,7 @@ import CoreText
         self.root = root ?? FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
         for folder in [self.root,self.root.appendingPathComponent("projects"),assets,fonts] { try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true) }
         registerFonts()
-        reload()
+        reload();reloadComponents()
     }
     func registerFonts() {
         let custom=(try? FileManager.default.contentsOfDirectory(at:fonts,includingPropertiesForKeys:nil)) ?? []
@@ -24,13 +25,20 @@ import CoreText
     func reload() {
         let folder=root.appendingPathComponent("projects")
         projects=((try? FileManager.default.contentsOfDirectory(at:folder,includingPropertiesForKeys:nil)) ?? []).filter { $0.pathExtension=="json" }.compactMap { u in
-            guard let d=try? Data(contentsOf:u) else { return nil }; return try? JSONDecoder().decode(Project.self,from:d)
+            if let d=try? Data(contentsOf:u),let project=try? JSONDecoder().decode(Project.self,from:d){return project}
+            for revision in self.revisions(u.deletingPathExtension().lastPathComponent){if let project=try? self.readRevision(revision,projectID:u.deletingPathExtension().lastPathComponent){return project}}
+            return nil
         }.sorted { $0.updated > $1.updated }
     }
     func save(_ value:Project) throws {
         var p=value; p.syncPage(); p.updated=Int64(Date().timeIntervalSince1970*1000)
         let d=try JSONEncoder().encode(p)
-        try d.write(to:root.appendingPathComponent("projects/\(p.id).json"),options:.atomic)
+        let destination=root.appendingPathComponent("projects/\(p.id).json")
+        if let old=try? Data(contentsOf:destination),old != d {
+            let latest=revisions(p.id).first?.date ?? .distantPast
+            if Date().timeIntervalSince(latest)>60,let previous=try? JSONDecoder().decode(Project.self,from:old){try checkpoint(previous,label:"Автосохранение")}
+        }
+        try d.write(to:destination,options:.atomic)
         if let i=projects.firstIndex(where:{$0.id==p.id}) { projects[i]=p } else { projects.insert(p,at:0) }
     }
     func delete(_ p:Project) {
@@ -82,6 +90,7 @@ import CoreText
                 }
                 func map(_ list:[Node])->[Node] { list.map { n in var n=n;n.asset=assets[n.asset] ?? n.asset;n.font=fonts[n.font] ?? n.font;return n } }
                 p.nodes=map(p.nodes);p.pages=p.pages.map { pg in var pg=pg;pg.nodes=map(pg.nodes);return pg }
+                if var studio=p.studio{studio.states=studio.states.map{state in var state=state;state.nodes=map(state.nodes);return state};p.studio=studio}
                 return p
             }.value
             var imported=p;imported.id=UUID().uuidString
@@ -96,7 +105,7 @@ import CoreText
         let zip=try Archive(url:out,accessMode:.create)
         let data=try JSONEncoder().encode(p)
         try zip.addEntry(with:"project.json",type:.file,uncompressedSize:Int64(data.count),compressionMethod:.deflate) { position,size in data.subdata(in:Int(position)..<min(data.count,Int(position)+size)) }
-        let all=p.nodes+p.pages.flatMap(\.nodes)
+        let all=p.nodes+p.pages.flatMap(\.nodes)+(p.studio?.states.flatMap(\.nodes) ?? [])
         for (folder,names) in [("assets",Set(all.map(\.asset).filter{!$0.isEmpty})),("fonts",Set(all.map(\.font).filter{!$0.isEmpty}))] {
             for name in names {
                 let file=root.appendingPathComponent(folder).appendingPathComponent(name)

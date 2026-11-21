@@ -4,6 +4,7 @@ import Foundation
 /// A generated view does not need Qwel or any other framework at runtime.
 enum ExportedInteractionSource {
     static let code = #"""
+private struct QwelTextSpan {var start:Int;var length:Int;var weight:Int;var italic:Bool;var color:Int64?}
 private struct QwelRule {
     var source: String
     var event: String
@@ -33,6 +34,9 @@ private struct QwelRule {
     var remainingID:String=""
     var clockFormat:String="clock"
     var targetAliases:[String]=[]
+    var stateNumbers:[String:Double]=[:]
+    var stateTexts:[String:String]=[:]
+    var reverseTexts:[String:String]=[:]
 }
 private struct QwelMotion {
     var source: String
@@ -182,6 +186,17 @@ private struct QwelEcho: Identifiable {
             if rule.alternate {if returning{toggled.remove(rule.id)}else{toggled.insert(rule.id)}}
             let isColor=["fill","stroke","fill2","shadowColor"].contains(property)
             switch rule.mode {
+            case "state":
+                for (address,destination) in rule.stateNumbers {
+                    guard let divider=address.lastIndex(of:"|") else{continue}
+                    let target=String(address[..<divider]),property=String(address[address.index(after:divider)...])
+                    let end=returning ? (base[address] ?? destination):destination
+                    if property=="visible" {visibility[target]=end>=0.5;continue}
+                    let origin=value(target,property,base:base[address] ?? end)
+                    motions.removeAll{$0.target==target && $0.property==property}
+                    motions.append(QwelMotion(source:rule.source,target:target,property:property,from:origin,to:end,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),ease:rule.easing,repeats:false))
+                }
+                for (target,label) in (returning ? rule.reverseTexts:rule.stateTexts){textValues[target]=label}
             case "playback":
                 if !rule.targetAliases.contains(rule.source),var clock=clocks[rule.id] {
                     if clock.position>=1{clock.position=0}
@@ -229,6 +244,23 @@ private struct QwelEcho: Identifiable {
             return m.from + (m.to-m.from)*eased
         }
         return current[idKey] ?? fallback
+    }
+    func styledLabel(_ id:String,base fallback:String,runs:[QwelTextSpan])->Text {
+        let value=label(id,base:fallback),string=value as NSString
+        var boundaries=Set([0,string.length])
+        for run in runs {boundaries.insert(min(string.length,max(0,run.start)));boundaries.insert(min(string.length,max(0,run.start+run.length)))}
+        let sorted=boundaries.sorted();var output=Text("")
+        for i in 0..<max(0,sorted.count-1){
+            let start=sorted[i],length=sorted[i+1]-start
+            guard length>0 else{continue}
+            var piece=Text(string.substring(with:NSRange(location:start,length:length)))
+            if let run=runs.last(where:{$0.start<=start && $0.start+$0.length>start}){
+                if run.weight>=600{piece=piece.bold()};if run.italic{piece=piece.italic()}
+                if let color=run.color{let v=UInt32(truncatingIfNeeded:color);piece=piece.foregroundColor(Color(.sRGB,red:Double((v>>16)&255)/255,green:Double((v>>8)&255)/255,blue:Double(v&255)/255,opacity:Double(v>>24)/255))}
+            }
+            output=output+piece
+        }
+        return output
     }
     func label(_ id:String,base fallback:String)->String {
         _ = version

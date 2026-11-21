@@ -4,6 +4,7 @@ import CoreGraphics
 /// A declarative connection between two layers, persisted inside the .qwel project.
 /// Events and effects are strings to allow new combinations without a schema migration.
 struct InteractionLink: Codable, Identifiable, Equatable {
+    var stateID:String?
     var autoplay:Bool?
     var elapsedEnabled:Bool?
     var remainingEnabled:Bool?
@@ -37,7 +38,7 @@ struct InteractionLink: Codable, Identifiable, Equatable {
         ("finished", "Завершение анимации"), ("start", "Запуск игры")
     ]
     static let effects: [(String, String)] = [
-        ("playback", "Таймер-плеер"), ("animate", "Анимировать свойство"), ("set", "Изменить сразу"),
+        ("state", "Перейти в состояние"), ("playback", "Таймер-плеер"), ("animate", "Анимировать свойство"), ("set", "Изменить сразу"),
         ("bind", "Связать с движением"), ("toggle", "Переключить видимость"),
         ("text", "Изменить текст"), ("echo", "Эхо / пульсация")
     ]

@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct Node: Codable, Identifiable, Equatable {
+    var extras:LayerExtras?
     var id: String = UUID().uuidString
     var kind: String = "RECT"
     var name: String = "Слой"
@@ -45,6 +46,7 @@ struct Node: Codable, Identifiable, Equatable {
     var action: String = ""
     init() {}
     enum CodingKeys: String, CodingKey {
+        case extras = "ux"
         case id = "id"
         case kind = "kind"
         case name = "name"
@@ -89,6 +91,7 @@ struct Node: Codable, Identifiable, Equatable {
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        extras = try c.decodeIfPresent(LayerExtras.self,forKey:.extras)
         id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
         kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "RECT"
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? "Слой"
@@ -164,8 +167,9 @@ struct Project: Codable, Identifiable, Equatable {
     var bgToken = -1
     var pages: [Page] = []
     var active = 0
+    var studio:StudioDocument?
     var links: [InteractionLink] = []
-    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links }
+    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links,studio }
     init() {}
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy:CodingKeys.self)
@@ -180,6 +184,7 @@ struct Project: Codable, Identifiable, Equatable {
         tone = try c.decodeIfPresent(Tone.self,forKey:.tone) ?? Tone()
         bgToken = try c.decodeIfPresent(Int.self,forKey:.bgToken) ?? -1
         pages = try c.decodeIfPresent([Page].self,forKey:.pages) ?? []
+        studio = try c.decodeIfPresent(StudioDocument.self,forKey:.studio)
         links = try c.decodeIfPresent([InteractionLink].self,forKey:.links) ?? []
         active = min(max(0,try c.decodeIfPresent(Int.self,forKey:.active) ?? 0),max(0,pages.count-1))
         let all = nodes + pages.flatMap(\.nodes)

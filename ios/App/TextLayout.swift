@@ -10,6 +10,7 @@ final class TextLayout {
     let manager = NSLayoutManager()
     let container: NSTextContainer
     let lineHeight: CGFloat
+    let resolvedFont:UIFont
     let isAndroidCatalogText: Bool
     private let horizontalOffset: CGFloat
 
@@ -19,6 +20,7 @@ final class TextLayout {
     }
 
     static func isAndroidCatalogText(_ node: Node) -> Bool {
+        if let extras=node.extras,extras.tracking != 0 || extras.lineSpacing != 0 || extras.autoFit || !extras.runs.isEmpty{return false}
         guard node.kind == "TEXT", !node.text.isEmpty, node.fontSize > 0 else { return false }
         let lines=node.text.components(separatedBy:"\n")
         let longest=lines.map { $0.utf16.count }.max() ?? 0
@@ -30,7 +32,19 @@ final class TextLayout {
                abs(node.h-expectedHeight) <= max(0.2, expectedHeight * 0.0002)
     }
 
-    init(_ node: Node,font: UIFont) {
+    init(_ node: Node,font sourceFont: UIFont) {
+        var font=sourceFont
+        if node.extras?.autoFit==true {
+            var low:CGFloat=4,high=max(4,sourceFont.pointSize)
+            for _ in 0..<12 {
+                let mid=(low+high)/2,candidate=sourceFont.withSize(mid)
+                let text=Self.attributed(node,font:candidate)
+                let bounds=text.boundingRect(with:CGSize(width:max(1,node.w),height:1_000_000),options:[.usesLineFragmentOrigin,.usesFontLeading],context:nil)
+                if bounds.height<=node.h && bounds.width<=node.w+1{low=mid}else{high=mid}
+            }
+            font=sourceFont.withSize(low)
+        }
+        resolvedFont=font
         isAndroidCatalogText=Self.isAndroidCatalogText(node)
         let explicitLines=node.text.components(separatedBy:"\n")
         let measuredWidth=explicitLines.map {
@@ -45,18 +59,16 @@ final class TextLayout {
             : 0
         lineHeight=isAndroidCatalogText
             ? node.fontSize * 1.25
-            : max(font.lineHeight,node.fontSize*1.25)
+            : max(font.lineHeight,font.pointSize*1.25)
         let paragraph=NSMutableParagraphStyle()
         paragraph.lineBreakMode = isAndroidCatalogText ? .byClipping : .byWordWrapping
         paragraph.alignment=node.textAlign=="center" ? .center :
                             node.textAlign=="right" ? .right : .left
         paragraph.minimumLineHeight=lineHeight
         paragraph.maximumLineHeight=lineHeight
-        storage=NSTextStorage(string:node.text,attributes:[
-            .font:font,
-            .foregroundColor:UIColor(argb:node.fill),
-            .paragraphStyle:paragraph
-        ])
+        paragraph.lineSpacing=node.extras?.lineSpacing ?? 0
+        storage=NSTextStorage(attributedString:Self.attributed(node,font:font))
+        storage.addAttribute(.paragraphStyle,value:paragraph,range:NSRange(location:0,length:storage.length))
         container=NSTextContainer(size:CGSize(width:width,height:1_000_000))
         container.lineFragmentPadding=0
         container.lineBreakMode=isAndroidCatalogText ? .byClipping : .byWordWrapping
@@ -65,6 +77,11 @@ final class TextLayout {
         manager.ensureLayout(for:container)
     }
 
+    var ranges:[NSRange]{
+        var result:[NSRange]=[]
+        manager.enumerateLineFragments(forGlyphRange:manager.glyphRange(for:container)){_,_,_,range,_ in result.append(self.manager.characterRange(forGlyphRange:range,actualGlyphRange:nil))}
+        return result
+    }
     var lines:[String] {
         var result:[String]=[]
         manager.enumerateLineFragments(forGlyphRange:manager.glyphRange(for:container)) { _,_,_,range,_ in

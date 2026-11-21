@@ -48,6 +48,12 @@ struct EditorCanvas:UIViewRepresentable {
                 for y in stride(from:CGFloat(0),through:editor.project.h,by:step) {ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))};ctx.strokePath()
             }
         }
+        if !editor.playing {
+            ctx.saveGState();ctx.setStrokeColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.setLineWidth(1/scale)
+            for x in (editor.project.studio?.guidesX ?? [])+editor.snapGuidesX{ctx.move(to:CGPoint(x:x,y:0));ctx.addLine(to:CGPoint(x:x,y:editor.project.h))}
+            for y in (editor.project.studio?.guidesY ?? [])+editor.snapGuidesY{ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))}
+            ctx.strokePath();ctx.restoreGState()
+        }
         editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.project,in:ctx,background:false);ctx.restoreGState()
         ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).cgColor);ctx.setLineWidth(1/scale);ctx.stroke(page)
         if !editor.playing,let box=editor.bounds {
@@ -129,11 +135,12 @@ struct EditorCanvas:UIViewRepresentable {
                     out[i].x=center.x+x*cos(rad)-y*sin(rad)-out[i].w/2;out[i].y=center.y+x*sin(rad)+y*cos(rad)-out[i].h/2;out[i].rotation=startNodes[i].rotation+angle
                 default:
                     out[i].x=startNodes[i].x+dx;out[i].y=startNodes[i].y+dy
-                    if editor.snap {
-                        if abs(out[i].center.x-editor.project.w/2)<5/scale { out[i].x=editor.project.w/2-out[i].w/2 }
-                        if abs(out[i].center.y-editor.project.h/2)<5/scale { out[i].y=editor.project.h/2-out[i].h/2 }
-                    }
+
                 }
+            }
+            if mode=="move" && editor.snap {
+                let offset=editor.snapOffset(out)
+                for i in out.indices{out[i].x+=offset.x;out[i].y+=offset.y}
             }
             let map=Dictionary(uniqueKeysWithValues:out.map { ($0.id,$0) });editor.project.nodes=editor.project.nodes.map { map[$0.id] ?? $0 }
         }
@@ -142,6 +149,6 @@ struct EditorCanvas:UIViewRepresentable {
             editor.project.nodes=editor.project.nodes.map{originals[$0.id] ?? $0}
             _ = editor.undoStack.popLast()
         }
-        if g.state == .ended || g.state == .cancelled { editor.saveSoon();startNodes=[] }
+        if g.state == .ended || g.state == .cancelled { editor.saveSoon();startNodes=[];editor.snapGuidesX=[];editor.snapGuidesY=[] }
     }
 }

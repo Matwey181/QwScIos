@@ -11,6 +11,8 @@ import SwiftUI
     @Published var requestTextEdit:String?
     @Published var eyedropTarget:WritableKeyPath<Node,Int64>?
     @Published var showGrid=true
+    @Published var snapGuidesX:[CGFloat]=[]
+    @Published var snapGuidesY:[CGFloat]=[]
     @Published var canvasScale:CGFloat=1
     @Published var error:String?
     var undoStack:[Project]=[],redoStack:[Project]=[]
@@ -34,7 +36,7 @@ import SwiftUI
     func edit(_ block:(inout Project)->Void) { checkpoint();block(&project);saveSoon() }
     func reflowText(_ node:inout Node) {
         guard node.kind=="TEXT" else{return}
-        node.h=TextLayout(node,font:renderer.font(node)).height
+        if node.extras?.autoFit != true{node.h=TextLayout(node,font:renderer.font(node)).height}
     }
     func commitText(_ id:String,text:String) {
         guard let index=project.nodes.firstIndex(where:{$0.id==id && $0.kind=="TEXT"}),project.nodes[index].text != text else{return}
@@ -43,7 +45,7 @@ import SwiftUI
     func change(_ block:(inout Node)->Void) {
         edit { p in for i in p.nodes.indices where selection.contains(p.nodes[i].id) {
             let old=p.nodes[i];block(&p.nodes[i]);let n=p.nodes[i]
-            if n.kind=="TEXT" && (old.text != n.text || old.w != n.w || old.fontSize != n.fontSize || old.font != n.font || old.weight != n.weight) {reflowText(&p.nodes[i])}
+            if n.kind=="TEXT" && (old.text != n.text || old.w != n.w || old.fontSize != n.fontSize || old.font != n.font || old.weight != n.weight || old.extras != n.extras) {reflowText(&p.nodes[i])}
         } }
     }
     func undo() { guard let old=undoStack.popLast() else { return };redoStack.append(project);project=old;selection.formIntersection(Set(project.nodes.map(\.id)));saveSoon() }
@@ -82,10 +84,14 @@ import SwiftUI
         edit { $0.nodes.append(n) };selection=[n.id]
     }
     func duplicate() {
-        var groups:[String:String]=[:]
-        let copies=selected.map { old in var n=old;n.id=UUID().uuidString;n.x += 16;n.y += 16
+        var groups:[String:String]=[:],instances:[String:String]=[:]
+        let ids=Dictionary(uniqueKeysWithValues:selected.map{($0.id,UUID().uuidString)})
+        let copies=selected.map { old in var n=old;n.id=ids[old.id] ?? UUID().uuidString;n.x += 16;n.y += 16
+            if var extras=n.extras,let instance=extras.instanceID{if instances[instance]==nil{instances[instance]=UUID().uuidString};extras.instanceID=instances[instance];n.extras=extras}
+            if n.action.hasPrefix("toggle:"){n.action="toggle:"+(ids[String(n.action.dropFirst(7))] ?? String(n.action.dropFirst(7)))}
             if !n.group.isEmpty { if groups[n.group]==nil { groups[n.group]=UUID().uuidString+(n.group.contains("~") ? "~"+n.group.components(separatedBy:"~").last! : "") };n.group=groups[n.group]! };return n }
-        edit { $0.nodes += copies };selection=Set(copies.map(\.id))
+        let reactions=project.links.filter{ids[$0.sourceID] != nil}.map{old in var r=old;r.id=UUID().uuidString;r.sourceID=ids[r.sourceID] ?? r.sourceID;r.targetID=ids[r.targetID] ?? r.targetID;r.elapsedID=r.elapsedID.map{ids[$0] ?? $0};r.remainingID=r.remainingID.map{ids[$0] ?? $0};return r}
+        edit { $0.nodes += copies;$0.links+=reactions };selection=Set(copies.map(\.id))
     }
     func remove() { edit { $0.nodes.removeAll { selection.contains($0.id) } };selection=[] }
     func group() { let id=UUID().uuidString;change { $0.group=id } }
