@@ -79,10 +79,7 @@ import SwiftUI
         var n=Node();n.kind="IMAGE";n.name=name;n.asset=file
         let s=min(project.w*0.8/image.size.width,project.h*0.8/image.size.height,1)
         n.w=image.size.width*s;n.h=image.size.height*s;n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2;n.ratioLock=true
-        if kind=="TEXT" { n.ratioLock=false;reflowText(&n) }
-        n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2
         edit { $0.nodes.append(n) };selection=[n.id]
-        if kind=="TEXT" { requestTextEdit=n.id }
     }
     func duplicate() {
         var groups:[String:String]=[:]
