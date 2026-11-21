@@ -97,10 +97,21 @@ import UIKit
         do { var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":CACurrentMediaTime()-startTime]);result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n };rendered=links.displayed(result);editor.objectWillChange.send() }
         catch { editor.error=error.localizedDescription;link?.invalidate();link=nil }
     }
+    private func linked(_ node:Node,events:[String])->Bool {
+        guard let editor else {return false}
+        return editor.project.links.contains { rule in
+            guard rule.enabled && events.contains(rule.event) else { return false }
+            if rule.sourceID == node.id {return true}
+            if !node.group.isEmpty {
+                return editor.project.nodes.first(where:{$0.id==rule.sourceID})?.group == node.group
+            }
+            return false
+        }
+    }
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
     func tap(_ p:CGPoint) {
         guard let editor else { return }
-        if let n=editor.project.nodes.reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || editor.project.links.contains(where:{$0.enabled && $0.sourceID == n.id}))}) {
+        if let n=editor.project.nodes.reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || linked(n,events:["tap"]))}) {
             links.fire("tap",sourceID:n.id)
             refresh()
             if n.action.hasPrefix("goto:"),let i=editor.project.pages.firstIndex(where:{$0.id==String(n.action.dropFirst(5))}) { let previous=editor.project.active;stop();back.append(previous);editor.page(i);start();return }
@@ -116,7 +127,7 @@ import UIKit
     func begin(_ p:CGPoint) {
         activeHit=hit(p);initial=p;lastStep=0
         activeSourceID=editor?.project.nodes.reversed().first(where: { n in
-            n.visible && !n.mask && n.contains(p) && (editor?.project.links.contains(where:{$0.enabled && $0.sourceID==n.id && ["dragStart","drag","dragEnd"].contains($0.event)}) ?? false)
+            n.visible && !n.mask && n.contains(p) && linked(n,events:["dragStart","drag","dragEnd"])
         })?.id
         if let id=activeSourceID {links.fire("dragStart",sourceID:id);refresh()}
         if ["slider","progress"].contains(activeHit?["kind"] as? String ?? "") { tap(p) }
