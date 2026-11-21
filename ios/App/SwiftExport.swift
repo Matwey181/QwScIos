@@ -79,7 +79,15 @@ enum SwiftExport {
                 var view:String
                 let nodeColor="graph.fill(\(identifier), base: \(n.fill))"
                 if n.kind=="TEXT" {
-                    view="Text(graph.label(\(identifier), base: \(literal(n.text)))).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(n.fontSize))), weight: \(n.weight>=700 ? ".bold":n.weight>=500 ? ".medium":".regular"))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment)).frame(width: \(n.w), alignment: .\(alignment)).fixedSize(horizontal: false, vertical: true)"
+                    let textBase="Text(graph.label(\(identifier), base: \(literal(n.text)))).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(n.fontSize))), weight: \(n.weight>=700 ? ".bold":n.weight>=500 ? ".medium":".regular"))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment))"
+                    if TextLayout.isAndroidCatalogText(n) {
+                        // Android's template text is measured with a 0.55 character
+                        // estimate and renders only explicit newlines. Its compact
+                        // frame must not cause extra line breaks in exported SwiftUI.
+                        view=textBase+".fixedSize(horizontal: true, vertical: true).frame(width: \(n.w), height: \(n.h), alignment: .\(alignment))"
+                    } else {
+                        view=textBase+".frame(width: \(n.w), alignment: .\(alignment)).fixedSize(horizontal: false, vertical: true)"
+                    }
                 } else if n.kind=="IMAGE" {
                     let bytes=(try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset))) ?? Data()
                     view="embeddedImage(\(literal(bytes.base64EncodedString()))).resizable()"
