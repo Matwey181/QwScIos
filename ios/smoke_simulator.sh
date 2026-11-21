@@ -27,12 +27,17 @@ xcrun simctl spawn "$sim_id" launchctl list | grep 'com.matwey181.qwscios'
 xcrun simctl io "$sim_id" screenshot build/iOS-launch.png
 app_data="$(xcrun simctl get_app_container "$sim_id" com.matwey181.qwscios data)"
 python3 - "$app_data" <<'PY'
-import base64, pathlib, sys
+import pathlib, struct, sys, zlib
 folder = pathlib.Path(sys.argv[1]) / 'Documents'
 folder.mkdir(exist_ok=True)
-png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aR5sAAAAASUVORK5CYII=')
-for name in ('import-test-a.png', 'import-test-b.png'):
-    (folder / name).write_bytes(png)
+def chunk(kind, data):
+    return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
+def png(color):
+    header = struct.pack('>IIBBBBB', 8, 8, 8, 6, 0, 0, 0)
+    rows = (b'\x00' + bytes(color) * 8) * 8
+    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', header) + chunk(b'IDAT', zlib.compress(rows)) + chunk(b'IEND', b'')
+for name, color in [('import-test-a.png', (220, 60, 30, 255)), ('import-test-b.png', (30, 70, 220, 255))]:
+    (folder / name).write_bytes(png(color))
 PY
 xcodebuild -project ios/QwScIos.xcodeproj -scheme QwScIos -configuration Debug \
   -sdk iphonesimulator -destination "platform=iOS Simulator,id=$sim_id" \
