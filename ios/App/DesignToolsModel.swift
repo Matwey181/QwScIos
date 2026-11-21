@@ -6,6 +6,7 @@ struct AutoLayoutFrame:Codable,Equatable,Identifiable {
     var name="Раскладка"
     var children:[String]
     var backgroundID:String?=nil
+    var groupItems:Bool?=nil
     var axis="horizontal"
     var alignment="center"
     var gap:CGFloat=12

@@ -42,10 +42,11 @@ import SwiftUI
         let children=selected.filter{$0.id != background?.id}.sorted{$0.x<$1.x}.map(\.id)
         var frame=AutoLayoutFrame(children:children,backgroundID:background?.id,x:box.minX,y:box.minY,width:box.width,height:box.height)
         frame.rightInset=max(0,project.w-box.maxX)
-        let originalGroup=selected.first?.group ?? ""
+        let originalGroup=selected.first?.group ?? "",groups=Set(selected.map(\.group))
+        frame.groupItems=background==nil || groups.count>1
         edit{p in var studio=p.studio ?? StudioDocument();studio.layouts=(studio.layouts ?? []).filter{Set($0.children).isDisjoint(with:children)}+[frame];p.studio=studio
             let group=originalGroup.isEmpty ? UUID().uuidString:originalGroup
-            for i in p.nodes.indices where selection.contains(p.nodes[i].id){p.nodes[i].group=group;if p.nodes[i].kind=="TEXT"{var x=p.nodes[i].extras ?? LayerExtras();x.hugWidth=true;p.nodes[i].extras=x}}
+            for i in p.nodes.indices where selection.contains(p.nodes[i].id){if groups.count<=1 && frame.groupItems != true{p.nodes[i].group=group};if p.nodes[i].kind=="TEXT" && (p.nodes[i].group.isEmpty || frame.groupItems != true){var x=p.nodes[i].extras ?? LayerExtras();x.hugWidth=true;p.nodes[i].extras=x}}
         }
     }
     func finishLayoutGesture(original:[Node]){

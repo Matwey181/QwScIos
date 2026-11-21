@@ -18,6 +18,7 @@ struct AutoLayoutControls:View {
     var body:some View {VStack(alignment:.leading,spacing:12){
         if let frame=frame{
             QToggle("Автоматическая раскладка",isOn:flag(frame.id))
+            QToggle("Сохранять внутренние группы",isOn:Binding(get:{frame.groupItems ?? false},set:{v in update(frame.id){$0.groupItems=v}}))
             LinkChoiceField(title:"Направление",selection:text(frame.id,\.axis),items:[("horizontal","В ряд"),("vertical","В столбик")])
             LinkChoiceField(title:"Выравнивание",selection:text(frame.id,\.alignment),items:[("start","По началу"),("center","По центру"),("end","По концу")])
             HStack{QNumber(title:"Отступ внутри",value:number(frame.id,\.padding));QNumber(title:"Между элементами",value:number(frame.id,\.gap))}

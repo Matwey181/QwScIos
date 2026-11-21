@@ -32,25 +32,34 @@ enum DesignLayoutEngine {
         guard !indices.isEmpty else{return}
         let horizontal=frame.axis=="horizontal",padding=max(0,frame.padding),gap=max(0,frame.gap)
         let width=frame.widthMode=="fill" ? max(1,project.w-frame.x-frame.rightInset):max(1,frame.width)
+        var items:[[Int]]=[],groups:[String:Int]=[:]
+        for i in indices {
+            let group=project.nodes[i].group
+            if frame.groupItems==true && !group.isEmpty {
+                if let item=groups[group]{items[item].append(i)}else{groups[group]=items.count;items.append([i])}
+            }else{items.append([i])}
+        }
+        func box(_ item:[Int])->CGRect{item.reduce(CGRect.null){$0.union(project.nodes[$1].rect)}}
         if frame.widthMode != "hug"{
-            let textIndices=indices.filter{project.nodes[$0].kind=="TEXT"}
-            let otherWidth=indices.filter{project.nodes[$0].kind != "TEXT"}.reduce(CGFloat(0)){$0+project.nodes[$1].w}
-            let available=max(1,width-padding*2-(horizontal ? otherWidth+gap*CGFloat(max(0,indices.count-1)):0))
-            for i in textIndices{
-                project.nodes[i].w=horizontal ? min(project.nodes[i].w,available/CGFloat(max(1,textIndices.count))):available
+            let textItems=items.filter{$0.count==1 && project.nodes[$0[0]].kind=="TEXT"}
+            let otherWidth=items.filter{$0.count != 1 || project.nodes[$0[0]].kind != "TEXT"}.reduce(CGFloat(0)){$0+box($1).width}
+            let available=max(1,width-padding*2-(horizontal ? otherWidth+gap*CGFloat(max(0,items.count-1)):0))
+            for item in textItems{let i=item[0]
+                project.nodes[i].w=horizontal ? min(project.nodes[i].w,available/CGFloat(max(1,textItems.count))):available
                 if project.nodes[i].extras?.autoFit != true{project.nodes[i].h=TextLayout(project.nodes[i],font:renderer.font(project.nodes[i])).height}
             }
         }
-        let contentWidth=horizontal ? indices.reduce(CGFloat(0)){$0+project.nodes[$1].w}+gap*CGFloat(max(0,indices.count-1)):(indices.map{project.nodes[$0].w}.max() ?? 0)
-        let contentHeight=horizontal ? (indices.map{project.nodes[$0].h}.max() ?? 0):indices.reduce(CGFloat(0)){$0+project.nodes[$1].h}+gap*CGFloat(max(0,indices.count-1))
-        let w=frame.widthMode=="hug" ? contentWidth+padding*2:width
-        let h=frame.heightMode=="hug" ? contentHeight+padding*2:max(1,frame.height)
+        let boxes=items.map(box)
+        let contentWidth=horizontal ? boxes.reduce(CGFloat(0)){$0+$1.width}+gap*CGFloat(max(0,items.count-1)):(boxes.map(\.width).max() ?? 0)
+        let contentHeight=horizontal ? (boxes.map(\.height).max() ?? 0):boxes.reduce(CGFloat(0)){$0+$1.height}+gap*CGFloat(max(0,items.count-1))
+        let w=frame.widthMode=="hug" ? contentWidth+padding*2:width,h=frame.heightMode=="hug" ? contentHeight+padding*2:max(1,frame.height)
         var cursor=horizontal ? frame.x+padding:frame.y+padding
-        for i in indices{
-            let cross=horizontal ? h: w,child=horizontal ? project.nodes[i].h:project.nodes[i].w
+        for (index,item) in items.enumerated(){
+            let rect=boxes[index],cross=horizontal ? h:w,child=horizontal ? rect.height:rect.width
             let offset=frame.alignment=="start" ? padding:frame.alignment=="end" ? cross-padding-child:(cross-child)/2
-            if horizontal{project.nodes[i].x=cursor;project.nodes[i].y=frame.y+offset;cursor+=project.nodes[i].w+gap}
-            else{project.nodes[i].y=cursor;project.nodes[i].x=frame.x+offset;cursor+=project.nodes[i].h+gap}
+            let x=horizontal ? cursor:frame.x+offset,y=horizontal ? frame.y+offset:cursor
+            for i in item{project.nodes[i].x+=x-rect.minX;project.nodes[i].y+=y-rect.minY}
+            cursor+=(horizontal ? rect.width:rect.height)+gap
         }
         if let i=project.nodes.firstIndex(where:{$0.id==frame.backgroundID}){project.nodes[i].x=frame.x;project.nodes[i].y=frame.y;project.nodes[i].w=w;project.nodes[i].h=h}
     }
