@@ -68,6 +68,7 @@ enum SwiftExport {
         let allNodes=pages.flatMap{$0}
         var functions:[String]=[],cases:[String]=[]
         let rulesSource=rules(project),baseSource=bases(project,pages)
+        let dictionarySource=baseSource.isEmpty ? ":" : baseSource
 
         for (page,nodes) in pages.enumerated() {
             var layers:[String]=[]
@@ -182,7 +183,7 @@ enum SwiftExport {
                 _currentPage = State(initialValue: page)
             }
             private var rules: [QwelRule] { [\(rulesSource)] }
-            private var initial: [String:Double] { [\(baseSource)] }
+            private var initial: [String:Double] { [\(dictionarySource)] }
             public var body: some View {
                 Group { switch currentPage { \(cases.joined(separator:"\n"))
                 default: Color.white.frame(width: \(project.w), height: \(project.h))
