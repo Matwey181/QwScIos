@@ -84,6 +84,14 @@ final class DocumentRenderer {
         } else { ctx.setFillColor(UIColor(argb:n.fill).cgColor);ctx.drawPath(using:n.evenOdd ? .eoFill:.fill) }
         if n.strokeWidth>0 { ctx.addPath(path);ctx.setStrokeColor(UIColor(argb:n.stroke).cgColor);ctx.setLineWidth(n.strokeWidth);ctx.setLineJoin(.round);ctx.setLineCap(.round);ctx.strokePath() }
     }
+    func sample(_ p:Project,at point:CGPoint)->Int64? {
+        guard point.x>=0,point.y>=0,point.x<p.w,point.y<p.h,let data=png(p,scale:1),let cg=UIImage(data:data)?.cgImage,let crop=cg.cropping(to:CGRect(x:floor(point.x),y:floor(point.y),width:1,height:1)) else{return nil}
+        var bytes=[UInt8](repeating:0,count:4)
+        guard let context=CGContext(data:&bytes,width:1,height:1,bitsPerComponent:8,bytesPerRow:4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else{return nil}
+        context.draw(crop,in:CGRect(x:0,y:0,width:1,height:1))
+        let a=UInt32(bytes[3]);func channel(_ i:Int)->UInt32{a==0 ? 0:min(255,UInt32(bytes[i])*255/a)}
+        return Int64(Int32(bitPattern:a<<24|channel(0)<<16|channel(1)<<8|channel(2)))
+    }
     func png(_ p:Project,scale:CGFloat=2)->Data? {
         guard p.w*p.h*scale*scale<=40_000_000 else { return nil }
         let f=UIGraphicsImageRendererFormat();f.scale=scale;f.opaque=false

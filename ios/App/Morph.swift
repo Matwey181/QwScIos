@@ -20,6 +20,7 @@ struct OriginalAddShape:View {
     @State private var start:[CGFloat]=[]
     @State private var end:[CGFloat]=[]
     var body:some View {OriginalMorph(start:start,end:end,progress:open ? 1:0).fill(q.color("primary")).animation(.spring(response:0.4,dampingFraction:0.6),value:open).task {if let result=try? OriginalCore.shared.request(["op":"morph","from":"cookie-9","to":"soft-burst"]),let a=result["start"] as? [NSNumber],let b=result["end"] as? [NSNumber]{start=a.map{CGFloat(truncating:$0)};end=b.map{CGFloat(truncating:$0)}}}}
+}
 struct BlendPanel:View {
     @ObservedObject var editor:Editor
     var close:()->Void

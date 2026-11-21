@@ -29,6 +29,7 @@ struct EditorScreen:View {
                 Color.black.opacity(0.001).ignoresSafeArea().onTapGesture{menu=false}
                 VStack { HStack { Spacer();menuContent.frame(width:265).padding(.top,62) };Spacer() }.padding(.trailing,8)
             }
+            if editor.eyedropTarget != nil { VStack{HStack{Text("Нажмите на цвет на холсте").font(qfont(14));Spacer();QIconButton(icon:"Close",label:"Отмена"){editor.eyedropTarget=nil}}.padding(.leading,18).qSurface(28,"surfaceContainerHigh").padding(.top,72);Spacer()}.padding(.horizontal,16).allowsHitTesting(true) }
             if let dialog {
                 Color.black.opacity(0.4).ignoresSafeArea().onTapGesture{self.dialog=nil}
                 Group {
@@ -108,7 +109,7 @@ struct EditorScreen:View {
                     }
                 }.padding(.trailing,8)
             }.frame(maxHeight:340).fixedSize(horizontal:false,vertical:true)
-        }.padding(.leading,16).padding(.trailing,8).padding(.top,8).padding(.bottom,16).qSurface(28,"surfaceContainerLow",glass:true)
+        }.padding(.leading,16).padding(.trailing,8).padding(.top,8).padding(.bottom,16).qSurface(28,"surfaceContainerLow",glass:true,alpha:0.985)
     }
     private var menuContent:some View {
         VStack(spacing:0) {

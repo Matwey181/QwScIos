@@ -38,8 +38,8 @@ extension VectorPath {
             switch e.type {
             case .moveToPoint:current=e.points[0];start=current;points.append(current)
             case .addLineToPoint:current=e.points[0];points.append(current)
-            case .addQuadCurveToPoint:let a=current,b=e.points[0],c=e.points[1];for i in 1...80{let t=CGFloat(i)/80,u=1-t;points.append(CGPoint(x:u*u*a.x+2*u*t*b.x+t*t*c.x,y:u*u*a.y+2*u*t*b.y+t*t*c.y))};current=c
-            case .addCurveToPoint:let a=current,b=e.points[0],c=e.points[1],d=e.points[2];for i in 1...120{let t=CGFloat(i)/120,u=1-t;points.append(CGPoint(x:u*u*u*a.x+3*u*u*t*b.x+3*u*t*t*c.x+t*t*t*d.x,y:u*u*u*a.y+3*u*u*t*b.y+3*u*t*t*c.y+t*t*t*d.y))};current=d
+            case .addQuadCurveToPoint:let a=current,b=e.points[0],c=e.points[1];for i in 1...80{let t=CGFloat(i)/80,u=1-t;points.append(bezierQuad(a,b,c,t))};current=c
+            case .addCurveToPoint:let a=current,b=e.points[0],c=e.points[1],d=e.points[2];for i in 1...120{let t=CGFloat(i)/120,u=1-t;points.append(bezierCubic(a,b,c,d,t))};current=d
             case .closeSubpath:points.append(start);current=start
             @unknown default:break
             }
@@ -53,4 +53,19 @@ extension VectorPath {
         for i in 0..<count{let distance=CGFloat(i)*step;while segment<lengths.count-1 && lengths[segment]<distance{segment+=1};let t=(distance-lengths[segment-1])/max(0.000001,lengths[segment]-lengths[segment-1]);let a=points[segment-1],b=points[segment];result += [a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t]}
         return result
     }
+}
+
+private func bezierQuad(_ a:CGPoint,_ b:CGPoint,_ c:CGPoint,_ t:CGFloat)->CGPoint {
+    let u:CGFloat=1-t
+    let a0:CGFloat=u*u, a1:CGFloat=2*u*t, a2:CGFloat=t*t
+    let x:CGFloat=a0*a.x+a1*b.x+a2*c.x
+    let y:CGFloat=a0*a.y+a1*b.y+a2*c.y
+    return CGPoint(x:x,y:y)
+}
+private func bezierCubic(_ a:CGPoint,_ b:CGPoint,_ c:CGPoint,_ d:CGPoint,_ t:CGFloat)->CGPoint {
+    let u:CGFloat=1-t
+    let a0:CGFloat=u*u*u, a1:CGFloat=3*u*u*t, a2:CGFloat=3*u*t*t, a3:CGFloat=t*t*t
+    let x:CGFloat=a0*a.x+a1*b.x+a2*c.x+a3*d.x
+    let y:CGFloat=a0*a.y+a1*b.y+a2*c.y+a3*d.y
+    return CGPoint(x:x,y:y)
 }

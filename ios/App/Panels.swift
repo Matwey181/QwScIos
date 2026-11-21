@@ -1,131 +1,74 @@
 import SwiftUI
 
 struct InspectorPanel:View {
-    @Environment(\.q) var q
     @ObservedObject var editor:Editor
     var importFont:()->Void
-    var node:Node? { editor.selected.first }
-    func value<T>(_ key:WritableKeyPath<Node,T>,fallback:T)->Binding<T> { Binding(get:{node?[keyPath:key] ?? fallback},set:{v in editor.change { $0[keyPath:key]=v }}) }
-    func color(_ key:WritableKeyPath<Node,Int64>)->Binding<Color> { Binding(get:{Color(argb:node?[keyPath:key] ?? 0)},set:{c in editor.change { $0[keyPath:key]=UIColor(c).argb;if key==\Node.fill { $0.fillToken = -1 };if key==\Node.stroke { $0.strokeToken = -1 } }}) }
+    @Environment(\.q) var q
+    var node:Node?{editor.selected.first}
+    func bind<T>(_ key:WritableKeyPath<Node,T>,_ fallback:T)->Binding<T>{Binding(get:{node?[keyPath:key] ?? fallback},set:{v in editor.change{n in if let d=v as? CGFloat,[\Node.w as AnyKeyPath,\Node.h as AnyKeyPath,\Node.fontSize as AnyKeyPath].contains(key){n[keyPath:key]=max(1,d) as! T}else{n[keyPath:key]=v}}})}
     var body:some View {
         VStack(alignment:.leading,spacing:14) {
             if let n=node {
-                QSection("Слой") { TextField("Название",text:value(\.name,fallback:""));QToggle("Блокировка",isOn:value(\.locked,fallback:false));QToggle("Видимость",isOn:value(\.visible,fallback:true)) }
-                transform
-                if n.kind=="TEXT" { textStyle }
-                QSection("Цвет и заливка") {
-                    ColorPicker("Заливка",selection:color(\.fill),supportsOpacity:true)
-                    if !["TEXT","IMAGE"].contains(n.kind) {
-                        Picker("Градиент",selection:value(\.gradKind,fallback:0)) { Text("Нет").tag(Int64(0));Text("Линейный").tag(Int64(1));Text("Радиальный").tag(Int64(2)) }
-                        if n.gradKind != 0 { ColorPicker("Второй цвет",selection:color(\.fill2),supportsOpacity:true);number("Угол градиента",\.gradAngle) }
-                    }
-                    LabeledContent("Прозрачность",value:"\(Int(n.opacity*100))%")
-                    QSlider(value:Binding(get:{Double(node?.opacity ?? 1)},set:{v in editor.change{$0.opacity=CGFloat(v)}}))
-                    if editor.project.tone.colors.count==22 {
-                        ScrollView(.horizontal,showsIndicators:false) { HStack { ForEach(0..<22,id:\.self) { index in Button { editor.change { $0.fill=editor.project.tone.colors[index];$0.fillToken=Int64(index) } } label:{Circle().fill(Color(argb:editor.project.tone.colors[index])).frame(width:30,height:30).overlay(Circle().stroke(.gray.opacity(0.3)))} } } }
-                    }
+                if editor.selected.count==1 {
+                    QTextField(title:"Имя слоя",text:bind(\.name,""))
+                    HStack(spacing:8){QNumber(title:"X",value:bind(\.x,0));QNumber(title:"Y",value:bind(\.y,0))}
+                    if n.kind != "TEXT"{HStack(spacing:8){QNumber(title:"Ширина",value:bind(\.w,100));QNumber(title:"Высота",value:bind(\.h,100))}}
+                    HStack(spacing:8){QNumber(title:"Поворот",value:bind(\.rotation,0));if n.kind != "TEXT"{QSwitch(on:bind(\.ratioLock,false));Text("Пропорции").font(qfont(14,.semibold))}}
+                }else{Text("Выбрано слоёв: \(editor.selected.count)").font(qfont(16,.semibold))}
+                if n.kind != "IMAGE"{row(n.kind=="TEXT" ? "Цвет текста":"Заливка",\.fill,token:n.fillToken)}
+                if !["TEXT","IMAGE"].contains(n.kind){
+                    title("Градиент")
+                    HStack(spacing:8){ForEach(Array(["Нет","Линейный","Радиальный"].enumerated()),id:\.offset){i,text in QChip(title:text,selected:n.gradKind==Int64(i)){editor.change{$0.gradKind=Int64(i)}}}}
+                    if n.gradKind != 0{row("Второй цвет",\.fill2);if n.gradKind==1{slider("Угол",\.gradAngle,0...360)}}
+                    row("Обводка",\.stroke,token:n.strokeToken)
+                    if n.stroke != 0 || n.strokeWidth>0{slider("Толщина",\.strokeWidth,0...16)}
                 }
-                QSection("Обводка и форма") {
-                    ColorPicker("Цвет обводки",selection:color(\.stroke),supportsOpacity:true)
-                    number("Толщина",\.strokeWidth)
-                    if n.kind=="RECT" { number("Скругление",\.corner);number("Скругление при нажатии (−1 — выкл.)",\.pressCorner) }
-                    QToggle("Маска для нижнего слоя",isOn:value(\.mask,fallback:false))
-                    QToggle("Пропорции",isOn:value(\.ratioLock,fallback:false))
+                slider("Непрозрачность",\.opacity,0...1,percent:true)
+                if !["TEXT","IMAGE"].contains(n.kind){
+                    slider("Тень",\.shadowBlur,0...48)
+                    HStack(spacing:8){QChip(title:"Мягкая"){editor.change{$0.shadowBlur=16;$0.shadowDx=0;$0.shadowDy=6;$0.shadowColor=0x40000000}};QChip(title:"Высокая"){editor.change{$0.shadowBlur=28;$0.shadowDx=0;$0.shadowDy=14;$0.shadowColor=0x59000000}};QChip(title:"Свечение"){editor.change{$0.shadowBlur=26;$0.shadowDx=0;$0.shadowDy=0;$0.shadowColor=Int64(Int32(bitPattern:(UInt32(truncatingIfNeeded:$0.fill)&0xffffff)|0x99000000))}}}
+                    if n.shadowBlur>0.5{slider("Тень по X",\.shadowDx,-40...40);slider("Тень по Y",\.shadowDy,-40...40);row("Цвет тени",\.shadowColor)}
+                    slider("Размытие фона",\.blur,0...48)
+                    slider("Размытие слоя",\.softBlur,0...48)
+                    if n.kind=="RECT"{title("Скругление");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach([CGFloat(0),4,8,12,16,28,48,9999],id:\.self){v in QChip(title:v==9999 ? "Full":"\(Int(v))",selected:n.corner==v){editor.change{$0.corner=v}}.fixedSize()}}};slider("Свой радиус",\.corner,0...min(n.w,n.h)/2);QToggle("Скругление при нажатии",isOn:Binding(get:{n.pressCorner>=0},set:{v in editor.change{$0.pressCorner=v ? min($0.w,$0.h)/2:-1}}));if n.pressCorner>=0{slider("При нажатии",\.pressCorner,0...min(n.w,n.h)/2)}}
+                    QToggle("Маска для нижнего слоя",isOn:bind(\.mask,false))
                 }
-                QSection("Эффекты") {
-                    number("Размытие слоя",\.softBlur)
-                    number("Размытие фона",\.blur)
-                    number("Тень: размытие",\.shadowBlur)
-                    number("Тень: X",\.shadowDx);number("Тень: Y",\.shadowDy)
-                    ColorPicker("Цвет тени",selection:color(\.shadowColor),supportsOpacity:true)
-
-                }
-                QSection("Действия в режиме «Играть»") {
-                    TextField("goto:ID, back, toggle:ID или url:https://…",text:value(\.action,fallback:"")).font(qfont(12)).textInputAutocapitalization(.never)
-                    Text("ID слоя: \(n.id)").font(qfont(12)).textSelection(.enabled)
-                }
-                QSection {
-                    HStack { Button("На передний план") { editor.front(true) };Spacer();Button("На задний план") { editor.front(false) } }
-                    HStack { Button("Группа") { editor.group() };Spacer();Button("Разгруппировать") { editor.ungroup() } }
-                    Button("Дублировать") { editor.duplicate() }
-                    Button("Удалить",role:.destructive) { editor.remove() }
-                }
-            } else { QSection { Text("Выбери слой на холсте или в панели «Слои».").foregroundStyle(.secondary) } }
+                ActionPanel(editor:editor,node:n)
+                if n.kind=="SHAPE"{title("Фигура");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(Catalog.shared.shapes){shape in Button{editor.change{$0.shapeId=shape.id}}label:{ShapePreview(shape:shape).fill(q.color(n.shapeId==shape.id ? "onPrimaryContainer":"primary")).frame(width:34,height:34).frame(width:56,height:56).qSurface(n.shapeId==shape.id ? 28:16,n.shapeId==shape.id ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}}}}
+                if n.kind=="TEXT"{QTextField(title:"Текст",text:bind(\.text,""));slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
+            }
         }
     }
-    private var transform:some View {
-        QSection("Положение и размер") {
-            number("X",\.x);number("Y",\.y);number("Ширина",\.w);number("Высота",\.h);number("Поворот",\.rotation)
-        }
-    }
-    private var textStyle:some View {
-        QSection("Текст") {
-            TextField("Текст",text:value(\.text,fallback:""),axis:.vertical).lineLimit(2...8)
-            number("Размер шрифта",\.fontSize)
-            Picker("Начертание",selection:value(\.weight,fallback:400)) { Text("Лёгкий").tag(Int64(300));Text("Обычный").tag(Int64(400));Text("Средний").tag(Int64(500));Text("Полужирный").tag(Int64(600));Text("Жирный").tag(Int64(700)) }
-            Button("Импорт шрифта .ttf / .otf",action:importFont)
-            Button("Системный шрифт") { editor.change { $0.font="" } }
-            Button("Подогнать рамку под текст") { editor.change { n in let size=(n.text as NSString).boundingRect(with:CGSize(width:10000,height:10000),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:[.font:editor.renderer.font(n)],context:nil).size;n.w=ceil(size.width+2);n.h=ceil(size.height+2) } }
-        }
-    }
-    private func number(_ title:String,_ key:WritableKeyPath<Node,CGFloat>)->some View {
-        HStack { Text(title);Spacer();TextField("0",value:Binding<Double>(get:{Double(node?[keyPath:key] ?? 0)},set:{v in editor.change{$0[keyPath:key]=CGFloat(v)}}),format:.number.precision(.fractionLength(0...2))).keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).frame(maxWidth:120) }
-    }
+    private func title(_ text:String)->some View{Text(text).font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))}
+    private func row(_ text:String,_ key:WritableKeyPath<Node,Int64>,token:Int64 = -1)->some View{QColorRow(title:text,color:bind(key,0),colors:editor.project.tone.colors,token:token,picked:{color,t in editor.change{n in n[keyPath:key]=color;if key==\Node.fill{n.fillToken=t};if key==\Node.stroke{n.strokeToken=t;if n.strokeWidth==0 && color != 0{n.strokeWidth=2}}}},eyedrop:{editor.eyedropTarget=key})}
+    private func slider(_ text:String,_ key:WritableKeyPath<Node,CGFloat>,_ range:ClosedRange<CGFloat>,percent:Bool=false)->some View{VStack(spacing:0){HStack{Text(text);Spacer();Text("\(Int((node?[keyPath:key] ?? 0)*(percent ? 100:1)))"+(percent ? "%":""))}.font(qfont(14));QSlider(value:Binding(get:{Double(node?[keyPath:key] ?? range.lowerBound)},set:{v in editor.change{$0[keyPath:key]=CGFloat(v)}}),range:Double(range.lowerBound)...Double(range.upperBound))}}
+}
+struct ActionPanel:View {
+    @ObservedObject var editor:Editor
+    var node:Node
+    @Environment(\.q) var q
+    private var type:String{node.action.isEmpty ? "none":node.action.components(separatedBy:":").first ?? "none"}
+    var body:some View{VStack(alignment:.leading,spacing:10){Text("Действие при нажатии").font(qfont(14,.semibold)).foregroundStyle(q.color("primary"));ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach([("none","Нет"),("goto","Перейти"),("back","Назад"),("toggle","Показать / скрыть"),("url","Ссылка")],id:\.0){key,title in QChip(title:title,selected:type==key){editor.change{$0.action=key=="none" ? "":key=="back" ? "back":key+":"}}.fixedSize()}}};if type=="goto"{ForEach(editor.project.pages){page in QChip(title:page.name,selected:node.action=="goto:"+page.id){editor.change{$0.action="goto:"+page.id}}}};if type=="toggle"{ForEach(editor.project.nodes.filter{$0.id != node.id}){layer in QChip(title:layer.name,selected:node.action=="toggle:"+layer.id){editor.change{$0.action="toggle:"+layer.id}}}};if type=="url"{QTextField(title:"Ссылка",text:Binding(get:{String(node.action.dropFirst(4))},set:{v in editor.change{$0.action="url:"+v}})).textInputAutocapitalization(.never)}}}
 }
 struct LayersPanel:View {
-    @Environment(\.q) var q
     @ObservedObject var editor:Editor
-    var body:some View {
-        VStack(alignment:.leading,spacing:4) {
-            QSection { QToggle("Выбор нескольких",isOn:$editor.multiSelect) }
-            ForEach(editor.project.nodes.reversed()) { n in
-                HStack {
-                    Button { editor.choose(n) } label:{HStack { QIcon(id:editor.selection.contains(n.id) ? "Check":"Layers",tint:q.color("primary"));VStack(alignment:.leading) { Text(n.name).font(qfont(16,.semibold));Text(n.kind+(n.group.isEmpty ? "":" · группа")).font(qfont(12)).foregroundStyle(.secondary) };Spacer() }}.buttonStyle(.plain)
-                    Button { editor.edit { p in if let i=p.nodes.firstIndex(where:{$0.id==n.id}) { p.nodes[i].visible.toggle() } } } label:{QIcon(id:n.visible ? "Eye":"EyeOff")}.buttonStyle(.borderless)
-                    Button { editor.edit { p in if let i=p.nodes.firstIndex(where:{$0.id==n.id}) { p.nodes[i].locked.toggle() } } } label:{QIcon(id:n.locked ? "Lock":"Unlock")}.buttonStyle(.borderless)
-                }.padding(.vertical,4)
-            }.onMove { from,to in editor.edit { p in var reversed=Array(p.nodes.reversed());reversed.move(fromOffsets:from,toOffset:to);p.nodes=Array(reversed.reversed()) } }
-            .onDelete { offsets in let list=Array(editor.project.nodes.reversed());let ids=Set(offsets.map{list[$0].id});editor.edit { $0.nodes.removeAll{ids.contains($0.id)} };editor.selection.subtract(ids) }
-        }
-    }
+    @Environment(\.q) var q
+    var body:some View{VStack(spacing:4){if editor.project.nodes.isEmpty{Text("Слоёв пока нет").font(qfont(14)).foregroundStyle(q.color("onSurfaceVariant"))};ForEach(editor.project.nodes.reversed()){n in HStack(spacing:0){EffectPreview(nodes:[n],renderer:editor.renderer).frame(width:40,height:40).qSurface(12,"surfaceContainerHighest");VStack(alignment:.leading,spacing:0){Text(n.name.isEmpty ? "Слой":n.name).font(qfont(16)).lineLimit(1);if n.mask{Text("Маска").font(qfont(11,.medium)).foregroundStyle(q.color("primary"))}else if !n.group.isEmpty{Text("В группе").font(qfont(11,.medium)).foregroundStyle(q.color("onSurfaceVariant"))}}.padding(.leading,12).frame(maxWidth:.infinity,alignment:.leading);QIconButton(icon:n.visible ? "Eye":"EyeOff",label:"Видимость",size:44){editor.edit{p in if let i=p.nodes.firstIndex(where:{$0.id==n.id}){p.nodes[i].visible.toggle()}}};QIconButton(icon:n.locked ? "Lock":"Unlock",label:"Блокировка",size:44){editor.edit{p in if let i=p.nodes.firstIndex(where:{$0.id==n.id}){p.nodes[i].locked.toggle()}}}}.padding(.leading,8).background(editor.selection.contains(n.id) ? q.color("secondaryContainer"):.clear,in:RoundedRectangle(cornerRadius:16)).contentShape(Rectangle()).onTapGesture{if editor.multiSelect{if editor.selection.contains(n.id){editor.selection.remove(n.id)}else{editor.selection.insert(n.id)}}else{editor.selection=[n.id]}}}}}
 }
 struct AlignPanel:View {
-    @Environment(\.q) var q
     @ObservedObject var editor:Editor
-    var body:some View {
-        VStack(alignment:.leading,spacing:4) {
-            QSection("Выравнивание") {
-                ForEach([("left","По левому краю"),("centerX","По горизонтальному центру"),("right","По правому краю"),("top","По верхнему краю"),("centerY","По вертикальному центру"),("bottom","По нижнему краю")],id:\.0) { mode,title in Button(title) { editor.align(mode) } }
-                Button("Равные промежутки по горизонтали") { editor.distribute(true) };Button("Равные промежутки по вертикали") { editor.distribute(false) }
-            }.disabled(editor.selection.isEmpty)
-            QSection("Булевы операции") {
-                Button("Объединение") { editor.boolean("union") };Button("Пересечение") { editor.boolean("intersection") };Button("Разность") { editor.boolean("subtract") };Button("Исключение") { editor.boolean("xor") }
-            }.disabled(editor.selection.count<2)
-            QSection { Text("Один выбранный слой выравнивается по холсту. Несколько — по общей рамке.").font(qfont(12)).foregroundStyle(.secondary) }
-        }
-    }
+    @Environment(\.q) var q
+    @State private var canvas=false
+    var body:some View{VStack(alignment:.leading,spacing:14){if editor.selection.isEmpty{Text("Выберите один или несколько слоёв для выравнивания.").font(qfont(14)).foregroundStyle(q.color("onSurfaceVariant"))};HStack(spacing:8){Text("Относительно").font(qfont(14,.semibold));QChip(title:"Выделения",selected:!canvas && editor.selected.count>=2){canvas=false}.disabled(editor.selected.count<2);QChip(title:"Холста",selected:canvas || editor.selected.count<2){canvas=true}};group("По горизонтали",[("AlignLeft","left"),("AlignHCenter","centerX"),("AlignRight","right")]){editor.alignTo($0,canvas:canvas || editor.selected.count<2)};group("По вертикали",[("AlignTop","top"),("AlignVCenter","centerY"),("AlignBottom","bottom")]){editor.alignTo($0,canvas:canvas || editor.selected.count<2)};group("Равные промежутки",[("DistributeH","h"),("DistributeV","v")]){editor.distribute($0=="h")}.disabled(editor.selected.count<3);group("Одинаковый размер",[("SameWidth","w"),("SameHeight","h")]){editor.matchDimension($0=="w")}.disabled(editor.selected.count<2);QChip(title:"В центр холста",selected:true){editor.alignTo("centerX",canvas:true);editor.alignTo("centerY",canvas:true)}}}
+    private func group(_ title:String,_ items:[(String,String)],_ run:@escaping(String)->Void)->some View{VStack(alignment:.leading,spacing:8){Text(title).font(qfont(14,.semibold)).foregroundStyle(q.color("primary"));HStack(spacing:4){ForEach(items,id:\.1){icon,id in QIconButton(icon:icon,label:title,size:52,enabled:!editor.selection.isEmpty){run(id)}}}.padding(4).qSurface(40,"surfaceContainerHighest")}}
 }
 struct DocumentPanel:View {
-    @Environment(\.q) var q
     @ObservedObject var editor:Editor
-    @State private var seed=Color.teal
-    @State private var dark=false
-    var body:some View {
-        VStack(alignment:.leading,spacing:14) {
-            QSection("Холст") {
-                TextField("Название",text:Binding(get:{editor.project.name},set:{v in editor.edit{$0.name=v}}))
-                HStack { Text("Ширина");TextField("390",value:Binding(get:{Double(editor.project.w)},set:{v in editor.edit{$0.w=CGFloat(min(8192,max(16,v)))}}),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                HStack { Text("Высота");TextField("844",value:Binding(get:{Double(editor.project.h)},set:{v in editor.edit{$0.h=CGFloat(min(8192,max(16,v)))}}),format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                ColorPicker("Фон",selection:Binding(get:{Color(argb:editor.project.bg)},set:{v in editor.edit{$0.bg=UIColor(v).argb;$0.bgToken = -1}}),supportsOpacity:true)
-            }
-            QSection("Тон проекта") { ColorPicker("Основной цвет",selection:$seed,supportsOpacity:false);QToggle("Тёмный тон",isOn:$dark);Button("Применить ко всем цветовым токенам") { editor.applyTone(UIColor(seed).argb,dark:dark) } }
-            QSection("Экраны") {
-                ForEach(Array(editor.project.pages.enumerated()),id:\.element.id) { index,page in
-                    Button { editor.page(index) } label:{HStack { Text(page.name);Spacer();if editor.project.active==index { QIcon(id:"Check") } }}
-                    Text("ID: \(page.id)").font(qfont(12)).textSelection(.enabled)
-                }
-                Button("Добавить экран") { editor.addPage() }
-            }
-        }
-    }
+    @Environment(\.q) var q
+    @State private var custom=false
+    var body:some View{VStack(alignment:.leading,spacing:14){Text("Тон проекта").font(qfont(16,.semibold));Text("Цвета из палитры следуют тону проекта, свои цвета остаются без изменений.").font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"));HStack(spacing:8){QChip(title:"Базовая",selected:!custom){custom=false;editor.applyTone(-16749974,dark:editor.project.tone.dark)};QChip(title:"Свой цвет",selected:custom){custom=true}};if custom{ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(seedColors,id:\.self){c in Circle().fill(Color(argb:c)).frame(width:40,height:40).onTapGesture{editor.applyTone(c,dark:editor.project.tone.dark)}}}}};HStack{Text("Тёмная схема").font(qfont(16));Spacer();QSwitch(on:Binding(get:{editor.project.tone.dark},set:{editor.applyTone(editor.project.tone.seed,dark:$0)}))};HStack(spacing:6){ForEach([0,2,5,7,12,16,17],id:\.self){i in Circle().fill(Color(argb:editor.project.tone.colors.indices.contains(i) ? editor.project.tone.colors[i]:0)).frame(width:28,height:28).overlay(Circle().stroke(q.color("outlineVariant")))}};Text("Холст").font(qfont(16,.semibold));ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(["360x800","360x640","834x1194","512x512","1280x800"],id:\.self){size in QChip(title:size,selected:size=="\(Int(editor.project.w))x\(Int(editor.project.h))"){let v=size.split(separator:"x").compactMap{Double($0)};editor.edit{$0.w=CGFloat(v[0]);$0.h=CGFloat(v[1])};editor.fitVersion+=1}.fixedSize()}}};HStack(spacing:8){QNumber(title:"Ширина",value:Binding(get:{editor.project.w},set:{v in editor.edit{$0.w=max(16,min(4096,v))}}));QNumber(title:"Высота",value:Binding(get:{editor.project.h},set:{v in editor.edit{$0.h=max(16,min(4096,v))}}))};QColorRow(title:"Фон листа",color:Binding(get:{editor.project.bg},set:{v in editor.edit{$0.bg=v;$0.bgToken = -1}}),colors:editor.project.tone.colors,token:Int64(editor.project.bgToken),picked:{c,t in editor.edit{$0.bg=c;$0.bgToken=Int(t)}});QToggle("Сетка 8 dp",isOn:$editor.showGrid);QToggle("Умные направляющие",isOn:$editor.snap)}}
+}
+extension Editor {
+    func alignTo(_ mode:String,canvas:Bool){guard canvas else{align(mode);return};let box=CGRect(x:0,y:0,width:project.w,height:project.h);change{n in switch mode{case "left":n.x=0;case "right":n.x=box.width-n.w;case "top":n.y=0;case "bottom":n.y=box.height-n.h;case "centerX":n.x=(box.width-n.w)/2;case "centerY":n.y=(box.height-n.h)/2;default:break}}}
+    func matchDimension(_ width:Bool){guard let max=selected.map({width ? $0.w:$0.h}).max()else{return};change{n in if width{n.w=max}else{n.h=max}}}
 }

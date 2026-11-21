@@ -91,14 +91,15 @@ struct QSurface:ViewModifier {
     var radius:CGFloat=28
     var color="surfaceContainerLow"
     var glass=false
+    var glassAlpha:Double=0.78
     @AppStorage("glass") var glassOn=true
     @Environment(\.q) var q
     func body(content:Content)->some View {
-        content.background { if glass && glassOn { RoundedRectangle(cornerRadius:radius).fill(.ultraThinMaterial).overlay(RoundedRectangle(cornerRadius:radius).fill(q.color(color).opacity(0.78))) } else { RoundedRectangle(cornerRadius:radius).fill(q.color(color)) } }
+        content.background { if glass && glassOn { RoundedRectangle(cornerRadius:radius).fill(.ultraThinMaterial).overlay(RoundedRectangle(cornerRadius:radius).fill(q.color(color).opacity(glassAlpha))) } else { RoundedRectangle(cornerRadius:radius).fill(q.color(color)) } }
             .overlay(RoundedRectangle(cornerRadius:radius).stroke(glass && glassOn ? q.color("outlineVariant").opacity(0.7):.clear,lineWidth:0.6))
     }
 }
-extension View { func qSurface(_ radius:CGFloat=28,_ color:String="surfaceContainerLow",glass:Bool=false)->some View { modifier(QSurface(radius:radius,color:color,glass:glass)) } }
+extension View { func qSurface(_ radius:CGFloat=28,_ color:String="surfaceContainerLow",glass:Bool=false,alpha:Double=0.78)->some View { modifier(QSurface(radius:radius,color:color,glass:glass,glassAlpha:alpha)) } }
 struct LogoPart:Decodable { var path:String;var color:Int64 }
 struct QLogo:View {
     static let paths:[LogoPart]=load("ui-logo")
@@ -116,7 +117,7 @@ struct QSlider:View {
     @Environment(\.q) var q
     var body:some View {
         GeometryReader { g in
-            let k=min(1,max(0,(value-range.lowerBound)/(range.upperBound-range.lowerBound))),x=12+(g.size.width-24)*k
+            let k=min(1,max(0,(value-range.lowerBound)/max(0.000001,range.upperBound-range.lowerBound))),x=12+(g.size.width-24)*k
             ZStack(alignment:.leading) {
                 Capsule().fill(q.color("secondaryContainer")).frame(height:16)
                 Capsule().fill(q.color("primary")).frame(width:max(0,x-6),height:16)

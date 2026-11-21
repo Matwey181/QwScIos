@@ -8,6 +8,7 @@ import SwiftUI
     @Published var snap=true
     @Published var fitVersion=0
     @Published var requestPanel:String?
+    @Published var eyedropTarget:WritableKeyPath<Node,Int64>?
     @Published var showGrid=true
     @Published var canvasScale:CGFloat=1
     @Published var error:String?

@@ -67,6 +67,10 @@ struct EditorCanvas:UIViewRepresentable {
     @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.project.nodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];editor.requestPanel="style"}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
+        if let key=editor.eyedropTarget {
+            if let color=editor.renderer.sample(editor.project,at:point){editor.change{n in n[keyPath:key]=color;if key==\Node.fill{n.fillToken = -1};if key==\Node.stroke{n.strokeToken = -1}}}
+            editor.eyedropTarget=nil;return
+        }
         if editor.playing { editor.interact(at:point) }
         else { editor.choose(editor.project.nodes.reversed().first { $0.visible && !$0.locked && !$0.mask && $0.contains(point) }) }
     }
