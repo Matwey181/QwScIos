@@ -1,0 +1,85 @@
+name: QwScIos
+options:
+  bundleIdPrefix: com.matwey181
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGNING_ALLOWED: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+targets:
+  QwScIos:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - path: Resources
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.matwey181.qwscios
+        PRODUCT_NAME: QwScIos
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_OBJC_BRIDGING_HEADER: Native/QwCore.h
+        LIBRARY_SEARCH_PATHS: "$(inherited) $(SRCROOT)/../build/ios-native"
+        OTHER_LDFLAGS: "$(inherited) -lqwcore -lqwastc -lqwzstd -lc++ -lz"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "0.1.1"
+  QwScIosTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: QwScIos
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.matwey181.qwscios.tests
+  QwScIosUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: QwScIos
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.matwey181.qwscios.uitests
+        TEST_TARGET_NAME: QwScIos
+  ImportFixtureSource:
+    type: application
+    platform: iOS
+    sources:
+      - path: FixtureSource
+        excludes: [Info.plist]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.matwey181.qwscios.fixtures
+        PRODUCT_NAME: QwScImportSource
+        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: FixtureSource/Info.plist
+schemes:
+  ImportFixtureSource:
+    build:
+      targets:
+        ImportFixtureSource: all
+  QwScIos:
+    build:
+      targets:
+        QwScIos: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+    test:
+      config: Debug
+      targets:
+        - QwScIosTests
+        - QwScIosUITests

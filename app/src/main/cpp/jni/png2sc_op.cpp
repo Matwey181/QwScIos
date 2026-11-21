@@ -144,9 +144,9 @@ static bool find_shape_rect(const std::vector<uint8_t>& raw, uint16_t wanted_id,
         if(tag==0) break;
         if(len<0 || p+(size_t)len>raw.size()) return false;
         size_t start=p,end=p+(size_t)len;
-        if((tag==2 || tag==18) && end-start>=4) {
+        if((tag==2 || tag==18 || tag==19) && end-start>=4) {
             uint16_t id=r16(); uint16_t draw_c=r16();
-            if(tag==18 && p+2<=end) r16(); // total point count
+            if((tag==18 || tag==19) && p+2<=end) r16(); // total point count
             for(uint16_t d=0; d<draw_c && p+5<=end; ++d) {
                 uint8_t ctag=r8(); int32_t clen=(int32_t)r32();
                 if(clen<0 || p+(size_t)clen>end) break;

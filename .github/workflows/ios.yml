@@ -1,0 +1,56 @@
+name: Build iOS IPA
+on:
+  push:
+    branches: [codex/ios-port, main]
+    paths: [ios/**, app/src/main/cpp/**, .github/workflows/ios.yml]
+  pull_request:
+    paths: [ios/**, app/src/main/cpp/**, .github/workflows/ios.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: brew install xcodegen cmake
+      - name: Test portable core
+        run: |
+          python3 ios/generate_bridge.py
+          cmake -S ios/Native -B build/host -DCMAKE_BUILD_TYPE=Release -DQW_BUILD_TESTS=ON
+          cmake --build build/host --parallel 3
+          ctest --test-dir build/host --output-on-failure
+      - name: Build arm64 iPhone IPA
+        run: bash ios/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QwScIos-IPA
+          path: |
+            build/QwScIos.ipa
+            build/QwScIos.ipa.sha256
+          if-no-files-found: error
+      - name: Verify import, cancellation and multiple file selection in iOS Simulator
+        run: bash ios/smoke_simulator.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Import-test-results
+          path: |
+            build/ImportTests.xcresult
+            build/iOS-launch.png
+          if-no-files-found: ignore
+      - name: Publish downloadable IPA
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "ios-build-${GITHUB_RUN_NUMBER}" \
+            build/QwScIos.ipa build/QwScIos.ipa.sha256 \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "QwSc iOS build ${GITHUB_RUN_NUMBER}" \
+            --notes 'iOS 17+, arm64. Sign this IPA with your sideload installer (for example iLoader or SideStore). Development port; not yet tested on a physical iPhone. Downgrade is unavailable because upstream only ships an Android binary for that operation.'
