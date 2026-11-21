@@ -51,6 +51,33 @@ final class EditorTests:XCTestCase {
         XCTAssertEqual(store.projects[0].nodes[0].path,e.project.nodes[0].path)
         e.pendingSaveForTestingCleanup()
     }
+    @MainActor func testOriginalKotlinSliderAndPersistentState() throws {
+        let component=try XCTUnwrap(Catalog.shared.components.first{$0.id=="slider"})
+        let project=component.project
+        let core=OriginalCore.shared
+        let result=try core.request(["op":"set"],project:project)
+        let widgets=try XCTUnwrap(result["widgets"] as? [[String:Any]])
+        let group=try XCTUnwrap(widgets.first?["group"] as? String)
+        let first=try core.project("apply",values:["shown":[group:0.0]])
+        let last=try core.project("apply",values:["shown":[group:1.0]])
+        let left=try XCTUnwrap(first.nodes.first{$0.widget=="slider:thumb"})
+        let right=try XCTUnwrap(last.nodes.first{$0.widget=="slider:thumb"})
+        XCTAssertGreaterThan(right.x-left.x,200)
+        let persisted=try core.project("stop",values:["shown":[group:1.0]])
+        XCTAssertEqual(persisted.nodes.first{$0.widget=="slider:thumb"}?.x,right.x)
+        let code=try core.compose(project)
+        XCTAssertTrue(code.contains("Slider("))
+    }
+    @MainActor func testOriginalSwitchMovesThumbWithoutDestroyingLayers() throws {
+        let p=try XCTUnwrap(Catalog.shared.components.first{$0.id=="switch"}).project
+        let result=try OriginalCore.shared.request(["op":"set"],project:p)
+        let widgets=try XCTUnwrap(result["widgets"] as? [[String:Any]])
+        let group=try XCTUnwrap(widgets.first?["group"] as? String)
+        let off=try OriginalCore.shared.project("apply",values:["shown":[group:0.0]])
+        let on=try OriginalCore.shared.project("apply",values:["shown":[group:1.0]])
+        XCTAssertEqual(off.nodes.count,on.nodes.count)
+        XCTAssertNotEqual(off.nodes.first{$0.widget=="switch:thumb"}?.x,on.nodes.first{$0.widget=="switch:thumb"}?.x)
+    }
     func testSVGPathsAndImport() throws {
         let path=VectorPath.parse("M10 10h20v20h-20z M50 50a20 10 30 1 1 30 0")
         XCTAssertGreaterThan(path.boundingBoxOfPath.width,20)

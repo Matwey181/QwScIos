@@ -1,93 +1,137 @@
 import SwiftUI
 import PhotosUI
-import UniformTypeIdentifiers
 import Photos
+import UniformTypeIdentifiers
 
 struct EditorScreen:View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var phase
+    @Environment(\.q) private var q
     @StateObject private var editor:Editor
     @State private var panel:String?
     @State private var shared:SharedFile?
     @State private var importer=false
     @State private var photos:[PhotosPickerItem]=[]
     @State private var exporting=false
+    @State private var menu=false
+    @State private var dockOpen=false
+    @State private var dialog:String?
     @AppStorage("pngScale") private var pngScale=2.0
     init(project:Project,store:ProjectStore) { _editor=StateObject(wrappedValue:Editor(project,store:store)) }
     var body:some View {
-        NavigationStack {
-            VStack(spacing:0) {
-                if editor.project.pages.count>1 {
-                    ScrollView(.horizontal,showsIndicators:false) { HStack { ForEach(Array(editor.project.pages.enumerated()),id:\.element.id) { i,p in Button(p.name) { editor.page(i) }.buttonStyle(.bordered).tint(i==editor.project.active ? .teal:.gray) };Button { editor.addPage() } label:{Image(systemName:"plus")} }.padding(.horizontal).padding(.vertical,6) }
-                }
-                EditorCanvas(editor:editor).accessibilityIdentifier("editorCanvas")
-                if !editor.selection.isEmpty && !editor.playing {
-                    HStack { Text("\(editor.selection.count) слоёв").font(.caption);Spacer();Button { editor.duplicate() } label:{Image(systemName:"plus.square.on.square")};Button { editor.group() } label:{Image(systemName:"square.3.layers.3d")};Button(role:.destructive) { editor.remove() } label:{Image(systemName:"trash")} }.padding(12).background(.regularMaterial)
-                }
-                dock
-            }.navigationTitle(editor.project.name).navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement:.topBarLeading) { Button { editor.saveNow();dismiss() } label:{Image(systemName:"chevron.left")}.accessibilityLabel("Закрыть редактор") }
-                ToolbarItemGroup(placement:.topBarTrailing) {
-                    Button { editor.undo() } label:{Image(systemName:"arrow.uturn.backward")}.disabled(editor.undoStack.isEmpty).accessibilityIdentifier("undo")
-                    Button { editor.redo() } label:{Image(systemName:"arrow.uturn.forward")}.disabled(editor.redoStack.isEmpty)
-                    Menu {
-                        Toggle("Играть",isOn:$editor.playing)
-                        Toggle("Привязки",isOn:$editor.snap)
-                        Button("Вписать холст",systemImage:"arrow.up.left.and.arrow.down.right") { editor.fitVersion += 1 }
-                        Button("Новый экран",systemImage:"rectangle.badge.plus") { editor.addPage() }
-                        Button("Настройки холста",systemImage:"slider.horizontal.3") { panel="document" }
-                        Divider()
-                        Button("Сохранить проект .qwel",systemImage:"square.and.arrow.up") { export("qwel") }
-                        Button("Экспорт PNG",systemImage:"photo") { export("png") }
-                        Button("Экспорт SVG",systemImage:"scribble.variable") { export("svg") }
-                        Button("PNG в Фото",systemImage:"photo.badge.arrow.down") { savePhoto() }
-                    } label:{Image(systemName:"ellipsis.circle")}
-                }
+        ZStack {
+            EditorCanvas(editor:editor).accessibilityIdentifier("editorCanvas")
+            if editor.project.nodes.isEmpty && panel==nil {
+                Text("Лист пуст. Нажмите '+' внизу или задержите палец на листе, чтобы добавить фигуру.").font(qfont(16)).foregroundStyle(q.color("onSurfaceVariant")).multilineTextAlignment(.center).padding(.horizontal,56).allowsHitTesting(false)
+            }
+            VStack(spacing:0) { topBar;Spacer();bottomBlock }.padding(.horizontal,8).padding(.bottom,8)
+            if menu {
+                Color.black.opacity(0.001).ignoresSafeArea().onTapGesture{menu=false}
+                VStack { HStack { Spacer();menuContent.frame(width:265).padding(.top,62) };Spacer() }.padding(.trailing,8)
+            }
+            if let dialog {
+                Color.black.opacity(0.4).ignoresSafeArea().onTapGesture{self.dialog=nil}
+                Group {
+                    if dialog=="echo" { EchoPanel(editor:editor){self.dialog=nil} }
+                    else if dialog=="screens" { ScreensPanel(editor:editor){self.dialog=nil} }
+                    else { ExportPanel(editor:editor,export:export){self.dialog=nil} }
+                }.padding(.horizontal,28)
             }
         }
-        .sheet(item:Binding(get:{panel.map{PanelID(id:$0)}},set:{panel=$0?.id})) { p in
-            NavigationStack {
+        .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
+        .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in switch result { case .success(let urls):if let url=urls.first{importFile(url)};case .failure(let e):editor.error=e.localizedDescription } }
+        .onChange(of:photos) { _,items in Task { for item in items{do{if let data=try await item.loadTransferable(type:Data.self){try editor.addImage(data,name:"Картинка")}}catch{editor.error=error.localizedDescription}};photos=[] } }
+        .onChange(of:editor.requestPanel){_,value in if let value{panel=value;editor.requestPanel=nil}}
+        .onChange(of:phase) { _,phase in if phase != .active { editor.saveNow() } }
+        .onDisappear { if editor.playing{editor.originalPlay.stop()};editor.saveNow() }
+        .alert("Не удалось выполнить действие",isPresented:Binding(get:{editor.error != nil},set:{if !$0{editor.error=nil}})){Button("OK"){editor.error=nil}}message:{Text(editor.error ?? "")}
+    }
+    private var topBar:some View {
+        HStack(spacing:8) {
+            QIconButton(icon:"Back",label:"Закрыть редактор"){editor.saveNow();dismiss()}.qSurface(24,"surfaceContainerHigh")
+            Button { panel="document" } label:{Text(editor.project.name+(editor.project.pages.count>1 ? " | \(editor.project.active+1)/\(editor.project.pages.count)":"")).font(qfont(14,.semibold)).lineLimit(1).padding(.horizontal,18).padding(.vertical,13).qSurface(28,"surfaceContainerHigh")}.buttonStyle(.plain)
+            Spacer(minLength:0)
+            HStack(spacing:0) {
+                QIconButton(icon:editor.playing ? "Stop":"Play",label:editor.playing ? "Остановить":"Играть",selected:editor.playing){panel=nil;dockOpen=false;editor.togglePlay()}.accessibilityIdentifier("play")
+                QIconButton(icon:"Undo",label:"Отменить",enabled:!editor.undoStack.isEmpty && !editor.playing){editor.undo()}.accessibilityIdentifier("undo")
+                QIconButton(icon:"Redo",label:"Повторить",enabled:!editor.redoStack.isEmpty && !editor.playing){editor.redo()}
+                QIconButton(icon:"More",label:"Меню"){menu.toggle()}
+            }.qSurface(24,"surfaceContainerHigh").layoutPriority(1)
+        }.padding(.vertical,6)
+    }
+    private var bottomBlock:some View {
+        VStack(spacing:8) {
+            if editor.project.pages.count>1 && !editor.playing { screensStrip }
+            HStack(spacing:6) {
+                Button { editor.fitVersion += 1 } label:{Text("\(Int(editor.canvasScale*100))%").font(qfont(14,.semibold)).padding(.horizontal,14).padding(.vertical,8).qSurface(25,"surfaceContainerHigh")}.buttonStyle(.plain)
+                if editor.project.pages.count<2 && !editor.playing { QIconButton(icon:"Screens",label:"Экраны",size:36){dialog="screens"}.qSurface(20,"surfaceContainerHigh") }
+                Spacer()
+            }
+            if !editor.selection.isEmpty && !editor.playing { SelectionPill(editor:editor,expanded:$dockOpen,openPanel:{panel=$0;dockOpen=false},echo:{dialog="echo"}) }
+            if let panel,!editor.playing { floatingPanel(panel).transition(.move(edge:.bottom).combined(with:.opacity)) }
+            if editor.playing {
+                Button { editor.togglePlay() } label:{Text("Режим игры: тяните слайдеры, нажимайте переключатели. Всё, что выставили, останется. Нажмите, чтобы выйти").font(qfont(14,.semibold)).multilineTextAlignment(.center).padding(.horizontal,20).padding(.vertical,14).background(q.color("primaryContainer"),in:Capsule()).foregroundStyle(q.color("onPrimaryContainer"))}.buttonStyle(.plain)
+            } else { dock }
+        }.animation(.spring(response:0.4,dampingFraction:0.75),value:panel)
+    }
+    private var screensStrip:some View {
+        ScrollView(.horizontal,showsIndicators:false) { HStack(spacing:6) {
+            ForEach(Array(editor.project.pages.enumerated()),id:\.element.id){index,page in Button {editor.page(index)}label:{Text(page.name).font(qfont(14,.semibold)).padding(.horizontal,14).padding(.vertical,10).qSurface(25,index==editor.project.active ? "secondaryContainer":"surfaceContainerHigh")}.buttonStyle(.plain)}
+            HStack(spacing:0){QIconButton(icon:"Add",label:"Новый экран",size:36){editor.addPage()};QIconButton(icon:"Screens",label:"Экраны",size:36){dialog="screens"}}.qSurface(22,"surfaceContainerHigh")
+        } }
+    }
+    private var dock:some View {
+        HStack {
+            tool("Layers","Слои","layers")
+            tool("Style","Стиль","style")
+            Button { togglePanel("add") } label:{ZStack{if let shape=Catalog.shared.shapes.first(where:{$0.id==(panel=="add" ? "soft-burst":"cookie-9")}){ShapePreview(shape:shape).fill(q.color("primary"))};QIcon(id:"Add",size:28,tint:q.color("onPrimary")).rotationEffect(.degrees(panel=="add" ? 45:0))}.frame(width:60,height:60)}.buttonStyle(QPressStyle()).accessibilityLabel("Добавить").accessibilityIdentifier("panel-add")
+            tool("Align","Выровнять","align")
+            VStack(spacing:0){QIconButton(icon:"Multi",label:"Выбор",selected:editor.multiSelect){editor.multiSelect.toggle()};Text("Выбор").font(qfont(11,.medium)).foregroundStyle(q.color("onSurfaceVariant"))}
+        }.frame(maxWidth:.infinity).padding(.horizontal,8).padding(.vertical,6).qSurface(50,"surfaceContainerHigh",glass:true)
+    }
+    private func tool(_ icon:String,_ title:String,_ id:String)->some View {
+        VStack(spacing:0){QIconButton(icon:icon,label:title,selected:panel==id){togglePanel(id)}.accessibilityIdentifier("panel-"+id);Text(title).font(qfont(11,.medium)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity)
+    }
+    private func togglePanel(_ id:String){dockOpen=false;panel=panel==id ? nil:id}
+    private func floatingPanel(_ id:String)->some View {
+        VStack(spacing:0) {
+            HStack{Text(["add":"Добавить","style":"Стиль","layers":"Слои","align":"Выровнять","document":"Стиль"][id] ?? "Стиль").font(qfont(22,.semibold));Spacer();QIconButton(icon:"Close",label:"Закрыть"){panel=nil}}.contentShape(Rectangle()).gesture(DragGesture().onEnded{if $0.translation.height>48{panel=nil}})
+            ScrollView {
                 Group {
-                    switch p.id {
-                    case "add":AddPanel(editor:editor,photoItems:$photos,importFile:{ panel=nil;DispatchQueue.main.asyncAfter(deadline:.now()+0.4) { importer=true } })
-                    case "style":InspectorPanel(editor:editor,importFont:{panel=nil;DispatchQueue.main.asyncAfter(deadline:.now()+0.4) { importer=true }})
+                    switch id {
+                    case "add":AddPanel(editor:editor,photoItems:$photos,importFile:{importer=true})
+                    case "style":if editor.selected.isEmpty {DocumentPanel(editor:editor)}else{InspectorPanel(editor:editor,importFont:{importer=true})}
                     case "layers":LayersPanel(editor:editor)
                     case "align":AlignPanel(editor:editor)
                     default:DocumentPanel(editor:editor)
                     }
-                }.toolbar { ToolbarItem(placement:.confirmationAction) { Button("Готово") { panel=nil } } }
-            }.presentationDetents([.medium,.large]).presentationDragIndicator(.visible)
-        }
-        .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
-        .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in
-            switch result { case .success(let urls):if let url=urls.first { importFile(url) };case .failure(let e):editor.error=e.localizedDescription }
-        }
-        .onChange(of:photos) { _,items in Task { for item in items { do { if let data=try await item.loadTransferable(type:Data.self) { try editor.addImage(data,name:"Фото") } } catch { editor.error=error.localizedDescription } };photos=[];panel=nil } }
-        .onChange(of:phase) { _,phase in if phase != .active { editor.saveNow() } }
-        .onDisappear { editor.saveNow() }
-        .alert("Не удалось выполнить действие",isPresented:Binding(get:{editor.error != nil},set:{if !$0 { editor.error=nil }})) { Button("OK") { editor.error=nil } } message:{Text(editor.error ?? "")}
-        .overlay { if exporting { ProgressView("Экспорт…").padding(24).background(.regularMaterial,in:RoundedRectangle(cornerRadius:24)) } }
+                }.padding(.trailing,8)
+            }.frame(maxHeight:340).fixedSize(horizontal:false,vertical:true)
+        }.padding(.leading,16).padding(.trailing,8).padding(.top,8).padding(.bottom,16).qSurface(28,"surfaceContainerLow",glass:true)
     }
-    private var dock:some View {
-        HStack(spacing:0) {
-            dockButton("Добавить","plus","add")
-            dockButton("Стиль","paintpalette","style")
-            dockButton("Слои","square.3.layers.3d","layers")
-            dockButton("Ровно","align.horizontal.center","align")
-            Button { editor.playing.toggle();editor.selection=[] } label:{VStack(spacing:5) { Image(systemName:editor.playing ? "stop.fill":"play.fill").font(.title3);Text("Играть").font(.caption2) }.frame(maxWidth:.infinity).padding(.vertical,12)}.tint(editor.playing ? .orange:.teal)
-        }.background(.regularMaterial)
+    private var menuContent:some View {
+        VStack(spacing:0) {
+            menuItem("Fit","Вписать в экран"){editor.fitVersion += 1}
+            menuItem("Grid",editor.showGrid ? "Скрыть сетку":"Показать сетку"){editor.showGrid.toggle()}
+            menuItem("Guides",editor.snap ? "Отключить привязки":"Включить привязки"){editor.snap.toggle()}
+            menuItem("Multi","Выбрать всё"){editor.selection=Set(editor.project.nodes.map(\.id))}
+            menuItem("Screens","Экраны"){dialog="screens"}
+            menuItem("Style","Тон проекта…"){panel="document"}
+            menuItem("Import","Импорт SVG"){importer=true}
+            menuItem("Code","Код Compose"){export("kt")}
+            menuItem("Export","Экспорт"){dialog="export"}
+            menuItem("Export","Сохранить .qwel"){export("qwel")}
+        }.padding(.vertical,8).qSurface(12,"surfaceContainerHigh").shadow(color:.black.opacity(0.2),radius:6,y:3)
     }
-    private func dockButton(_ title:String,_ icon:String,_ id:String)->some View {
-        Button { panel=id } label:{VStack(spacing:5) { Image(systemName:icon).font(.title3);Text(title).font(.caption2) }.frame(maxWidth:.infinity).padding(.vertical,12)}.accessibilityIdentifier("panel-"+id)
-    }
+    private func menuItem(_ icon:String,_ title:String,_ action:@escaping()->Void)->some View { Button {menu=false;action()}label:{HStack(spacing:12){QIcon(id:icon);Text(title).font(qfont(14));Spacer()}.padding(.horizontal,12).frame(height:48)}.buttonStyle(.plain) }
     private func export(_ kind:String) {
         do {
             if kind=="qwel" { shared=SharedFile(url:try editor.store.archive(editor.project));return }
             let folder=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
             let url=folder.appendingPathComponent(safeName(editor.project.name)+"."+kind)
-            if kind=="svg" { try SVGExport.make(editor.project,root:editor.store.root).write(to:url,atomically:true,encoding:.utf8) }
+            if kind=="kt" { try OriginalCore.shared.compose(editor.project).write(to:url,atomically:true,encoding:.utf8) }
+            else if kind=="svg" { try SVGExport.make(editor.project,root:editor.store.root).write(to:url,atomically:true,encoding:.utf8) }
             else { guard let data=editor.renderer.png(editor.project,scale:CGFloat(pngScale)) else { throw CocoaError(.fileWriteOutOfSpace) };try data.write(to:url) }
             shared=SharedFile(url:url)
         } catch { editor.error=error.localizedDescription }
@@ -114,48 +158,6 @@ struct EditorScreen:View {
     }
 }
 struct PanelID:Identifiable { let id:String }
-struct AddPanel:View {
-    @ObservedObject var editor:Editor
-    @Binding var photoItems:[PhotosPickerItem]
-    var importFile:()->Void
-    @Environment(\.dismiss) var dismiss
-    @State private var category=0
-    @State private var query=""
-    var body:some View {
-        VStack {
-            Picker("Каталог",selection:$category) { Text("Основа").tag(0);Text("Фигуры").tag(1);Text("Компоненты").tag(2);Text("Иконки").tag(3) }.pickerStyle(.segmented).padding(.horizontal)
-            ScrollView {
-                if category==0 { VStack(spacing:12) {
-                    ForEach([("RECT","Прямоугольник","rectangle"),("ELLIPSE","Эллипс","circle"),("TEXT","Текст","textformat")],id:\.0) { kind,name,icon in Button { editor.add(kind);dismiss() } label:{Label(name,systemImage:icon).padding(10).frame(maxWidth:.infinity)}.buttonStyle(.bordered).accessibilityIdentifier("add-"+kind) }
-                    PhotosPicker(selection:$photoItems,maxSelectionCount:12,matching:.images) { Label("Из Фото",systemImage:"photo.on.rectangle").padding(10).frame(maxWidth:.infinity) }.buttonStyle(.bordered)
-                    Button(action:importFile) { Label("Картинка, SVG или шрифт",systemImage:"folder").padding(10).frame(maxWidth:.infinity) }.buttonStyle(.bordered)
-                }.padding() }
-                else if category==1 {
-                    LazyVGrid(columns:[GridItem(.adaptive(minimum:90))]) {
-                        ForEach(Catalog.shared.shapes.filter{query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)}) { shape in
-                            Button { editor.add("SHAPE",shape:shape);dismiss() } label:{VStack { ShapePreview(shape:shape).fill(.teal).frame(width:55,height:55);Text(shape.name).font(.caption).lineLimit(1) }.padding(10)}.buttonStyle(.plain)
-                        }
-                    }.padding()
-                } else if category==2 {
-                    LazyVGrid(columns:[GridItem(.adaptive(minimum:150))],spacing:18) {
-                        ForEach(Catalog.shared.components.filter{query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) || $0.category.localizedCaseInsensitiveContains(query)}) { item in
-                            Button { editor.addComponent(item);dismiss() } label:{VStack { ProjectThumbnail(project:item.project,root:editor.store.root).frame(height:90).frame(maxWidth:.infinity).background(Color(uiColor:.secondarySystemBackground),in:RoundedRectangle(cornerRadius:16));Text(item.name).font(.caption).lineLimit(2) }}.buttonStyle(.plain)
-                        }
-                    }.padding()
-                } else {
-                    LazyVGrid(columns:[GridItem(.adaptive(minimum:60))]) { ForEach(["house.fill","heart.fill","star.fill","gearshape.fill","person.fill","magnifyingglass","plus","xmark","checkmark","bell.fill","play.fill","pause.fill","message.fill","paperplane.fill","bookmark.fill","cart.fill","camera.fill","photo.fill","music.note","location.fill","sun.max.fill","moon.fill","lock.fill","wifi","battery.100","chevron.left","chevron.right","ellipsis","trash.fill","folder.fill"],id:\.self) { symbol in
-                        Button { addSymbol(symbol);dismiss() } label:{Image(systemName:symbol).font(.title2).frame(width:50,height:50)}
-                    } }.padding()
-                }
-            }
-        }.navigationTitle("Добавить").navigationBarTitleDisplayMode(.inline).searchable(text:$query,prompt:"Поиск")
-    }
-    private func addSymbol(_ symbol:String) {
-        let config=UIImage.SymbolConfiguration(pointSize:128,weight:.regular)
-        guard let im=UIImage(systemName:symbol,withConfiguration:config)?.withTintColor(.black,renderingMode:.alwaysOriginal),let data=im.pngData() else { return }
-        do { try editor.addImage(data,name:symbol) } catch { editor.error=error.localizedDescription }
-    }
-}
 struct ShapePreview:Shape {
     let shape:ShapeItem
     func path(in rect:CGRect)->Path { var t=CGAffineTransform(scaleX:rect.width,y:rect.height);return Path(VectorPath.parse(shape.path).copy(using:&t)!) }

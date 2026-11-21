@@ -2,13 +2,15 @@ import SwiftUI
 
 struct EditorCanvas:UIViewRepresentable {
     @ObservedObject var editor:Editor
+    @Environment(\.q) var q
     func makeUIView(context:Context)->CanvasView { CanvasView(editor:editor) }
     func updateUIView(_ view:CanvasView,context:Context) {
         if view.lastFit != editor.fitVersion { view.lastFit=editor.fitVersion;view.zoom=1;view.pan = .zero }
-        view.setNeedsDisplay()
+        view.palette=q;view.backgroundColor=UIColor(argb:q.argb("surfaceContainer"));view.setNeedsDisplay()
     }
 }
 @MainActor final class CanvasView:UIView,UIGestureRecognizerDelegate {
+    var palette=QPalette()
     let editor:Editor
     var zoom:CGFloat=1,pan=CGPoint.zero,lastFit=0
     private var initialZoom:CGFloat=1,initialPan=CGPoint.zero
@@ -18,31 +20,51 @@ struct EditorCanvas:UIViewRepresentable {
         self.editor=editor;super.init(frame:.zero)
         backgroundColor=UIColor.secondarySystemBackground;isMultipleTouchEnabled=true
         let tap=UITapGestureRecognizer(target:self,action:#selector(tap(_:)));addGestureRecognizer(tap)
-        let double=UITapGestureRecognizer(target:self,action:#selector(doubleTap));double.numberOfTapsRequired=2;addGestureRecognizer(double);tap.require(toFail:double)
+        let double=UITapGestureRecognizer(target:self,action:#selector(doubleTap(_:)));double.numberOfTapsRequired=2;addGestureRecognizer(double);tap.require(toFail:double)
+        let long=UILongPressGestureRecognizer(target:self,action:#selector(longPress(_:)));addGestureRecognizer(long)
+        let undo=UITapGestureRecognizer(target:self,action:#selector(twoTap));undo.numberOfTouchesRequired=2;addGestureRecognizer(undo)
+        let redo=UITapGestureRecognizer(target:self,action:#selector(threeTap));redo.numberOfTouchesRequired=3;addGestureRecognizer(redo)
         let drag=UIPanGestureRecognizer(target:self,action:#selector(drag(_:)));drag.maximumNumberOfTouches=1;addGestureRecognizer(drag)
         let pan=UIPanGestureRecognizer(target:self,action:#selector(panning(_:)));pan.minimumNumberOfTouches=2;pan.delegate=self;addGestureRecognizer(pan)
         let pinch=UIPinchGestureRecognizer(target:self,action:#selector(pinching(_:)));pinch.delegate=self;addGestureRecognizer(pinch)
     }
     required init?(coder:NSCoder) { fatalError() }
-    var scale:CGFloat { max(0.01,min((bounds.width-48)/editor.project.w,(bounds.height-64)/editor.project.h))*zoom }
-    var origin:CGPoint { CGPoint(x:(bounds.width-editor.project.w*scale)/2+pan.x,y:(bounds.height-editor.project.h*scale)/2+pan.y) }
+    var scale:CGFloat { max(0.01,min((bounds.width-48)/editor.project.w,(bounds.height-240)/editor.project.h))*zoom }
+    var origin:CGPoint { CGPoint(x:(bounds.width-editor.project.w*scale)/2+pan.x,y:88+(bounds.height-240-editor.project.h*scale)/2+pan.y) }
     func document(_ p:CGPoint)->CGPoint { CGPoint(x:(p.x-origin.x)/scale,y:(p.y-origin.y)/scale) }
     override func draw(_ rect:CGRect) {
         guard let ctx=UIGraphicsGetCurrentContext() else { return }
         ctx.saveGState();ctx.translateBy(x:origin.x,y:origin.y);ctx.scaleBy(x:scale,y:scale)
         let page=CGRect(x:0,y:0,width:editor.project.w,height:editor.project.h)
-        ctx.setFillColor(UIColor.white.cgColor);ctx.fill(page)
-        ctx.saveGState();ctx.clip(to:page);editor.renderer.draw(editor.project,in:ctx);ctx.restoreGState()
-        if !editor.playing,let box=editor.bounds {
-            ctx.setLineWidth(1.5/scale);ctx.setStrokeColor(UIColor.systemTeal.cgColor);ctx.stroke(box)
-            let corners=[CGPoint(x:box.minX,y:box.minY),CGPoint(x:box.maxX,y:box.minY),CGPoint(x:box.maxX,y:box.maxY),CGPoint(x:box.minX,y:box.maxY)]
-            for p in corners { let r=CGRect(x:p.x-5/scale,y:p.y-5/scale,width:10/scale,height:10/scale);ctx.setFillColor(UIColor.white.cgColor);ctx.fillEllipse(in:r);ctx.strokeEllipse(in:r) }
-            ctx.move(to:CGPoint(x:box.midX,y:box.minY));ctx.addLine(to:CGPoint(x:box.midX,y:box.minY-26/scale));ctx.strokePath()
-            let r=CGRect(x:box.midX-5/scale,y:box.minY-31/scale,width:10/scale,height:10/scale);ctx.fillEllipse(in:r);ctx.strokeEllipse(in:r)
+        ctx.setFillColor(UIColor(argb:editor.project.bg).cgColor);ctx.fill(page)
+        ctx.saveGState();ctx.clip(to:page)
+        if editor.showGrid {
+            let step:CGFloat = 8*scale<7 ? 32:8
+            if step*scale>=7 {
+                ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).withAlphaComponent(0.45).cgColor);ctx.setLineWidth(1/scale)
+                for x in stride(from:CGFloat(0),through:editor.project.w,by:step) {ctx.move(to:CGPoint(x:x,y:0));ctx.addLine(to:CGPoint(x:x,y:editor.project.h))}
+                for y in stride(from:CGFloat(0),through:editor.project.h,by:step) {ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))};ctx.strokePath()
+            }
         }
+        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.project,in:ctx,background:false);ctx.restoreGState()
+        ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).cgColor);ctx.setLineWidth(1/scale);ctx.stroke(page)
+        if !editor.playing,let box=editor.bounds {
+            ctx.setLineWidth(2/scale);ctx.setStrokeColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.setFillColor(UIColor(argb:palette.argb("surface")).cgColor);ctx.stroke(box)
+            let corners=[CGPoint(x:box.minX,y:box.minY),CGPoint(x:box.maxX,y:box.minY),CGPoint(x:box.maxX,y:box.maxY),CGPoint(x:box.minX,y:box.maxY)]
+            for p in corners { let r=CGRect(x:p.x-7/scale,y:p.y-7/scale,width:14/scale,height:14/scale);let path=CGPath(roundedRect:r,cornerWidth:5/scale,cornerHeight:5/scale,transform:nil);ctx.addPath(path);ctx.drawPath(using:.fillStroke) }
+            for (index,p) in [CGPoint(x:box.midX,y:box.minY),CGPoint(x:box.maxX,y:box.midY),CGPoint(x:box.midX,y:box.maxY),CGPoint(x:box.minX,y:box.midY)].enumerated(){let horizontal=index%2==0;let r=CGRect(x:p.x-(horizontal ? 10:4)/scale,y:p.y-(horizontal ? 4:10)/scale,width:(horizontal ? 20:8)/scale,height:(horizontal ? 8:20)/scale);ctx.addPath(CGPath(roundedRect:r,cornerWidth:4/scale,cornerHeight:4/scale,transform:nil));ctx.drawPath(using:.fillStroke)}
+            ctx.move(to:CGPoint(x:box.midX,y:box.minY));ctx.addLine(to:CGPoint(x:box.midX,y:box.minY-36/scale));ctx.strokePath()
+            let r=CGRect(x:box.midX-10/scale,y:box.minY-46/scale,width:20/scale,height:20/scale);ctx.fillEllipse(in:r);ctx.strokeEllipse(in:r)
+            ctx.setFillColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.fillEllipse(in:CGRect(x:box.midX-3/scale,y:box.minY-39/scale,width:6/scale,height:6/scale))
+        }
+        if abs(editor.canvasScale-scale)>0.001 { let value=scale;DispatchQueue.main.async{[weak self] in self?.editor.canvasScale=value} }
         ctx.restoreGState()
     }
-    @objc func doubleTap() { zoom=1;pan = .zero;setNeedsDisplay() }
+    private func gestureOn(_ id:String)->Bool {(UserDefaults.standard.object(forKey:"gesture_"+id) as? Bool) ?? true}
+    @objc func twoTap(){if gestureOn("UNDO_TAP"){editor.undo()}}
+    @objc func threeTap(){if gestureOn("REDO_TAP"){editor.redo()}}
+    @objc func longPress(_ g:UILongPressGestureRecognizer){guard g.state == .began,!editor.playing else{return};let point=document(g.location(in:self));let hit=editor.project.nodes.reversed().first{$0.visible && !$0.locked && $0.contains(point)};if let hit,gestureOn("LONG_LAYER"){editor.choose(hit);editor.requestPanel="style"}else if hit==nil,gestureOn("LONG_EMPTY"){editor.requestPanel="add"}}
+    @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.project.nodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];editor.requestPanel="style"}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
         if editor.playing { editor.interact(at:point) }
@@ -59,13 +81,13 @@ struct EditorCanvas:UIViewRepresentable {
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool { true }
     @objc func drag(_ g:UIPanGestureRecognizer) {
         let p=document(g.location(in:self))
-        if editor.playing { if g.state == .began || g.state == .changed { editor.interact(at:p) };return }
+        if editor.playing { if g.state == .began { editor.originalPlay.begin(p) };if g.state == .changed { editor.originalPlay.drag(p) };if g.state == .ended || g.state == .cancelled { editor.originalPlay.end(p) };return }
         if g.state == .began {
             startPoint=p;mode="move";startNodes=editor.selected
             if let box=editor.bounds {
-                let corners=[CGPoint(x:box.minX,y:box.minY),CGPoint(x:box.maxX,y:box.minY),CGPoint(x:box.maxX,y:box.maxY),CGPoint(x:box.minX,y:box.maxY)]
+                let corners=[CGPoint(x:box.minX,y:box.minY),CGPoint(x:box.maxX,y:box.minY),CGPoint(x:box.maxX,y:box.maxY),CGPoint(x:box.minX,y:box.maxY),CGPoint(x:box.midX,y:box.minY),CGPoint(x:box.maxX,y:box.midY),CGPoint(x:box.midX,y:box.maxY),CGPoint(x:box.minX,y:box.midY)]
                 if let i=corners.firstIndex(where:{hypot($0.x-p.x,$0.y-p.y)<18/scale}) { mode="resize";handle=i }
-                else if hypot(box.midX-p.x,box.minY-26/scale-p.y)<18/scale { mode="rotate" }
+                else if hypot(box.midX-p.x,box.minY-36/scale-p.y)<18/scale { mode="rotate" }
                 else if !box.insetBy(dx:-8/scale,dy:-8/scale).contains(p) { editor.choose(editor.project.nodes.reversed().first { $0.visible && !$0.locked && $0.contains(p) });startNodes=editor.selected }
             } else { editor.choose(editor.project.nodes.reversed().first { $0.visible && !$0.locked && $0.contains(p) });startNodes=editor.selected }
             if startNodes.isEmpty { mode="pan";initialPan=pan } else { editor.checkpoint() }
@@ -79,8 +101,8 @@ struct EditorCanvas:UIViewRepresentable {
                 switch mode {
                 case "resize":
                     var target=box
-                    if handle==0 || handle==3 { target.origin.x += dx;target.size.width -= dx } else { target.size.width += dx }
-                    if handle<2 { target.origin.y += dy;target.size.height -= dy } else { target.size.height += dy }
+                    if [0,3,7].contains(handle) { target.origin.x += dx;target.size.width -= dx } else if [1,2,5].contains(handle) { target.size.width += dx }
+                    if [0,1,4].contains(handle) { target.origin.y += dy;target.size.height -= dy } else if [2,3,6].contains(handle) { target.size.height += dy }
                     target.size.width=max(4,target.width);target.size.height=max(4,target.height)
                     if out[i].ratioLock { target.size.height=target.width*box.height/max(1,box.width) }
                     let sx=target.width/max(1,box.width),sy=target.height/max(1,box.height)

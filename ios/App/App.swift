@@ -1,119 +1,117 @@
 import SwiftUI
-import PhotosUI
 import UniformTypeIdentifiers
 
 @main struct QwelApp:App {
     @StateObject private var store=ProjectStore()
-    @AppStorage("appearance") private var appearance=0
     var body:some Scene {
-        WindowGroup { ProjectsView().environmentObject(store).tint(Color(red:0.0,green:0.47,blue:0.45))
-            .preferredColorScheme(appearance==0 ? nil:appearance==1 ? .light:.dark)
+        WindowGroup { ProjectsView().environmentObject(store).modifier(OriginalTheme())
             .onOpenURL { url in Task { await store.importFile(url) } }
         }
     }
 }
 struct ProjectsView:View {
     @EnvironmentObject var store:ProjectStore
+    @Environment(\.q) var q
     @State private var creating=false
     @State private var settings=false
     @State private var importing=false
     @State private var opened:Project?
     @State private var query=""
     @State private var shared:SharedFile?
+    @State private var renaming:Project?
+    @State private var rename=""
+    @State private var deleting:Project?
+    @AppStorage("projectSort") private var sort=0
+    @AppStorage("projectList") private var list=false
+    private var filtered:[Project] {
+        let p=store.projects.filter{query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)}
+        return sort==1 ? p.sorted{$0.name.localizedCompare($1.name) == .orderedAscending}:sort==2 ? p.sorted{$0.w*$0.h>$1.w*$1.h}:p.sorted{$0.updated>$1.updated}
+    }
     var body:some View {
-        NavigationStack {
+        ZStack(alignment:.bottomTrailing) {
+            q.color("surface").ignoresSafeArea()
             ScrollView {
-                VStack(alignment:.leading,spacing:24) {
-                    HStack {
-                        VStack(alignment:.leading,spacing:4) { Text("Твои идеи, в форме.").font(.largeTitle.bold());Text("Создавай интерфейсы вместе с Qwel").foregroundStyle(.secondary) }
-                        Spacer()
-                    }.padding(.top,8)
-                    if store.projects.isEmpty { ContentUnavailableView("Первый чистый лист",systemImage:"square.and.pencil",description:Text("Создай проект или открой файл .qwel")) }
-                    LazyVGrid(columns:[GridItem(.adaptive(minimum:155),spacing:16)],spacing:16) {
-                        ForEach(store.projects.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }) { p in
-                            Button { opened=p } label: {
-                                VStack(alignment:.leading,spacing:10) {
-                                    ProjectThumbnail(project:p,root:store.root).frame(height:160).frame(maxWidth:.infinity).background(Color(uiColor:.tertiarySystemBackground)).clipShape(RoundedRectangle(cornerRadius:24))
-                                    Text(p.name).font(.headline).foregroundStyle(.primary).lineLimit(1)
-                                    Text("\(Int(p.w)) × \(Int(p.h)) · \(p.nodes.count) слоёв").font(.caption).foregroundStyle(.secondary)
-                                }
-                            }.buttonStyle(.plain).accessibilityIdentifier("project-"+p.id)
-                            .contextMenu {
-                                Button("Открыть",systemImage:"pencil") { opened=p }
-                                Button("Дублировать",systemImage:"plus.square.on.square") { store.duplicate(p) }
-                                Button("Поделиться .qwel",systemImage:"square.and.arrow.up") { do { shared=SharedFile(url:try store.archive(p)) } catch { store.error=error.localizedDescription } }
-                                Button("Удалить",systemImage:"trash",role:.destructive) { store.delete(p) }
-                            }
+                VStack(spacing:12) {
+                    header.padding(.vertical,4)
+                    if store.projects.isEmpty { empty }
+                    else {
+                        searchAndSort
+                        LazyVGrid(columns:list ? [GridItem(.flexible())]:[GridItem(.adaptive(minimum:168),spacing:12)],spacing:12) {
+                            ForEach(filtered) { project in card(project) }
                         }
+                        if filtered.isEmpty { Text("Ничего не найдено").font(qfont(16)).foregroundStyle(q.color("onSurfaceVariant")).padding(.vertical,40) }
                     }
-                }.padding(20)
-            }.background(Color(uiColor:.systemGroupedBackground))
-            .navigationTitle("Qwel").navigationBarTitleDisplayMode(.inline)
-            .searchable(text:$query,prompt:"Поиск проектов")
-            .toolbar {
-                ToolbarItem(placement:.topBarLeading) { Button { settings=true } label:{Image(systemName:"gearshape")} }
-                ToolbarItem(placement:.topBarTrailing) { Menu { Button("Открыть .qwel",systemImage:"folder") { importing=true };Button("Новый проект",systemImage:"plus") { creating=true } } label:{Image(systemName:"ellipsis.circle")} }
+                }.padding(.horizontal,16).padding(.top,12).padding(.bottom,112)
             }
-            .safeAreaInset(edge:.bottom) { Button { creating=true } label:{Label("Новый проект",systemImage:"plus").font(.headline).padding(.vertical,12).frame(maxWidth:.infinity)}.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).padding().background(.ultraThinMaterial).accessibilityIdentifier("newProject") }
+            Button { creating=true } label:{ HStack(spacing:12) { QIcon(id:"Add",tint:q.color("onPrimaryContainer"));Text("Новый проект").font(qfont(14,.semibold)) }.padding(.horizontal,20).frame(height:56).background(q.color("primaryContainer"),in:RoundedRectangle(cornerRadius:20)) }.buttonStyle(QPressStyle()).accessibilityIdentifier("newProject").padding(16)
         }
-        .sheet(isPresented:$creating) { NewProjectView { p in creating=false;opened=p }.environmentObject(store) }
-        .sheet(isPresented:$settings) { SettingsView() }
-        .fullScreenCover(item:$opened) { p in EditorScreen(project:p,store:store) }
+        .fullScreenCover(isPresented:$creating) { NewProjectView { p in creating=false;DispatchQueue.main.asyncAfter(deadline:.now()+0.35){opened=p} }.environmentObject(store).modifier(OriginalTheme()) }
+        .fullScreenCover(isPresented:$settings) { SettingsView().modifier(OriginalTheme()) }
+        .fullScreenCover(item:$opened) { p in EditorScreen(project:p,store:store).modifier(OriginalTheme()) }
         .fileImporter(isPresented:$importing,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in
             switch result { case .success(let urls):if let url=urls.first { Task { await store.importFile(url) } };case .failure(let e):store.error=e.localizedDescription }
         }
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
-        .overlay { if store.working { ProgressView("Открываю проект…").padding(24).background(.regularMaterial,in:RoundedRectangle(cornerRadius:24)) } }
-        .alert("Не удалось выполнить действие",isPresented:Binding(get:{store.error != nil},set:{if !$0 { store.error=nil }})) { Button("OK") { store.error=nil } } message:{Text(store.error ?? "")}
+        .alert("Переименовать",isPresented:Binding(get:{renaming != nil},set:{if !$0 {renaming=nil}})) { TextField("Название",text:$rename);Button("Готово"){if var p=renaming{p.name=rename;try? store.save(p)};renaming=nil};Button("Отмена",role:.cancel){renaming=nil} }
+        .alert("Удалить проект?",isPresented:Binding(get:{deleting != nil},set:{if !$0{deleting=nil}})) { Button("Удалить",role:.destructive){if let p=deleting{store.delete(p)};deleting=nil};Button("Отмена",role:.cancel){deleting=nil} }
+        .alert("Не удалось выполнить действие",isPresented:Binding(get:{store.error != nil},set:{if !$0{store.error=nil}})) { Button("OK"){store.error=nil} } message:{Text(store.error ?? "")}
+        .overlay { if store.working { ProgressView().padding(24).qSurface() } }
     }
+    private var header:some View {
+        HStack(spacing:0) {
+            QLogo().frame(width:56,height:56)
+            VStack(alignment:.leading,spacing:0) { Text("Vexel").font(qfont(28,.semibold));Text("Интерфейсы в стиле Material 3").font(qfont(14)).foregroundStyle(q.color("onSurfaceVariant")).fixedSize(horizontal:false,vertical:true) }.padding(.leading,14).frame(maxWidth:.infinity,alignment:.leading)
+            QIconButton(icon:"Import",label:"Открыть проект",tonal:true){importing=true}
+            QIconButton(icon:"Settings",label:"Настройки",tonal:true){settings=true}.padding(.leading,8)
+        }
+    }
+    private var searchAndSort:some View {
+        VStack(spacing:10) {
+            HStack(spacing:16){QIcon(id:"Search",tint:q.color("onSurfaceVariant"));TextField("Поиск проектов",text:$query).font(qfont(16));if !query.isEmpty { QIconButton(icon:"Close",label:"Очистить",size:32){query=""} }}.padding(.horizontal,16).frame(height:56).overlay(Capsule().stroke(q.color("outline")))
+            HStack(spacing:0) {
+                ScrollView(.horizontal,showsIndicators:false) { HStack(spacing:8) { ForEach(Array(["Недавние","По имени","По размеру"].enumerated()),id:\.offset) { index,title in QChip(title:title,selected:sort==index){sort=index}.fixedSize() } } }
+                QIconButton(icon:list ? "Components":"List",label:"Вид списка"){list.toggle()}
+            }
+        }
+    }
+    private var empty:some View {
+        VStack(spacing:16) {
+            if let shape=Catalog.shared.shapes.first(where:{$0.id=="soft-burst"}) { ShapePreview(shape:shape).fill(q.color("tertiary")).frame(width:140,height:140) }
+            Text("Пока нет проектов").font(qfont(22,.semibold))
+            Text("Создайте первый - холст, фигуры MD3 и выравнивание уже ждут.").font(qfont(14)).foregroundStyle(q.color("onSurfaceVariant")).multilineTextAlignment(.center)
+        }.frame(maxWidth:.infinity).padding(.vertical,56)
+    }
+    private func card(_ p:Project)->some View {
+        Group {
+            if list {
+                HStack(spacing:14) { ProjectThumbnail(project:p,root:store.root).frame(width:72,height:72).qSurface(20,"surfaceContainerHighest");titles(p);projectMenu(p) }.padding(.leading,8).padding(.vertical,8).padding(.trailing,2)
+            } else {
+                VStack(spacing:0) {
+                    ProjectThumbnail(project:p,root:store.root).frame(maxWidth:.infinity).aspectRatio(1,contentMode:.fit).qSurface(20,"surfaceContainerHighest").padding(8)
+                    HStack(spacing:0){titles(p);projectMenu(p)}.padding(.leading,14).padding(.trailing,2).padding(.bottom,6)
+                }
+            }
+        }.qSurface(28).contentShape(RoundedRectangle(cornerRadius:28)).onTapGesture{opened=p}.accessibilityElement(children:.contain).accessibilityIdentifier("project-"+p.id)
+    }
+    private func titles(_ p:Project)->some View { VStack(alignment:.leading,spacing:0){Text(p.name).font(qfont(16,.semibold)).lineLimit(1);Text("\(Int(p.w))x\(Int(p.h)) | \(ago(p.updated))").font(qfont(12,.medium)).foregroundStyle(q.color("onSurfaceVariant")).lineLimit(1)}.frame(maxWidth:.infinity,alignment:.leading) }
+    private func projectMenu(_ p:Project)->some View {
+        Menu {
+            Button("Переименовать"){rename=p.name;renaming=p}
+            Button("Дублировать"){store.duplicate(p)}
+            Button("Сохранить как .qwel"){do{shared=SharedFile(url:try store.archive(p))}catch{store.error=error.localizedDescription}}
+            Button("Удалить",role:.destructive){deleting=p}
+        } label:{QIcon(id:"More").frame(width:44,height:44)}
+    }
+    private func ago(_ time:Int64)->String { let minutes=max(0,(Int64(Date().timeIntervalSince1970*1000)-time)/60000);return minutes<1 ? "только что":minutes<60 ? "\(minutes) мин. назад":minutes<1440 ? "\(minutes/60) ч. назад":"\(minutes/1440) дн. назад" }
 }
 struct ProjectThumbnail:View {
     var project:Project
     var root:URL
     @State private var image:UIImage?
     var body:some View {
-        Group { if let image { Image(uiImage:image).resizable().scaledToFit().padding(12) } else { ProgressView() } }
+        Group { if let image { Image(uiImage:image).resizable().scaledToFit().padding(14) } else { ProgressView() } }
             .task(id:project.updated) { image=DocumentRenderer(root:root).preview(project) }
     }
-}
-struct NewProjectView:View {
-    @EnvironmentObject var store:ProjectStore
-    @Environment(\.dismiss) var dismiss
-    var created:(Project)->Void
-    @State private var name="Новый проект"
-    @State private var width:Double=390
-    @State private var height:Double=844
-    @State private var template:String=""
-    var body:some View {
-        NavigationStack {
-            Form {
-                Section("Чистый лист") {
-                    TextField("Название",text:$name).accessibilityIdentifier("projectName")
-                    HStack { Text("Ширина");Spacer();TextField("390",value:$width,format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                    HStack { Text("Высота");Spacer();TextField("844",value:$height,format:.number).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
-                    HStack { ForEach(["iPhone","Квадрат","Экран"],id:\.self) { size in Button(size) { template="";if size=="iPhone" { width=390;height=844 } else if size=="Квадрат" { width=1080;height=1080 } else { width=1920;height=1080 } }.buttonStyle(.bordered) } }
-                }
-                Section("Шаблоны из Qwel") {
-                    Button { template="" } label:{HStack { Text("Без шаблона");Spacer();if template.isEmpty { Image(systemName:"checkmark") } }}
-                    ForEach(Catalog.shared.templates) { item in
-                        Button { template=item.id;name=item.name } label: { HStack { ProjectThumbnail(project:item.project,root:store.root).frame(width:55,height:80);VStack(alignment:.leading) { Text(item.name);Text(item.category).font(.caption).foregroundStyle(.secondary) };Spacer();if template==item.id { Image(systemName:"checkmark.circle.fill") } } }
-                    }
-                }
-            }.navigationTitle("Новый проект")
-            .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Отмена") { dismiss() } };ToolbarItem(placement:.confirmationAction) { Button("Создать") { do { let t=Catalog.shared.templates.first{$0.id==template}?.project;created(try store.create(name:name,width:CGFloat(min(8192,max(16,width))),height:CGFloat(min(8192,max(16,height))),template:t)) } catch { store.error=error.localizedDescription } }.accessibilityIdentifier("createProject") } }
-        }
-    }
-}
-struct SettingsView:View {
-    @Environment(\.dismiss) var dismiss
-    @AppStorage("appearance") var appearance=0
-    @AppStorage("pngScale") var pngScale=2.0
-    var body:some View { NavigationStack { Form {
-        Section { HStack { Image(systemName:"square.stack.3d.up.fill").font(.largeTitle).foregroundStyle(.teal);VStack(alignment:.leading) { Text("Qwel для iOS").font(.title2.bold());Text("Порт исходников v44 · сборка 0.1").foregroundStyle(.secondary) } } }
-        Section("Внешний вид") { Picker("Тема",selection:$appearance) { Text("Системная").tag(0);Text("Светлая").tag(1);Text("Тёмная").tag(2) } }
-        Section("Экспорт") { Picker("Масштаб PNG",selection:$pngScale) { ForEach([1.0,2.0,3.0],id:\.self) { Text("\(Int($0))×").tag($0) } } }
-        Section("Жесты") { Text("Один палец — выбор и перенос. Два пальца — панорамирование. Щипок — масштаб. Углы рамки — размер, верхняя ручка — поворот. Двойной тап — вписать холст.") }
-    }.navigationTitle("Настройки").toolbar { Button("Готово") { dismiss() } } } }
 }
 struct ShareSheet:UIViewControllerRepresentable {
     var urls:[URL]

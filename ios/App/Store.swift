@@ -17,7 +17,7 @@ import CoreText
     }
     func registerFonts() {
         let custom=(try? FileManager.default.contentsOfDirectory(at:fonts,includingPropertiesForKeys:nil)) ?? []
-        let bundled=Bundle.main.urls(forResourcesWithExtension:"ttf",subdirectory:nil) ?? []
+        let bundled=(Bundle.main.urls(forResourcesWithExtension:"ttf",subdirectory:nil) ?? [])+(Bundle.main.urls(forResourcesWithExtension:"otf",subdirectory:nil) ?? [])
         for u in custom+bundled { CTFontManagerRegisterFontsForURL(u as CFURL,.process,nil) }
     }
     func reload() {

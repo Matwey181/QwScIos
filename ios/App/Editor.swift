@@ -7,10 +7,14 @@ import SwiftUI
     @Published var multiSelect=false
     @Published var snap=true
     @Published var fitVersion=0
+    @Published var requestPanel:String?
+    @Published var showGrid=true
+    @Published var canvasScale:CGFloat=1
     @Published var error:String?
     var undoStack:[Project]=[],redoStack:[Project]=[]
     let store:ProjectStore
     let renderer:DocumentRenderer
+    lazy var originalPlay=OriginalPlayRuntime(editor:self)
     private var pendingSave:Task<Void,Never>?
     init(_ p:Project,store:ProjectStore) { project=p;self.store=store;renderer=DocumentRenderer(root:store.root) }
     var selected:[Node] { project.nodes.filter { selection.contains($0.id) } }
@@ -33,7 +37,7 @@ import SwiftUI
         guard let n=node else { if !multiSelect { selection=[] };return }
         let ids=Set(project.nodes.filter { n.group.isEmpty ? $0.id==n.id : $0.group==n.group }.map(\.id))
         if multiSelect { if ids.isSubset(of:selection) { selection.subtract(ids) } else { selection.formUnion(ids) } }
-        else { selection=ids }
+        else { selection = !n.group.isEmpty && ids.isSubset(of:selection) ? [n.id]:ids }
     }
     func add(_ kind:String,shape:ShapeItem?=nil) {
         var n=Node();n.kind=kind;n.name=shape?.name ?? ["RECT":"Прямоугольник","ELLIPSE":"Эллипс","TEXT":"Текст"][kind] ?? "Фигура"
@@ -130,50 +134,6 @@ import SwiftUI
             if p.bgToken>=0 && tone.colors.indices.contains(p.bgToken) { p.bg=tone.colors[p.bgToken] }
         }
     }
-    func interact(at point:CGPoint) {
-        guard let hit=project.nodes.reversed().first(where:{$0.visible && $0.contains(point)}) else { return }
-        if hit.action.hasPrefix("goto:") { let id=String(hit.action.dropFirst(5));if let i=project.pages.firstIndex(where:{$0.id==id}) { page(i) };return }
-        if hit.action=="back" { page(max(0,project.active-1));return }
-        if hit.action.hasPrefix("toggle:") { let id=String(hit.action.dropFirst(7));edit { p in if let i=p.nodes.firstIndex(where:{$0.id==id}) { p.nodes[i].visible.toggle() } };return }
-        if hit.action.hasPrefix("url:"),let u=URL(string:String(hit.action.dropFirst(4))),["https","http"].contains(u.scheme) { UIApplication.shared.open(u);return }
-        let group=hit.group
-        let indices=project.nodes.indices.filter { group.isEmpty ? project.nodes[$0].id==hit.id:project.nodes[$0].group==group }
-        let kind=indices.compactMap { project.nodes[$0].widget.split(separator:":").first.map(String.init) }.first ?? "press"
-        edit { p in
-            func part(_ role:String)->Int? { indices.first { p.nodes[$0].widget.components(separatedBy:":").dropFirst().joined(separator:":").components(separatedBy:"/").first==role } }
-            func color(_ token:Int)->Int64 { p.tone.colors.indices.contains(token) ? p.tone.colors[token]:-16749974 }
-            switch kind {
-            case "switch":
-                guard let tr=part("track"),let th=part("thumb") else { return }
-                let on=p.nodes[tr].fillToken != 0
-                let track=p.nodes[tr].rect
-                p.nodes[tr].fillToken=on ? 0:16;p.nodes[tr].fill=color(on ? 0:16);p.nodes[tr].strokeWidth=on ? 0:2
-                p.nodes[th].w=on ? 24:16;p.nodes[th].h=p.nodes[th].w
-                p.nodes[th].x=(on ? track.maxX-track.height/2:track.minX+track.height/2)-p.nodes[th].w/2
-                p.nodes[th].y=track.midY-p.nodes[th].h/2;p.nodes[th].fill=color(on ? 1:19)
-            case "check","chip","radio":
-                let box=part(kind=="radio" ? "ring":kind=="chip" ? "bg":"box")
-                if let box { let on=p.nodes[box].fillToken<0;p.nodes[box].fillToken=on ? 0:-1;p.nodes[box].fill=on ? color(0):0;p.nodes[box].strokeWidth=on ? 0:2
-                    for i in indices where p.nodes[i].widget.contains(":mark") || p.nodes[i].widget.contains(":dot") { p.nodes[i].opacity=on ? 1:0 }
-                }
-            case "slider","progress":
-                if let active=part("active") { let track=part("track");let right=track.map { p.nodes[$0].x+p.nodes[$0].w } ?? (p.nodes[active].x+160)
-                    let x=min(right,max(p.nodes[active].x,point.x));p.nodes[active].w=max(1,x-p.nodes[active].x)
-                    if let thumb=part("thumb") { p.nodes[thumb].x=x-p.nodes[thumb].w/2 }
-                }
-            case "reveal":for i in indices where p.nodes[i].widget.contains(":item") { p.nodes[i].opacity=p.nodes[i].opacity>0.5 ? 0:1 }
-            case "counter":if let label=part("label") { p.nodes[label].text=String(max(0,(Int(p.nodes[label].text) ?? 0)+(point.x<hit.center.x ? -1:1))) }
-            case "focus":if let box=part("box") { p.nodes[box].strokeWidth=p.nodes[box].strokeWidth>2 ? 1:3;p.nodes[box].stroke=color(0) }
-            case "pick":
-                let items=indices.filter { p.nodes[$0].widget.contains(":i") }
-                if let nearest=items.min(by:{abs(p.nodes[$0].center.x-point.x)<abs(p.nodes[$1].center.x-point.x)}) {
-                    let chosen=p.nodes[nearest].widget.components(separatedBy:"/").first ?? ""
-                    for i in items { let bits=p.nodes[i].widget.components(separatedBy:"/");if bits.count>=3 { let selected=bits[0]==chosen;let token=Int(bits[selected ? 1:2]) ?? 0;p.nodes[i].fill=color(token) } }
-                    if let indicator=part("indicator") { p.nodes[indicator].x=p.nodes[nearest].center.x-p.nodes[indicator].w/2 }
-                }
-            default:
-                for i in indices where p.nodes[i].pressCorner>=0 { let old=p.nodes[i].corner;p.nodes[i].corner=p.nodes[i].pressCorner;p.nodes[i].pressCorner=old }
-            }
-        }
-    }
+    func interact(at point:CGPoint) { originalPlay.tap(point) }
+    func togglePlay() { if playing { originalPlay.stop() } else { originalPlay.start() } }
 }

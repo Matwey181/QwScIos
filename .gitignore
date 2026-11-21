@@ -4,3 +4,4 @@ build/
 ios/*.xcodeproj/
 ios/*.xcworkspace/
 *.xcresult/
+.core-build/
