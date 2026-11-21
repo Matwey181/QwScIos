@@ -174,7 +174,6 @@ private struct QwelEcho: Identifiable {
                                           ease:rule.easing,repeats:rule.repeats))
                 if property == "progress" {current[idKey]=0}
             }
-        }
     }
     func value(_ id:String,_ property:String,base fallback:Double)->Double {
         // Access to this property establishes an observable dependency for SwiftUI.
