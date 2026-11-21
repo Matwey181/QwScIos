@@ -12,10 +12,71 @@ final class EditorTests:XCTestCase {
             n.path="M0 0L1 0L1 1Z";n.shapeId=Catalog.shared.shapes.first?.id ?? ""
             project.nodes.append(n)
         }
+        let source=project.nodes.first!.id
+        let destination=project.nodes.last!.id
+        var textRule=InteractionLink()
+        textRule.sourceID=source
+        textRule.event="tap"
+        textRule.mode="text"
+        textRule.targetID=destination
+        textRule.text="Переключено"
+        var slideRule=InteractionLink()
+        slideRule.sourceID=source
+        slideRule.event="drag"
+        slideRule.mode="bind"
+        slideRule.property="opacity"
+        slideRule.targetID=destination
+        slideRule.from=0
+        slideRule.to=1
+        project.links=[textRule,slideRule]
         let code=SwiftExport.make(project,root:FileManager.default.temporaryDirectory)
         XCTAssertTrue(code.contains("public struct QwelExportedView"))
+        XCTAssertTrue(code.contains("QwelExportRuntime"))
+        XCTAssertTrue(code.contains("graph.emit"))
+        XCTAssertTrue(code.contains("dragChanged"))
+        XCTAssertTrue(code.contains("Переключено"))
         XCTAssertTrue(code.contains("multilineTextAlignment(.center)"))
         try code.write(to:FileManager.default.temporaryDirectory.appendingPathComponent("QwelExportValidation.swift"),atomically:true,encoding:.utf8)
+    }
+    @MainActor func testRuleGraphPersistsAndRunsInPlayMode() throws {
+        let source=Node()
+        var destination=Node()
+        destination.kind="TEXT"
+        destination.text="До"
+        destination.x=120
+        var document=Project()
+        document.nodes=[source,destination]
+
+        var tap=InteractionLink()
+        tap.sourceID=source.id
+        tap.targetID=destination.id
+        tap.event="tap"
+        tap.mode="text"
+        tap.text="После"
+
+        var drag=InteractionLink()
+        drag.sourceID=source.id
+        drag.targetID=destination.id
+        drag.event="drag"
+        drag.mode="bind"
+        drag.property="opacity"
+        drag.from=0
+        drag.to=1
+
+        document.links=[tap,drag]
+        let data=try JSONEncoder().encode(document)
+        let restored=try JSONDecoder().decode(Project.self,from:data)
+        XCTAssertEqual(restored.links.count,2)
+        XCTAssertEqual(restored.links[0].text,"После")
+
+        let runtime=InteractionRuntime()
+        runtime.start(restored)
+        runtime.fire("tap",sourceID:source.id)
+        XCTAssertEqual(runtime.displayed(document).nodes[1].text,"После")
+        runtime.fire("drag",sourceID:source.id,fraction:0.25)
+        XCTAssertEqual(Double(runtime.displayed(document).nodes[1].opacity),0.25,accuracy:0.001)
+        runtime.stop()
+        XCTAssertEqual(runtime.displayed(document).nodes[1].text,"До")
     }
     @MainActor func testTextAlignmentPersistsThroughArchiveAndOriginalCore() throws {
         var node=Node();node.kind="TEXT";node.text="Test";node.w=240;node.textAlign="center"
