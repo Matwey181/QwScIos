@@ -137,15 +137,33 @@ enum CoordinatedFileImport {
 struct DocumentPicker: UIViewControllerRepresentable {
     let selected: ([URL]) -> Void
     func makeCoordinator() -> Coordinator { Coordinator(selected: selected) }
-    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+    func makeUIViewController(context: Context) -> Presenter {
+        let presenter = Presenter()
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: false)
+        picker.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         picker.allowsMultipleSelection = true
         picker.shouldShowFileExtensions = true
         picker.delegate = context.coordinator
-        picker.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-        return picker
+        picker.modalPresentationStyle = .fullScreen
+        presenter.picker = picker
+        return presenter
     }
-    func updateUIViewController(_ picker: UIDocumentPickerViewController, context: Context) {}
+    func updateUIViewController(_ presenter: Presenter, context: Context) {}
+    // SwiftUI configures a document picker used directly as sheet content,
+    // including its selection mode. Present it from a plain UIKit controller so
+    // UIKit owns its complete lifecycle and preserves multiple selection.
+    final class Presenter: UIViewController {
+        var picker: UIDocumentPickerViewController!
+        private var opened = false
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            guard !opened else { return }; opened = true
+            picker.allowsMultipleSelection = true
+            picker.shouldShowFileExtensions = true
+            present(picker, animated: false)
+            importTrace("Presented picker: multiple=\(picker.allowsMultipleSelection)")
+        }
+    }
     final class Coordinator: NSObject, UIDocumentPickerDelegate {
         let selected: ([URL]) -> Void
         private var delivered = false
