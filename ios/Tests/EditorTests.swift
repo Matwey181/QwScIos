@@ -158,7 +158,7 @@ final class EditorTests:XCTestCase {
                 XCTAssertTrue(TextLayout.isAndroidCatalogText(node),"\(item.id): \(node.text)")
                 let font=rendered.font(node)
                 let layout=TextLayout(node,font:font)
-                XCTAssertEqual(layout.lines.count,node.text.components(separatedBy:"\\n").count,
+                XCTAssertEqual(layout.lines.count,node.text.components(separatedBy:"\n").count,
                                "\(item.id): unexpected wrapped line in \(node.text)")
             }
             let exported=SwiftExport.make(original,root:FileManager.default.temporaryDirectory)
