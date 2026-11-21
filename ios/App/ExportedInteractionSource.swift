@@ -185,7 +185,7 @@ private struct QwelEcho: Identifiable {
             case "playback":
                 if !rule.targetAliases.contains(rule.source),var clock=clocks[rule.id] {
                     if clock.position>=1{clock.position=0}
-                    clock.running.toggle();clock.last=now;clocks[rule.id]=clock;publishClock(clock)
+                    clock.running=rule.event=="start" ? true:!clock.running;clock.last=now;clocks[rule.id]=clock;publishClock(clock)
                 }
             case "toggle":
                 visibility[id] = !(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))

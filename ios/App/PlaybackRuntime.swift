@@ -25,10 +25,10 @@ import QuartzCore
         }
     }
     func stop(){tracks=[:]}
-    func toggle(_ id:String) {
+    func toggle(_ id:String,forcePlay:Bool=false) {
         guard var track=tracks[id] else{return}
         if track.position>=1{track.position=0}
-        track.running.toggle();track.last=CACurrentMediaTime();tracks[id]=track;publish(track)
+        track.running=forcePlay ? true:!track.running;track.last=CACurrentMediaTime();tracks[id]=track;publish(track)
     }
     func seek(group:String,value:Double) {
         for id in Array(tracks.keys) {
@@ -57,7 +57,7 @@ import QuartzCore
         onProgress?(track.rule.targetID,track.position)
         let total=max(1,track.rule.duration),elapsed=track.position*total
         if track.rule.elapsedEnabled==true,let id=track.rule.elapsedID,!id.isEmpty{onText?(id,format(elapsed,track.rule.clockFormat ?? "clock"))}
-        if track.rule.remainingEnabled==true,let id=track.rule.remainingID,!id.isEmpty{onText?(id,format(max(0,total-elapsed),track.rule.clockFormat ?? "clock"))}
+        if track.rule.remainingEnabled==true,let id=track.rule.remainingID,!id.isEmpty{onText?(id,format(track.rule.clockFormat=="precise" ? max(0,total-elapsed):ceil(max(0,total-elapsed)),track.rule.clockFormat ?? "clock"))}
     }
     private func format(_ seconds:Double,_ style:String)->String {
         let value=max(0,seconds),whole=Int(value.rounded(.down))

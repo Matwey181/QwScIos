@@ -107,7 +107,7 @@ import QuartzCore
         case "playback":
             let source=project.nodes.first{$0.id==link.sourceID}
             let ownSlider=source?.id==node.id || (!node.group.isEmpty && source?.group==node.group)
-            if !ownSlider || link.event != "tap" {playback.toggle(link.id)}
+            if !ownSlider || link.event != "tap" {playback.toggle(link.id,forcePlay:link.event=="start")}
         case "toggle":
             visibility[target] = !(visibility[target] ?? node.visible)
         case "text":

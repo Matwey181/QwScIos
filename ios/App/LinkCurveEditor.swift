@@ -44,7 +44,7 @@ struct LinkCurveEditor:View {
     }
     private func coordinate(_ title:String,_ index:Int)->some View {
         QNumber(title:title,value:Binding(get:{CGFloat(points[index])},set:{value in
-            let range:ClosedRange<Double> =index%2==0 ? 0...1 : outside ? -10...10:0...1
+            let range:ClosedRange<Double> = index%2==0 ? 0...1 : outside ? -10...10:0...1
             points[index]=min(range.upperBound,max(range.lowerBound,Double(value)));save()
         }))
     }
