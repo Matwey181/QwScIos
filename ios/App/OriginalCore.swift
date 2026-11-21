@@ -67,7 +67,7 @@ import UIKit
                 self.target[group]=value
                 self.shown[group]=value
             }
-            links.start(editor.project)
+            links.start(editor.project,widgetValues:shown)
             refresh()
             let link=CADisplayLink(target:self,selector:#selector(frame));link.preferredFramesPerSecond=60;link.add(to:.main,forMode:.common);self.link=link
         } catch { editor.error=error.localizedDescription }
@@ -129,6 +129,7 @@ import UIKit
     }
     private func notifyWidget(_ group:String,value:Double) {
         guard let node=editor?.project.nodes.first(where:{$0.group==group}) else{return}
+        links.playback.seek(group:group,value:value)
         var fraction=value
         if kinds[group]=="pick",let nodes=editor?.project.nodes {
             let indices=Set(nodes.filter{$0.group==group && $0.widget.hasPrefix("pick:i")}.compactMap{Int($0.widget.dropFirst(6).split(separator:"/").first ?? "")})
@@ -155,6 +156,7 @@ import UIKit
     }
     func begin(_ p:CGPoint) {
         activeHit=hit(p);initial=p;lastStep=0
+        if let group=activeHit?["group"] as? String{links.playback.scrub(group:group,true)}
         let events=["dragStart","drag","dragEnd","valueChanged"]
         if let group=activeHit?["group"] as? String {
             activeSourceID=editor?.project.nodes.first(where:{$0.group==group && linked($0,events:events)})?.id
@@ -177,6 +179,7 @@ import UIKit
             // Keep the captured component even when the finger leaves its bounds.
             let value=widgetFraction(p,widget)
             target[group]=value;shown[group]=value
+            links.playback.seek(group:group,value:value)
             if activeSourceID==nil {notifyWidget(group,value:value)}
             refresh()
         } else if kind=="pick" {
@@ -185,6 +188,7 @@ import UIKit
         }
     }
     func end(_ p:CGPoint) {
+        if let group=activeHit?["group"] as? String{links.playback.scrub(group:group,false)}
         if let id=activeSourceID {
             links.fire("dragEnd",sourceID:id,fraction:dragFraction(p,sourceID:id))
             refresh()

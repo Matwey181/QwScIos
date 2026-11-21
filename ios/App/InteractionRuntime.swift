@@ -42,11 +42,12 @@ import QuartzCore
     }
     private var pending:[Pending]=[]
     private var valueEvents:[(String,Double)]=[]
+    let playback=PlaybackRuntime()
     var onWidgetProgress: ((String, Double) -> Void)?
 
-    var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty }
+    var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty || playback.active }
 
-    func start(_ document: Project) {
+    func start(_ document: Project,widgetValues:[String:Double]=[:]) {
         project = document
         toggled=[];morphs=[:];valueEvents=[]
         for rule in document.links where rule.enabled && rule.property=="morph" {
@@ -60,10 +61,14 @@ import QuartzCore
         motions.removeAll()
         echoes.removeAll()
         pending.removeAll()
+        playback.onProgress={ [weak self] id,value in self?.set(id,"progress",value) }
+        playback.onText={ [weak self] id,value in self?.text[id]=value }
+        playback.start(document,values:widgetValues)
         fire("start", sourceID: "")
     }
 
     func stop() {
+        playback.stop()
         motions.removeAll()
         echoes.removeAll()
         pending.removeAll()
@@ -99,6 +104,10 @@ import QuartzCore
         let colorProperty=["fill","stroke","fill2","shadowColor"].contains(link.property)
         if ["bind","set","toggle","text"].contains(link.mode) {motions.removeAll{$0.targetID==target && $0.property==link.property}}
         switch link.mode {
+        case "playback":
+            let source=project.nodes.first{$0.id==link.sourceID}
+            let ownSlider=source?.id==node.id || (!node.group.isEmpty && source?.group==node.group)
+            if !ownSlider || link.event != "tap" {playback.toggle(link.id)}
         case "toggle":
             visibility[target] = !(visibility[target] ?? node.visible)
         case "text":
@@ -181,6 +190,7 @@ import QuartzCore
     /// Advance active animations. Returns true while a frame must be redrawn.
     @discardableResult func tick(at now: Double = CACurrentMediaTime()) -> Bool {
         let hadMotion = active
+        let clockChanged=playback.tick(now)
         let due=pending.filter{$0.at<=now}
         pending.removeAll{$0.at<=now}
         for entry in due {execute(entry.link,fraction:entry.fraction)}
@@ -220,7 +230,7 @@ import QuartzCore
         echoes.removeAll { !$0.repeats && now > $0.started+$0.duration }
         // Completion can start new animations, but don't recursively call completion.
         for id in Set(finished) { fire("finished",sourceID:id) }
-        return hadMotion || !motions.isEmpty
+        return clockChanged || hadMotion || !motions.isEmpty
     }
 
     func displayed(_ base: Project, at now: Double = CACurrentMediaTime()) -> Project {

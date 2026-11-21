@@ -4,16 +4,13 @@ struct LinkRulesEditor:View {
     @ObservedObject var editor:Editor
     let source:Node
     @Environment(\.q) private var q
-    @State private var adding=false
-    @State private var draft=InteractionLink()
     @State private var expandedID:String?
     var body:some View {
         VStack(alignment:.leading,spacing:18){
             intro
-            if !adding {presets}
+            presets
             ForEach(editor.project.links){link in ruleCard(link)}
-            if adding {draftCard}
-            else {LinkPill(title:"Новая связка",icon:"plus",prominent:true){preset("custom")}}
+            LinkPill(title:"Новая связка",icon:"plus",prominent:true){preset("custom")}
         }
     }
     private var intro:some View {
@@ -29,6 +26,7 @@ struct LinkRulesEditor:View {
                 LinkPill(title:"Форма 5 ↔ 8",icon:"sparkle"){preset("morph")}
                 LinkPill(title:"Ползунок → эхо",icon:"slider.horizontal.3"){preset("echo")}
                 LinkPill(title:"Пульсация",icon:"wave.3.right"){preset("pulse")}
+                LinkPill(title:"Таймер-плеер",icon:"play.fill"){preset("playback")}
                 LinkPill(title:"Прогресс 15 с",icon:"play.fill"){preset("progress")}
                 LinkPill(title:"Смена текста",icon:"textformat"){preset("text")}
                 LinkPill(title:"Ползунок → размер",icon:"arrow.up.left.and.arrow.down.right"){preset("scale")}
@@ -55,13 +53,6 @@ struct LinkRulesEditor:View {
             if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes)}
         }.padding(18).qSurface(28,"surfaceContainerHigh")
     }
-    private var draftCard:some View {
-        VStack(alignment:.leading,spacing:18){
-            Text("Новая связка").font(qfont(21,.semibold))
-            LinkRuleForm(link:$draft,layers:editor.project.nodes)
-            HStack(spacing:10){LinkPill(title:"Отмена",icon:"xmark"){adding=false};LinkPill(title:"Сохранить",icon:"checkmark",prominent:true){var rule=draft;if rule.targetID.isEmpty{rule.targetID=source.id};editor.edit{$0.links.append(rule)};adding=false;expandedID=rule.id}}
-        }.padding(18).qSurface(28,"surfaceContainerHigh")
-    }
     private func mini(_ icon:String,_ label:String,action:@escaping()->Void)->some View {
         Button(action:action){Image(systemName:icon).font(.system(size:16,weight:.medium)).foregroundStyle(q.color("primary")).frame(width:44,height:44).qSurface(18,"surfaceContainerHighest")}.buttonStyle(.plain).accessibilityLabel(label)
     }
@@ -76,6 +67,7 @@ struct LinkRulesEditor:View {
         var rule=InteractionLink();rule.sourceID=source.id;rule.targetID=source.id
         switch kind {
         case "morph":rule.property="morph";rule.shapeID="star-8";rule.alternate=true;rule.duration=0.5
+        case "playback":rule.mode="playback";rule.duration=80;rule.easing="linear";rule.autoplay=true;rule.elapsedEnabled=false;rule.remainingEnabled=false
         case "progress":rule.property="progress";rule.duration=15;rule.easing="linear"
         case "text":rule.mode="text";rule.alternate=true
         case "scale":rule.event="valueChanged";rule.mode="bind";rule.property="scale";rule.from=0.7;rule.to=1.5
@@ -83,8 +75,9 @@ struct LinkRulesEditor:View {
         case "pulse":rule.mode="echo";rule.value=1;rule.duration=1
         default:break
         }
+        if kind=="playback",let slider=editor.project.nodes.first(where:{$0.widget.hasPrefix("slider:") || $0.widget.hasPrefix("progress:")}){rule.targetID=slider.id}
         if ["echo","scale"].contains(kind),let slider=editor.project.nodes.first(where:{$0.widget.hasPrefix("slider:")}){rule.sourceID=slider.id}
-        draft=rule;adding=true
+        editor.edit{$0.links.append(rule)};expandedID=rule.id
     }
 }
 
@@ -120,6 +113,7 @@ private struct LinkRuleForm:View {
                 LinkChoiceField(title:"Какой слой изменить",selection:$link.targetID,items:nodeChoices)
                 propertyControls
                 textControls
+                if link.mode=="playback"{PlaybackLinkControls(link:$link,layers:layers)}
             }
             timingControls
         }.onChange(of:link.property){_,property in if property=="morph" && link.shapeID==nil{link.shapeID="star-8";link.from=0;link.to=1}}
@@ -154,7 +148,7 @@ private struct LinkRuleForm:View {
                     QSlider(value:$link.duration,range:0.05...20)
                     QToggle("Повторять",isOn:$link.repeats)
                 }
-                LinkCurveEditor(easing:curve)
+                LinkCurveEditor(easing:curve,onPreset:{preset in if preset=="addButton"{link.duration=0.8}})
             }
         }
         if link.mode != "bind"{number("Задержка · секунды",value:$link.delay)}

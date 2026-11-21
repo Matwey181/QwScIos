@@ -26,6 +26,13 @@ private struct QwelRule {
     var sourceAliases: [String] = []
     var morphFrom: [Double] = []
     var morphTo: [Double] = []
+    var autoplay:Bool=false
+    var elapsedEnabled:Bool=false
+    var remainingEnabled:Bool=false
+    var elapsedID:String=""
+    var remainingID:String=""
+    var clockFormat:String="clock"
+    var targetAliases:[String]=[]
 }
 private struct QwelMotion {
     var source: String
@@ -54,6 +61,8 @@ private struct QwelEcho: Identifiable {
 }
 @MainActor private final class QwelExportRuntime: NSObject, ObservableObject {
     @Published private var version: Int = 0
+    private struct Clock {var rule:QwelRule;var position:Double;var last:Double;var running:Bool;var scrubbing=false}
+    private var clocks:[String:Clock]=[:]
     private var rules: [QwelRule] = []
     private var toggled:Set<String>=[]
     private var base: [String:Double] = [:]
@@ -85,6 +94,11 @@ private struct QwelEcho: Identifiable {
         echoes=[]
         pending=[]
         draggingSources=[]
+        clocks=[:]
+        for rule in links where rule.enabled && rule.mode=="playback" {
+            let clock=Clock(rule:rule,position:0,last:CACurrentMediaTime(),running:rule.autoplay)
+            clocks[rule.id]=clock;publishClock(clock)
+        }
         emit("start",source:"")
         let ticker=CADisplayLink(target:self,selector:#selector(frame))
         ticker.preferredFramesPerSecond=60
@@ -95,12 +109,14 @@ private struct QwelEcho: Identifiable {
         clock?.invalidate()
         clock=nil
         running=false
+        clocks=[:]
         motions=[]
         echoes=[]
         draggingSources=[]
     }
     @objc private func frame() {
         let now=CACurrentMediaTime()
+        let clockChanged=advanceClocks(now)
         let due=pending.filter{$0.at<=now}
         pending.removeAll{$0.at<=now}
         for item in due {apply(item.rule,fraction:item.fraction,now:now)}
@@ -123,11 +139,12 @@ private struct QwelEcho: Identifiable {
         for id in Set(completed.map(\.target)) {
             emit("finished",source:id)
         }
-        if !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty || !due.isEmpty {
+        if clockChanged || !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty || !due.isEmpty {
             version &+= 1
         }
     }
     func dragChanged(source:String,fraction:Double) {
+        seekClocks(source,fraction:fraction,scrubbing:true)
         if draggingSources.insert(source).inserted {
             emit("dragStart",source:source,fraction:fraction)
         }
@@ -135,6 +152,7 @@ private struct QwelEcho: Identifiable {
     }
     func dragEnded(source:String,fraction:Double) {
         emit("dragEnd",source:source,fraction:fraction)
+        seekClocks(source,fraction:fraction,scrubbing:false)
         draggingSources.remove(source)
     }
     func toggle(target id:String) {
@@ -164,6 +182,11 @@ private struct QwelEcho: Identifiable {
             if rule.alternate {if returning{toggled.remove(rule.id)}else{toggled.insert(rule.id)}}
             let isColor=["fill","stroke","fill2","shadowColor"].contains(property)
             switch rule.mode {
+            case "playback":
+                if !rule.targetAliases.contains(rule.source),var clock=clocks[rule.id] {
+                    if clock.position>=1{clock.position=0}
+                    clock.running.toggle();clock.last=now;clocks[rule.id]=clock;publishClock(clock)
+                }
             case "toggle":
                 visibility[id] = !(visibility[id] ?? ((base[key(id,"visible")] ?? 1) > 0.5))
             case "text":
@@ -231,6 +254,34 @@ private struct QwelEcho: Identifiable {
         let raw=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration)/pulse.duration:elapsed/pulse.duration
         return ease(min(1,max(0,raw)),pulse.easing)
     }
+    private func seekClocks(_ source:String,fraction:Double,scrubbing:Bool){
+        for id in Array(clocks.keys){
+            guard var clock=clocks[id],clock.rule.target==source || clock.rule.targetAliases.contains(source) else{continue}
+            clock.position=min(1,max(0,fraction));clock.last=CACurrentMediaTime();clock.scrubbing=scrubbing;clocks[id]=clock;publishClock(clock)
+        }
+    }
+    private func advanceClocks(_ now:Double)->Bool {
+        var changed=false
+        for id in Array(clocks.keys){
+            guard var clock=clocks[id],clock.running && !clock.scrubbing else{continue}
+            clock.position+=max(0,now-clock.last)/max(1,clock.rule.duration);clock.last=now
+            if clock.position>=1{if clock.rule.repeats{clock.position.formTruncatingRemainder(dividingBy:1)}else{clock.position=1;clock.running=false}}
+            clocks[id]=clock;publishClock(clock);changed=true
+        }
+        return changed
+    }
+    private func publishClock(_ clock:Clock){
+        current[key(clock.rule.target,"progress")]=clock.position
+        let elapsed=clock.position*max(1,clock.rule.duration)
+        if clock.rule.elapsedEnabled && !clock.rule.elapsedID.isEmpty{textValues[clock.rule.elapsedID]=clockLabel(elapsed,clock.rule.clockFormat)}
+        if clock.rule.remainingEnabled && !clock.rule.remainingID.isEmpty{textValues[clock.rule.remainingID]=clockLabel(max(0,clock.rule.duration-elapsed),clock.rule.clockFormat)}
+    }
+    private func clockLabel(_ seconds:Double,_ format:String)->String {
+        let t=max(0,seconds),n=Int(t.rounded(.down))
+        if format=="seconds"{return "\(n) с"}
+        let result=String(format:"%d:%02d",n/60,n%60)
+        return format=="precise" ? result+String(format:".%d",Int(t*10)%10):result
+    }
     func gradientPoint(_ id:String,base:Double,end:Bool)->UnitPoint {
         let angle=value(id,"gradAngle",base:base) * .pi/180,k=end ? 0.5 : -0.5
         return UnitPoint(x:0.5+cos(angle)*k,y:0.5+sin(angle)*k)
@@ -244,8 +295,16 @@ private struct QwelEcho: Identifiable {
         path.closeSubpath();return path
     }
     private func ease(_ raw:Double,_ kind:String)->Double {
-        if kind.hasPrefix("mapped:"){return ease(raw,String(kind.dropFirst(7)))}
-        let t=min(1,max(0,raw))
+        if kind.hasPrefix("mapped:"){return eased(raw,String(kind.dropFirst(7)))}
+        if kind.hasPrefix("curve:"),let divider=kind.firstIndex(of:"|") {
+            let options=kind[kind.index(kind.startIndex,offsetBy:6)..<divider].split(separator:",").compactMap{Double($0)}
+            let hold=min(0.95,max(0,options.first ?? 0))
+            let steps=min(240,max(0,options.count>1 ? options[1]:0))
+            var time=min(1,max(0,(raw-hold)/(1-hold)))
+            if steps>=2 && time<1 {time=floor(time*steps)/steps}
+            return eased(time,String(kind[kind.index(after:divider)...]))
+        }
+        let t = min(1, max(0, raw))
         if kind.hasPrefix("bezier:"),case let points=kind.dropFirst(7).split(separator:",").compactMap({Double($0)}),points.count==4,points.allSatisfy(\.isFinite) {
             func cubic(_ p:Double,_ a:Double,_ b:Double)->Double {3*(1-p)*(1-p)*p*a+3*(1-p)*p*p*b+p*p*p}
             var low=0.0,high=1.0
@@ -253,11 +312,16 @@ private struct QwelEcho: Identifiable {
             return t==0 || t==1 ? t:cubic((low+high)/2,points[1],points[3])
         }
         switch kind {
-        case "easeIn":return t*t*t
-        case "easeOut":return 1-pow(1-t,3)
-        case "easeInOut":return t<0.5 ? 4*t*t*t : 1-pow(-2*t+2,3)/2
-        case "spring":return t == 0 || t == 1 ? t : 1-pow(2,-10*t)*cos((t*10-0.75)*2 * .pi / 3)
-        default:return t
+        case "addButton":
+            if t==0 || t==1{return t}
+            let omega=2 * Double.pi/0.4,zeta=0.6,time=t*0.8
+            let damped=omega*sqrt(1-zeta*zeta)
+            return 1-exp(-zeta*omega*time)*(cos(damped*time)+zeta*omega/damped*sin(damped*time))
+        case "easeIn": return t * t * t
+        case "easeOut": return 1 - pow(1 - t, 3)
+        case "easeInOut": return t < 0.5 ? 4*t*t*t : 1 - pow(-2*t+2, 3)/2
+        case "spring": return t == 0 || t == 1 ? t : 1 - pow(2, -10*t) * cos((t*10 - 0.75) * 2 * .pi / 3)
+        default: return t
         }
     }
     private func mixColor(_ first:Int64,_ last:Int64,_ t:Double)->Int64 {
