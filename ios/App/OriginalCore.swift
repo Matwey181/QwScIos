@@ -99,7 +99,7 @@ import UIKit
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
     func tap(_ p:CGPoint) {
         guard let editor else { return }
-        if let n=editor.project.nodes.reversed().first(where:{($0.visible || visibility[$0.id]==true) && visibility[$0.id] != false && !$0.mask && $0.contains(p) && (!$0.action.isEmpty || editor.project.links.contains(where:{$0.enabled && $0.sourceID == $0.id}))}) {
+        if let n=editor.project.nodes.reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || editor.project.links.contains(where:{$0.enabled && $0.sourceID == n.id}))}) {
             links.fire("tap",sourceID:n.id)
             refresh()
             if n.action.hasPrefix("goto:"),let i=editor.project.pages.firstIndex(where:{$0.id==String(n.action.dropFirst(5))}) { let previous=editor.project.active;stop();back.append(previous);editor.page(i);start();return }
