@@ -15,7 +15,14 @@ struct InteractionEditorPanel:View {
                 Spacer(minLength:0)
                 Button{dismiss()}label:{Text("Готово").font(qfont(14,.semibold)).padding(.horizontal,20).padding(.vertical,14).qSurface(26,"primaryContainer")}.buttonStyle(.plain)
             }.padding(16)
-            ScrollView{LinkRulesEditor(editor:editor,source:source).padding(.horizontal,16).padding(.bottom,28)}.scrollDismissesKeyboard(.interactively)
+            ScrollView{
+                VStack(alignment:.leading,spacing:16){
+                    LinkRulesEditor(editor:editor,source:source)
+                    InlineSection(title:"Состояния и переходы"){StudioStates(editor:editor)}
+                    InlineSection(title:"Таймлайн анимаций"){StudioTimeline(editor:editor)}
+                    InlineSection(title:"Схема и проблемы связок"){StudioGraph(editor:editor)}
+                }.padding(.horizontal,16).padding(.bottom,28)
+            }.scrollDismissesKeyboard(.interactively)
         }.background(q.color("surfaceContainer").ignoresSafeArea()).foregroundStyle(q.color("onSurface"))
     }
 }

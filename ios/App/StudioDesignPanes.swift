@@ -44,18 +44,17 @@ struct StudioLayout:View {
 }
 struct StudioText:View {
     @ObservedObject var editor:Editor
-    @State private var editing=false
     private var node:Node?{editor.selected.first{$0.kind=="TEXT"}}
-    var body:some View {StudioCard(title:"Типографика"){
-        if let n=node{
-            EffectPreview(nodes:[n],renderer:editor.renderer).frame(height:140)
+    var body:some View {
+        VStack(alignment:.leading,spacing:12){
             QNumber(title:"Межбуквенный интервал",value:value(\.tracking))
             QNumber(title:"Дополнительный интервал строк",value:value(\.lineSpacing))
             QToggle("Подбирать размер внутри рамки",isOn:Binding(get:{node?.extras?.autoFit ?? false},set:{v in editor.extras{$0.autoFit=v}}))
-            HStack{QNumber(title:"Ширина",value:Binding(get:{node?.w ?? 180},set:{v in editor.change{$0.w=max(1,v)}}));QNumber(title:"Высота",value:Binding(get:{node?.h ?? 40},set:{v in editor.change{$0.h=max(1,v)}}))}
-            LinkPill(title:"Редактировать текст и выделения",icon:"textformat"){editing=true}
-        }else{Text("Выделите текстовый слой на холсте.").font(qfont(14))}
-    }.sheet(isPresented:$editing){if let n=node{TextEditPanel(editor:editor,nodeID:n.id){editing=false}.padding(16).modifier(OriginalTheme())}}}
+            if node?.extras?.autoFit==true {
+                QNumber(title:"Высота текстовой рамки",value:Binding(get:{node?.h ?? 40},set:{v in editor.change{$0.h=max(1,v)}}))
+            }
+        }
+    }
     private func value(_ key:WritableKeyPath<LayerExtras,CGFloat>)->Binding<CGFloat>{Binding(get:{(node?.extras ?? LayerExtras())[keyPath:key]},set:{v in editor.extras{$0[keyPath:key]=v}})}
 }
 struct StudioImage:View {

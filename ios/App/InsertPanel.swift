@@ -39,6 +39,7 @@ struct AddPanel:View {
     }
     private var components:some View {
         VStack(alignment:.leading,spacing:8) {
+            InlineSection(title:"Мои компоненты · сохранить и вставить"){StudioComponents(editor:editor)}
             ForEach(["actions","navigation","containment","communication","selection","inputs"],id:\.self){category in
                 Text(["actions":"Действия","navigation":"Навигация","containment":"Контейнеры","communication":"Сообщения","selection":"Выбор","inputs":"Ввод"][category] ?? category).font(qfont(14,.semibold)).foregroundStyle(q.color("primary")).padding(.top,8)
                 LazyVGrid(columns:[GridItem(.flexible(),spacing:8),GridItem(.flexible(),spacing:8)],spacing:8){ForEach(Catalog.shared.components.filter{$0.category==category}){item in

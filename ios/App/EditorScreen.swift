@@ -16,7 +16,7 @@ struct EditorScreen:View {
     @State private var menu=false
     @State private var dockOpen=false
     @State private var dialog:String?
-    @State private var studio=false
+    @State private var history=false
     @AppStorage("pngScale") private var pngScale=2.0
     init(project:Project,store:ProjectStore) { _editor=StateObject(wrappedValue:Editor(project,store:store)) }
     var body:some View {
@@ -42,7 +42,7 @@ struct EditorScreen:View {
                 }.padding(.horizontal,28)
             }
         }
-        .fullScreenCover(isPresented:$studio){StudioPanel(editor:editor).modifier(OriginalTheme())}
+        .fullScreenCover(isPresented:$history){ProjectHistoryPanel(editor:editor).modifier(OriginalTheme())}
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
         .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in switch result { case .success(let urls):if let url=urls.first{importFile(url)};case .failure(let e):editor.error=e.localizedDescription } }
         .onChange(of:photos) { _,items in Task { for item in items{do{if let data=try await item.loadTransferable(type:Data.self){try editor.addImage(data,name:"Картинка")}}catch{editor.error=error.localizedDescription}};photos=[] } }
@@ -117,12 +117,12 @@ struct EditorScreen:View {
     }
     private var menuContent:some View {
         ScrollView {VStack(spacing:0) {
-            menuItem("Style","Студия · компоненты и состояния"){studio=true}
             menuItem("Fit","Вписать в экран"){editor.fitVersion += 1}
             menuItem("Grid",editor.showGrid ? "Скрыть сетку":"Показать сетку"){editor.showGrid.toggle()}
             menuItem("Guides",editor.snap ? "Отключить привязки":"Включить привязки"){editor.snap.toggle()}
             menuItem("Multi","Выбрать всё"){editor.selection=Set(editor.project.nodes.map(\.id))}
             menuItem("Screens","Экраны"){dialog="screens"}
+            menuItem("Undo","Версии проекта"){history=true}
             menuItem("Style","Тон проекта…"){panel="document"}
             menuItem("Import","Импорт SVG"){importer=true}
             menuItem("Code","Код Compose"){export("kt")}

@@ -16,6 +16,7 @@ struct InspectorPanel:View {
                         TextField("Текст",text:bind(\.text,""),axis:.vertical).lineLimit(2...5).font(qfont(16)).padding(16).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
                         Button("Редактировать текст"){editor.requestTextEdit=n.id}.font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))
                         QNumber(title:"Ширина текста",value:bind(\.w,180))
+                        InlineSection(title:"Интервалы и автоподбор"){StudioText(editor:editor)}
                         HStack(spacing:8){
                             ForEach(["left","center","right"],id:\.self){alignment in
                                 QChip(title:alignment=="left" ? "Слева":alignment=="center" ? "По центру":"Справа",selected:n.textAlign==alignment){editor.change{$0.textAlign=alignment}}
@@ -35,6 +36,7 @@ struct InspectorPanel:View {
                     row("Обводка",\.stroke,token:n.strokeToken)
                     if n.stroke != 0 || n.strokeWidth>0{slider("Толщина",\.strokeWidth,0...16)}
                 }
+                if n.kind=="IMAGE"{StudioImage(editor:editor)}
                 slider("Непрозрачность",\.opacity,0...1,percent:true)
                 if !["TEXT","IMAGE"].contains(n.kind){
                     slider("Тень",\.shadowBlur,0...48)
@@ -89,7 +91,7 @@ struct AlignPanel:View {
     @ObservedObject var editor:Editor
     @Environment(\.q) var q
     @State private var canvas=false
-    var body:some View{VStack(alignment:.leading,spacing:14){if editor.selection.isEmpty{Text("Выберите один или несколько слоёв для выравнивания.").font(qfont(14)).foregroundStyle(q.color("onSurfaceVariant"))};HStack(spacing:8){Text("Относительно").font(qfont(14,.semibold));QChip(title:"Выделения",selected:!canvas && editor.selected.count>=2){canvas=false}.disabled(editor.selected.count<2);QChip(title:"Холста",selected:canvas || editor.selected.count<2){canvas=true}};group("По горизонтали",[("AlignLeft","left"),("AlignHCenter","centerX"),("AlignRight","right")]){editor.alignTo($0,canvas:canvas || editor.selected.count<2)};group("По вертикали",[("AlignTop","top"),("AlignVCenter","centerY"),("AlignBottom","bottom")]){editor.alignTo($0,canvas:canvas || editor.selected.count<2)};group("Равные промежутки",[("DistributeH","h"),("DistributeV","v")]){editor.distribute($0=="h")}.disabled(editor.selected.count<3);group("Одинаковый размер",[("SameWidth","w"),("SameHeight","h")]){editor.matchDimension($0=="w")}.disabled(editor.selected.count<2);QChip(title:"В центр холста",selected:true){editor.alignTo("centerX",canvas:true);editor.alignTo("centerY",canvas:true)}}}
+    var body:some View{VStack(alignment:.leading,spacing:14){if editor.selection.isEmpty{Text("Выберите один или несколько слоёв для выравнивания.").font(qfont(14)).foregroundStyle(q.color("onSurfaceVariant"))};HStack(spacing:8){Text("Относительно").font(qfont(14,.semibold));QChip(title:"Выделения",selected:!canvas && editor.selected.count>=2){canvas=false}.disabled(editor.selected.count<2);QChip(title:"Холста",selected:canvas || editor.selected.count<2){canvas=true}};group("По горизонтали",[("AlignLeft","left"),("AlignHCenter","centerX"),("AlignRight","right")]){editor.alignTo($0,canvas:canvas || editor.selected.count<2)};group("По вертикали",[("AlignTop","top"),("AlignVCenter","centerY"),("AlignBottom","bottom")]){editor.alignTo($0,canvas:canvas || editor.selected.count<2)};group("Равные промежутки",[("DistributeH","h"),("DistributeV","v")]){editor.distribute($0=="h")}.disabled(editor.selected.count<3);group("Одинаковый размер",[("SameWidth","w"),("SameHeight","h")]){editor.matchDimension($0=="w")}.disabled(editor.selected.count<2);QChip(title:"В центр холста",selected:true){editor.alignTo("centerX",canvas:true);editor.alignTo("centerY",canvas:true)};InlineSection(title:"Привязки, направляющие и отступы"){StudioLayout(editor:editor)}}}
     private func group(_ title:String,_ items:[(String,String)],_ run:@escaping(String)->Void)->some View{VStack(alignment:.leading,spacing:8){Text(title).font(qfont(14,.semibold)).foregroundStyle(q.color("primary"));HStack(spacing:4){ForEach(items,id:\.1){icon,id in QIconButton(icon:icon,label:title,size:52,enabled:!editor.selection.isEmpty){run(id)}}}.padding(4).qSurface(40,"surfaceContainerHighest")}}
 }
 struct DocumentPanel:View {
