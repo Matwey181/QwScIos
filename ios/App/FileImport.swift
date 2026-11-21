@@ -48,8 +48,8 @@ final class FileImportSession: @unchecked Sendable {
             current?.cancel()
         }
     }
-    func run(timeout: TimeInterval = 60, abandoned: @escaping () -> Void = {},
-             operation: @escaping (FileImportSession) throws -> [URL]) async throws -> [URL] {
+    func run(timeout: TimeInterval = 60, abandoned: @escaping @Sendable () -> Void = {},
+             operation: @escaping @Sendable (FileImportSession) throws -> [URL]) async throws -> [URL] {
         try await withCheckedThrowingContinuation { continuation in
             lock.lock()
             if finished { lock.unlock(); continuation.resume(throwing: FileImportError.cancelled); return }
@@ -68,7 +68,7 @@ final class FileImportSession: @unchecked Sendable {
 
 enum CoordinatedFileImport {
     static func copy(_ urls: [URL], to folder: URL, session: FileImportSession,
-                     progress: @escaping (String) -> Void) throws -> [URL] {
+                     progress: @escaping @Sendable (String) -> Void) throws -> [URL] {
         dispatchPrecondition(condition: .notOnQueue(.main))
         let manager = FileManager.default
         try manager.createDirectory(at: folder, withIntermediateDirectories: true)
