@@ -21,6 +21,7 @@ class JSONArray(val obj:dynamic=js("[]")) {
  fun put(v:Any?):JSONArray { obj.push(when(v){is JSONObject->v.obj;is JSONArray->v.obj;is Long->v.toDouble();else->v});return this }
  fun length():Int=obj.length as Int
  fun getJSONObject(i:Int)=JSONObject(obj[i],true)
+ fun getDouble(i:Int)=(obj[i] as Number).toDouble()
  fun getInt(i:Int)=(obj[i] as Number).toInt()
  override fun toString():String=JSON.stringify(obj)
 }

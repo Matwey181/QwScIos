@@ -98,17 +98,17 @@ var qwelcore = function (_) {
   initMetadataForClass(AbstractMutableCollection, 'AbstractMutableCollection', VOID, AbstractCollection, [AbstractCollection, Collection]);
   initMetadataForClass(IteratorImpl, 'IteratorImpl');
   initMetadataForClass(ListIteratorImpl, 'ListIteratorImpl', VOID, IteratorImpl);
-  initMetadataForClass(AbstractMutableList, 'AbstractMutableList', VOID, AbstractMutableCollection, [AbstractMutableCollection, Collection, KtList]);
+  initMetadataForClass(AbstractMutableList, 'AbstractMutableList', VOID, AbstractMutableCollection, [AbstractMutableCollection, KtList, Collection]);
   initMetadataForClass(AbstractMap, 'AbstractMap', VOID, VOID, [KtMap]);
   initMetadataForClass(AbstractMutableMap, 'AbstractMutableMap', VOID, AbstractMap, [AbstractMap, KtMap]);
-  initMetadataForClass(AbstractMutableSet, 'AbstractMutableSet', VOID, AbstractMutableCollection, [AbstractMutableCollection, Collection, KtSet]);
+  initMetadataForClass(AbstractMutableSet, 'AbstractMutableSet', VOID, AbstractMutableCollection, [AbstractMutableCollection, KtSet, Collection]);
   initMetadataForCompanion(Companion_1);
   initMetadataForInterface(RandomAccess, 'RandomAccess');
-  initMetadataForClass(ArrayList, 'ArrayList', ArrayList_init_$Create$, AbstractMutableList, [AbstractMutableList, Collection, KtList, RandomAccess]);
+  initMetadataForClass(ArrayList, 'ArrayList', ArrayList_init_$Create$, AbstractMutableList, [AbstractMutableList, KtList, Collection, RandomAccess]);
   initMetadataForClass(HashMap, 'HashMap', HashMap_init_$Create$, AbstractMutableMap, [AbstractMutableMap, KtMap]);
-  initMetadataForClass(HashMapEntrySetBase, 'HashMapEntrySetBase', VOID, AbstractMutableSet, [Collection, KtSet, AbstractMutableSet]);
+  initMetadataForClass(HashMapEntrySetBase, 'HashMapEntrySetBase', VOID, AbstractMutableSet, [KtSet, Collection, AbstractMutableSet]);
   initMetadataForClass(HashMapEntrySet, 'HashMapEntrySet', VOID, HashMapEntrySetBase);
-  initMetadataForClass(HashSet, 'HashSet', HashSet_init_$Create$, AbstractMutableSet, [AbstractMutableSet, Collection, KtSet]);
+  initMetadataForClass(HashSet, 'HashSet', HashSet_init_$Create$, AbstractMutableSet, [AbstractMutableSet, KtSet, Collection]);
   initMetadataForCompanion(Companion_2);
   initMetadataForClass(Itr, 'Itr');
   initMetadataForClass(KeysItr, 'KeysItr', VOID, Itr);
@@ -152,7 +152,11 @@ var qwelcore = function (_) {
   initMetadataForInterface(InternalMap, 'InternalMap');
   initMetadataForClass(InternalHashMap, 'InternalHashMap', InternalHashMap_init_$Create$, VOID, [InternalMap]);
   initMetadataForClass(LinkedHashMap, 'LinkedHashMap', LinkedHashMap_init_$Create$, HashMap, [HashMap, KtMap]);
-  initMetadataForClass(LinkedHashSet, 'LinkedHashSet', LinkedHashSet_init_$Create$, HashSet, [HashSet, Collection, KtSet]);
+  initMetadataForClass(LinkedHashSet, 'LinkedHashSet', LinkedHashSet_init_$Create$, HashSet, [HashSet, KtSet, Collection]);
+  initMetadataForClass(BaseOutput, 'BaseOutput');
+  initMetadataForClass(NodeJsOutput, 'NodeJsOutput', VOID, BaseOutput);
+  initMetadataForClass(BufferedOutput, 'BufferedOutput', BufferedOutput, BaseOutput);
+  initMetadataForClass(BufferedOutputToConsoleLog, 'BufferedOutputToConsoleLog', BufferedOutputToConsoleLog, BufferedOutput);
   initMetadataForClass(Exception, 'Exception', Exception_init_$Create$, Error);
   initMetadataForClass(RuntimeException, 'RuntimeException', RuntimeException_init_$Create$, Exception);
   initMetadataForClass(IllegalArgumentException, 'IllegalArgumentException', IllegalArgumentException_init_$Create$, RuntimeException);
@@ -218,11 +222,36 @@ var qwelcore = function (_) {
   initMetadataForObject(Components, 'Components');
   initMetadataForClass(Src, 'Src');
   initMetadataForClass(Ctx, 'Ctx', Ctx);
+  initMetadataForClass(ExportOpts, 'ExportOpts');
   initMetadataForClass(Comp, 'Comp');
   initMetadataForObject(ComposeCode, 'ComposeCode');
   initMetadataForClass(EchoParams, 'EchoParams', EchoParams);
   initMetadataForObject(Echo, 'Echo');
   initMetadataForObject(ExpressiveComponents, 'ExpressiveComponents');
+  initMetadataForCompanion(Companion_11);
+  initMetadataForClass(CornerRounding, 'CornerRounding', CornerRounding);
+  initMetadataForCompanion(Companion_12);
+  initMetadataForClass(Cubic, 'Cubic');
+  initMetadataForInterface(PointTransformer, 'PointTransformer');
+  initMetadataForClass(MutableCubic, 'MutableCubic', MutableCubic, Cubic);
+  initMetadataForClass(ProgressableFeature, 'ProgressableFeature');
+  initMetadataForClass(Feature, 'Feature');
+  initMetadataForClass(Edge, 'Edge', VOID, Feature);
+  initMetadataForClass(Corner, 'Corner', VOID, Feature);
+  initMetadataForCompanion(Companion_13);
+  initMetadataForClass(DoubleMapper, 'DoubleMapper');
+  initMetadataForCompanion(Companion_14);
+  initMetadataForClass(Morph, 'Morph');
+  initMetadataForClass(MeasuredCubic, 'MeasuredCubic');
+  initMetadataForCompanion(Companion_15);
+  initMetadataForClass(MeasuredPolygon, 'MeasuredPolygon', VOID, AbstractList);
+  initMetadataForInterface(FindMinimumFunction, 'FindMinimumFunction');
+  initMetadataForClass(sam$androidx_graphics_shapes_FindMinimumFunction$0, 'sam$androidx_graphics_shapes_FindMinimumFunction$0', VOID, VOID, [FindMinimumFunction, FunctionAdapter]);
+  initMetadataForClass(AngleMeasurer, 'AngleMeasurer');
+  initMetadataForCompanion(Companion_16);
+  initMetadataForClass(sam$androidx_graphics_shapes_PointTransformer$0, 'sam$androidx_graphics_shapes_PointTransformer$0', VOID, VOID, [PointTransformer, FunctionAdapter]);
+  initMetadataForClass(RoundedPolygon, 'RoundedPolygon');
+  initMetadataForClass(RoundedCorner, 'RoundedCorner');
   initMetadataForObject(IconNodes, 'IconNodes');
   initMetadataForClass(NodeKind, 'NodeKind', VOID, Enum);
   initMetadataForClass(Node, 'Node');
@@ -238,15 +267,23 @@ var qwelcore = function (_) {
   initMetadataForClass(Slider, 'Slider');
   initMetadataForClass(sam$kotlin_Comparator$0, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
   initMetadataForObject(PlayMode, 'PlayMode');
+  initMetadataForClass(Result, 'Result');
+  initMetadataForClass(Core, 'Core');
+  initMetadataForClass(sam$kotlin_Comparator$0_0, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+  initMetadataForObject(ProjectExport, 'ProjectExport');
   initMetadataForObject(ProjectStore, 'ProjectStore');
-  initMetadataForCompanion(Companion_11);
+  initMetadataForCompanion(Companion_17);
   initMetadataForClass(Tone, 'Tone', Tone);
   initMetadataForObject(ToneGen, 'ToneGen');
+  initMetadataForClass(ShapeDef, 'ShapeDef');
+  initMetadataForObject(ShapeLibrary, 'ShapeLibrary');
+  initMetadataForObject(Mat, 'Mat');
   initMetadataForObject(IconLibrary, 'IconLibrary');
   initMetadataForObject(SvgImport, 'SvgImport');
+  initMetadataForClass(FloatFloatPair, 'FloatFloatPair');
   initMetadataForObject(Math_0, 'Math');
   initMetadataForClass(Random, 'Random');
-  initMetadataForClass(sam$kotlin_Comparator$0_0, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
+  initMetadataForClass(sam$kotlin_Comparator$0_1, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
   initMetadataForClass(JSONObject, 'JSONObject', JSONObject);
   initMetadataForClass(JSONArray, 'JSONArray', JSONArray);
   initMetadataForClass(TapState, 'TapState');
@@ -311,11 +348,11 @@ var qwelcore = function (_) {
     }
     return tmp;
   }
-  function toMutableList(_this__u8e3s4) {
-    return ArrayList_init_$Create$_1(asCollection(_this__u8e3s4));
-  }
   function get_lastIndex(_this__u8e3s4) {
     return _this__u8e3s4.length - 1 | 0;
+  }
+  function toMutableList(_this__u8e3s4) {
+    return ArrayList_init_$Create$_1(asCollection(_this__u8e3s4));
   }
   function indexOf_0(_this__u8e3s4, element) {
     var inductionVariable = 0;
@@ -338,7 +375,7 @@ var qwelcore = function (_) {
       case 1:
         return setOf(_this__u8e3s4[0]);
       default:
-        return toCollection(_this__u8e3s4, LinkedHashSet_init_$Create$_0(mapCapacity(_this__u8e3s4.length)));
+        return toCollection(_this__u8e3s4, LinkedHashSet_init_$Create$_1(mapCapacity(_this__u8e3s4.length)));
     }
   }
   function joinToString(_this__u8e3s4, separator, prefix, postfix, limit, truncated, transform) {
@@ -455,6 +492,9 @@ var qwelcore = function (_) {
     result.addAll_h3ej1q_k$(_this__u8e3s4);
     result.add_utx5q5_k$(element);
     return result;
+  }
+  function distinct(_this__u8e3s4) {
+    return toList_0(toMutableSet(_this__u8e3s4));
   }
   function firstOrNull(_this__u8e3s4) {
     return _this__u8e3s4.isEmpty_y1axqb_k$() ? null : _this__u8e3s4.get_c1px32_k$(0);
@@ -629,6 +669,15 @@ var qwelcore = function (_) {
     sortWith_0(this_1, comparator);
     return this_1;
   }
+  function toMutableSet(_this__u8e3s4) {
+    var tmp;
+    if (isInterface(_this__u8e3s4, Collection)) {
+      tmp = LinkedHashSet_init_$Create$_0(_this__u8e3s4);
+    } else {
+      tmp = toCollection_0(_this__u8e3s4, LinkedHashSet_init_$Create$());
+    }
+    return tmp;
+  }
   function toMutableList_1(_this__u8e3s4) {
     if (isInterface(_this__u8e3s4, Collection))
       return toMutableList_0(_this__u8e3s4);
@@ -673,7 +722,7 @@ var qwelcore = function (_) {
           tmp = setOf(tmp_0);
           break;
         default:
-          tmp = toCollection_0(_this__u8e3s4, LinkedHashSet_init_$Create$_0(mapCapacity(_this__u8e3s4.get_size_woubt6_k$())));
+          tmp = toCollection_0(_this__u8e3s4, LinkedHashSet_init_$Create$_1(mapCapacity(_this__u8e3s4.get_size_woubt6_k$())));
           break;
       }
       return tmp;
@@ -1106,6 +1155,45 @@ var qwelcore = function (_) {
   function arrayToString(array) {
     return joinToString(array, ', ', '[', ']', VOID, VOID, arrayToString$lambda);
   }
+  function contentEqualsInternal(_this__u8e3s4, other) {
+    // Inline function 'kotlin.js.asDynamic' call
+    var a = _this__u8e3s4;
+    // Inline function 'kotlin.js.asDynamic' call
+    var b = other;
+    if (a === b)
+      return true;
+    if (a == null || b == null || !isArrayish(b) || a.length != b.length)
+      return false;
+    var inductionVariable = 0;
+    var last = a.length;
+    if (inductionVariable < last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        if (!equals(a[i], b[i])) {
+          return false;
+        }
+      }
+       while (inductionVariable < last);
+    return true;
+  }
+  function contentHashCodeInternal(_this__u8e3s4) {
+    // Inline function 'kotlin.js.asDynamic' call
+    var a = _this__u8e3s4;
+    if (a == null)
+      return 0;
+    var result = 1;
+    var inductionVariable = 0;
+    var last = a.length;
+    if (inductionVariable < last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        result = imul(result, 31) + hashCode(a[i]) | 0;
+      }
+       while (inductionVariable < last);
+    return result;
+  }
   function arrayToString$lambda(it) {
     return toString_1(it);
   }
@@ -1216,8 +1304,38 @@ var qwelcore = function (_) {
     }
     return tmp;
   }
-  function anyToString(o) {
-    return Object.prototype.toString.call(o);
+  function equals(obj1, obj2) {
+    if (obj1 == null) {
+      return obj2 == null;
+    }
+    if (obj2 == null) {
+      return false;
+    }
+    if (typeof obj1 === 'object' && typeof obj1.equals === 'function') {
+      return obj1.equals(obj2);
+    }
+    if (obj1 !== obj1) {
+      return obj2 !== obj2;
+    }
+    if (typeof obj1 === 'number' && typeof obj2 === 'number') {
+      var tmp;
+      if (obj1 === obj2) {
+        var tmp_0;
+        if (obj1 !== 0) {
+          tmp_0 = true;
+        } else {
+          // Inline function 'kotlin.js.asDynamic' call
+          var tmp_1 = 1 / obj1;
+          // Inline function 'kotlin.js.asDynamic' call
+          tmp_0 = tmp_1 === 1 / obj2;
+        }
+        tmp = tmp_0;
+      } else {
+        tmp = false;
+      }
+      return tmp;
+    }
+    return obj1 === obj2;
   }
   function hashCode(obj) {
     if (obj == null)
@@ -1255,6 +1373,9 @@ var qwelcore = function (_) {
         break;
     }
     return tmp;
+  }
+  function anyToString(o) {
+    return Object.prototype.toString.call(o);
   }
   function getBooleanHashCode(value) {
     return value ? 1231 : 1237;
@@ -1315,39 +1436,6 @@ var qwelcore = function (_) {
   }
   var symbolMap;
   var symbolWeakMap;
-  function equals(obj1, obj2) {
-    if (obj1 == null) {
-      return obj2 == null;
-    }
-    if (obj2 == null) {
-      return false;
-    }
-    if (typeof obj1 === 'object' && typeof obj1.equals === 'function') {
-      return obj1.equals(obj2);
-    }
-    if (obj1 !== obj1) {
-      return obj2 !== obj2;
-    }
-    if (typeof obj1 === 'number' && typeof obj2 === 'number') {
-      var tmp;
-      if (obj1 === obj2) {
-        var tmp_0;
-        if (obj1 !== 0) {
-          tmp_0 = true;
-        } else {
-          // Inline function 'kotlin.js.asDynamic' call
-          var tmp_1 = 1 / obj1;
-          // Inline function 'kotlin.js.asDynamic' call
-          tmp_0 = tmp_1 === 1 / obj2;
-        }
-        tmp = tmp_0;
-      } else {
-        tmp = false;
-      }
-      return tmp;
-    }
-    return obj1 === obj2;
-  }
   function unboxIntrinsic(x) {
     var message = 'Should be lowered';
     throw IllegalStateException_init_$Create$_0(toString_1(message));
@@ -2039,6 +2127,12 @@ var qwelcore = function (_) {
       VOID = void 0;
     }
   }
+  function contentEquals(_this__u8e3s4, other) {
+    return contentEqualsInternal(_this__u8e3s4, other);
+  }
+  function contentHashCode(_this__u8e3s4) {
+    return contentHashCodeInternal(_this__u8e3s4);
+  }
   function asList(_this__u8e3s4) {
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -2189,6 +2283,12 @@ var qwelcore = function (_) {
     }
     return index;
   }
+  function checkCountOverflow(count) {
+    if (count < 0) {
+      throwCountOverflow();
+    }
+    return count;
+  }
   function sortWith_0(_this__u8e3s4, comparator) {
     collectionsSort(_this__u8e3s4, comparator);
   }
@@ -2223,6 +2323,37 @@ var qwelcore = function (_) {
   }
   function setOf(element) {
     return hashSetOf([element]);
+  }
+  function arrayCopy(source, destination, destinationOffset, startIndex, endIndex) {
+    Companion_instance_4.checkRangeIndexes_mmy49x_k$(startIndex, endIndex, source.length);
+    var rangeSize = endIndex - startIndex | 0;
+    Companion_instance_4.checkRangeIndexes_mmy49x_k$(destinationOffset, destinationOffset + rangeSize | 0, destination.length);
+    if (isView(destination) && isView(source)) {
+      // Inline function 'kotlin.js.asDynamic' call
+      var subrange = source.subarray(startIndex, endIndex);
+      // Inline function 'kotlin.js.asDynamic' call
+      destination.set(subrange, destinationOffset);
+    } else {
+      if (!(source === destination) || destinationOffset <= startIndex) {
+        var inductionVariable = 0;
+        if (inductionVariable < rangeSize)
+          do {
+            var index = inductionVariable;
+            inductionVariable = inductionVariable + 1 | 0;
+            destination[destinationOffset + index | 0] = source[startIndex + index | 0];
+          }
+           while (inductionVariable < rangeSize);
+      } else {
+        var inductionVariable_0 = rangeSize - 1 | 0;
+        if (0 <= inductionVariable_0)
+          do {
+            var index_0 = inductionVariable_0;
+            inductionVariable_0 = inductionVariable_0 + -1 | 0;
+            destination[destinationOffset + index_0 | 0] = source[startIndex + index_0 | 0];
+          }
+           while (0 <= inductionVariable_0);
+      }
+    }
   }
   function AbstractMutableCollection() {
     AbstractCollection.call(this);
@@ -2496,6 +2627,24 @@ var qwelcore = function (_) {
     }
     return tmp;
   };
+  protoOf(ArrayList).remove_cedx0m_k$ = function (element) {
+    this.checkIsMutable_jn1ih0_k$();
+    var inductionVariable = 0;
+    var last = this.array_1.length - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var index = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        if (equals(this.array_1[index], element)) {
+          // Inline function 'kotlin.js.asDynamic' call
+          this.array_1.splice(index, 1);
+          this.modCount_1 = this.modCount_1 + 1 | 0;
+          return true;
+        }
+      }
+       while (inductionVariable <= last);
+    return false;
+  };
   protoOf(ArrayList).indexOf_si1fv9_k$ = function (element) {
     return indexOf(this.array_1, element);
   };
@@ -2652,7 +2801,7 @@ var qwelcore = function (_) {
     return HashMap_init_$Init$_0(objectCreate(protoOf(HashMap)));
   }
   function HashMap_init_$Init$_1(initialCapacity, loadFactor, $this) {
-    HashMap_init_$Init$(InternalHashMap_init_$Create$_1(initialCapacity, loadFactor), $this);
+    HashMap_init_$Init$(InternalHashMap_init_$Create$_2(initialCapacity, loadFactor), $this);
     return $this;
   }
   function HashMap_init_$Init$_2(initialCapacity, $this) {
@@ -2660,9 +2809,12 @@ var qwelcore = function (_) {
     return $this;
   }
   function HashMap_init_$Init$_3(original, $this) {
-    HashMap_init_$Init$(InternalHashMap_init_$Create$_0(original), $this);
+    HashMap_init_$Init$(InternalHashMap_init_$Create$_1(original), $this);
     return $this;
   }
+  protoOf(HashMap).clear_j9egeb_k$ = function () {
+    this.internalMap_1.clear_j9egeb_k$();
+  };
   protoOf(HashMap).containsKey_aw81wo_k$ = function (key) {
     return this.internalMap_1.contains_vbgn2f_k$(key);
   };
@@ -2743,19 +2895,31 @@ var qwelcore = function (_) {
   function HashSet_init_$Create$() {
     return HashSet_init_$Init$_0(objectCreate(protoOf(HashSet)));
   }
-  function HashSet_init_$Init$_1(initialCapacity, loadFactor, $this) {
-    HashSet_init_$Init$(InternalHashMap_init_$Create$_1(initialCapacity, loadFactor), $this);
+  function HashSet_init_$Init$_1(elements, $this) {
+    HashSet_init_$Init$(InternalHashMap_init_$Create$_0(elements.get_size_woubt6_k$()), $this);
+    var _iterator__ex2g4s = elements.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      $this.internalMap_1.put_4fpzoq_k$(element, true);
+    }
     return $this;
   }
-  function HashSet_init_$Init$_2(initialCapacity, $this) {
-    HashSet_init_$Init$_1(initialCapacity, 1.0, $this);
+  function HashSet_init_$Init$_2(initialCapacity, loadFactor, $this) {
+    HashSet_init_$Init$(InternalHashMap_init_$Create$_2(initialCapacity, loadFactor), $this);
+    return $this;
+  }
+  function HashSet_init_$Init$_3(initialCapacity, $this) {
+    HashSet_init_$Init$_2(initialCapacity, 1.0, $this);
     return $this;
   }
   function HashSet_init_$Create$_0(initialCapacity) {
-    return HashSet_init_$Init$_2(initialCapacity, objectCreate(protoOf(HashSet)));
+    return HashSet_init_$Init$_3(initialCapacity, objectCreate(protoOf(HashSet)));
   }
   protoOf(HashSet).add_utx5q5_k$ = function (element) {
     return this.internalMap_1.put_4fpzoq_k$(element, true) == null;
+  };
+  protoOf(HashSet).clear_j9egeb_k$ = function () {
+    this.internalMap_1.clear_j9egeb_k$();
   };
   protoOf(HashSet).contains_aljjnj_k$ = function (element) {
     return this.internalMap_1.contains_vbgn2f_k$(element);
@@ -2793,12 +2957,15 @@ var qwelcore = function (_) {
     InternalHashMap.call($this, arrayOfUninitializedElements(initialCapacity), null, new Int32Array(initialCapacity), new Int32Array(computeHashSize(Companion_instance_2, initialCapacity)), 2, 0);
     return $this;
   }
+  function InternalHashMap_init_$Create$_0(initialCapacity) {
+    return InternalHashMap_init_$Init$_0(initialCapacity, objectCreate(protoOf(InternalHashMap)));
+  }
   function InternalHashMap_init_$Init$_1(original, $this) {
     InternalHashMap_init_$Init$_0(original.get_size_woubt6_k$(), $this);
     $this.putAll_wgg6cj_k$(original);
     return $this;
   }
-  function InternalHashMap_init_$Create$_0(original) {
+  function InternalHashMap_init_$Create$_1(original) {
     return InternalHashMap_init_$Init$_1(original, objectCreate(protoOf(InternalHashMap)));
   }
   function InternalHashMap_init_$Init$_2(initialCapacity, loadFactor, $this) {
@@ -2810,7 +2977,7 @@ var qwelcore = function (_) {
     }
     return $this;
   }
-  function InternalHashMap_init_$Create$_1(initialCapacity, loadFactor) {
+  function InternalHashMap_init_$Create$_2(initialCapacity, loadFactor) {
     return InternalHashMap_init_$Init$_2(initialCapacity, loadFactor, objectCreate(protoOf(InternalHashMap)));
   }
   function _get_capacity__a9k9f3($this) {
@@ -2981,7 +3148,7 @@ var qwelcore = function (_) {
       }
     }
   }
-  function contentEquals($this, other) {
+  function contentEquals_0($this, other) {
     return $this._size_1 === other.get_size_woubt6_k$() && $this.containsAllEntries_m9iqdx_k$(other.get_entries_p20ztl_k$());
   }
   function putEntry($this, entry) {
@@ -3188,6 +3355,32 @@ var qwelcore = function (_) {
     this.checkIsMutable_h5js84_k$();
     putAllEntries(this, from.get_entries_p20ztl_k$());
   };
+  protoOf(InternalHashMap).clear_j9egeb_k$ = function () {
+    this.checkIsMutable_h5js84_k$();
+    var inductionVariable = 0;
+    var last = this.length_1 - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var hash = this.presenceArray_1[i];
+        if (hash >= 0) {
+          this.hashArray_1[hash] = 0;
+          this.presenceArray_1[i] = -1;
+        }
+      }
+       while (!(i === last));
+    resetRange(this.keysArray_1, 0, this.length_1);
+    var tmp0_safe_receiver = this.valuesArray_1;
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      resetRange(tmp0_safe_receiver, 0, this.length_1);
+    }
+    this._size_1 = 0;
+    this.length_1 = 0;
+    registerModification(this);
+  };
   protoOf(InternalHashMap).equals = function (other) {
     var tmp;
     if (other === this) {
@@ -3195,7 +3388,7 @@ var qwelcore = function (_) {
     } else {
       var tmp_0;
       if (!(other == null) ? isInterface(other, KtMap) : false) {
-        tmp_0 = contentEquals(this, other);
+        tmp_0 = contentEquals_0(this, other);
       } else {
         tmp_0 = false;
       }
@@ -3281,17 +3474,25 @@ var qwelcore = function (_) {
   function LinkedHashSet_init_$Create$() {
     return LinkedHashSet_init_$Init$(objectCreate(protoOf(LinkedHashSet)));
   }
-  function LinkedHashSet_init_$Init$_0(initialCapacity, loadFactor, $this) {
-    HashSet_init_$Init$_1(initialCapacity, loadFactor, $this);
+  function LinkedHashSet_init_$Init$_0(elements, $this) {
+    HashSet_init_$Init$_1(elements, $this);
     LinkedHashSet.call($this);
     return $this;
   }
-  function LinkedHashSet_init_$Init$_1(initialCapacity, $this) {
-    LinkedHashSet_init_$Init$_0(initialCapacity, 1.0, $this);
+  function LinkedHashSet_init_$Create$_0(elements) {
+    return LinkedHashSet_init_$Init$_0(elements, objectCreate(protoOf(LinkedHashSet)));
+  }
+  function LinkedHashSet_init_$Init$_1(initialCapacity, loadFactor, $this) {
+    HashSet_init_$Init$_2(initialCapacity, loadFactor, $this);
+    LinkedHashSet.call($this);
     return $this;
   }
-  function LinkedHashSet_init_$Create$_0(initialCapacity) {
-    return LinkedHashSet_init_$Init$_1(initialCapacity, objectCreate(protoOf(LinkedHashSet)));
+  function LinkedHashSet_init_$Init$_2(initialCapacity, $this) {
+    LinkedHashSet_init_$Init$_1(initialCapacity, 1.0, $this);
+    return $this;
+  }
+  function LinkedHashSet_init_$Create$_1(initialCapacity) {
+    return LinkedHashSet_init_$Init$_2(initialCapacity, objectCreate(protoOf(LinkedHashSet)));
   }
   protoOf(LinkedHashSet).checkIsMutable_jn1ih0_k$ = function () {
     return this.internalMap_1.checkIsMutable_h5js84_k$();
@@ -3299,6 +3500,83 @@ var qwelcore = function (_) {
   function LinkedHashSet() {
   }
   function RandomAccess() {
+  }
+  function get_output() {
+    _init_properties_console_kt__rfg7jv();
+    return output;
+  }
+  var output;
+  function BaseOutput() {
+  }
+  protoOf(BaseOutput).println_uvj9r3_k$ = function () {
+    this.print_o1pwgy_k$('\n');
+  };
+  protoOf(BaseOutput).println_ghnc0w_k$ = function (message) {
+    this.print_o1pwgy_k$(message);
+    this.println_uvj9r3_k$();
+  };
+  function NodeJsOutput(outputStream) {
+    BaseOutput.call(this);
+    this.outputStream_1 = outputStream;
+  }
+  protoOf(NodeJsOutput).print_o1pwgy_k$ = function (message) {
+    // Inline function 'kotlin.io.String' call
+    var tmp1_elvis_lhs = message == null ? null : toString_1(message);
+    var messageString = tmp1_elvis_lhs == null ? 'null' : tmp1_elvis_lhs;
+    this.outputStream_1.write(messageString);
+  };
+  function BufferedOutputToConsoleLog() {
+    BufferedOutput.call(this);
+  }
+  protoOf(BufferedOutputToConsoleLog).print_o1pwgy_k$ = function (message) {
+    // Inline function 'kotlin.io.String' call
+    var tmp1_elvis_lhs = message == null ? null : toString_1(message);
+    var s = tmp1_elvis_lhs == null ? 'null' : tmp1_elvis_lhs;
+    // Inline function 'kotlin.text.nativeLastIndexOf' call
+    // Inline function 'kotlin.js.asDynamic' call
+    var i = s.lastIndexOf('\n', 0);
+    if (i >= 0) {
+      var tmp = this;
+      var tmp_0 = this.buffer_1;
+      // Inline function 'kotlin.text.substring' call
+      // Inline function 'kotlin.js.asDynamic' call
+      tmp.buffer_1 = tmp_0 + s.substring(0, i);
+      this.flush_shahbo_k$();
+      var tmp6 = s;
+      // Inline function 'kotlin.text.substring' call
+      var startIndex = i + 1 | 0;
+      // Inline function 'kotlin.js.asDynamic' call
+      s = tmp6.substring(startIndex);
+    }
+    this.buffer_1 = this.buffer_1 + s;
+  };
+  protoOf(BufferedOutputToConsoleLog).flush_shahbo_k$ = function () {
+    console.log(this.buffer_1);
+    this.buffer_1 = '';
+  };
+  function BufferedOutput() {
+    BaseOutput.call(this);
+    this.buffer_1 = '';
+  }
+  protoOf(BufferedOutput).print_o1pwgy_k$ = function (message) {
+    var tmp = this;
+    var tmp_0 = this.buffer_1;
+    // Inline function 'kotlin.io.String' call
+    var tmp1_elvis_lhs = message == null ? null : toString_1(message);
+    tmp.buffer_1 = tmp_0 + (tmp1_elvis_lhs == null ? 'null' : tmp1_elvis_lhs);
+  };
+  function println(message) {
+    _init_properties_console_kt__rfg7jv();
+    get_output().println_ghnc0w_k$(message);
+  }
+  var properties_initialized_console_kt_gll9dl;
+  function _init_properties_console_kt__rfg7jv() {
+    if (!properties_initialized_console_kt_gll9dl) {
+      properties_initialized_console_kt_gll9dl = true;
+      // Inline function 'kotlin.run' call
+      var isNode = typeof process !== 'undefined' && process.versions && !!process.versions.node;
+      output = isNode ? new NodeJsOutput(process.stdout) : new BufferedOutputToConsoleLog();
+    }
   }
   function Exception_init_$Init$($this) {
     extendThrowable($this);
@@ -3824,6 +4102,11 @@ var qwelcore = function (_) {
     this.nativeStickyPattern_1 = null;
     this.nativeMatchesEntirePattern_1 = null;
   }
+  protoOf(Regex).matches_evli6i_k$ = function (input) {
+    reset(this.nativePattern_1);
+    var match = this.nativePattern_1.exec(toString_1(input));
+    return !(match == null) && match.index === 0 && this.nativePattern_1.lastIndex === charSequenceLength(input);
+  };
   protoOf(Regex).containsMatchIn_gpzk5u_k$ = function (input) {
     reset(this.nativePattern_1);
     return this.nativePattern_1.test(toString_1(input));
@@ -3850,7 +4133,7 @@ var qwelcore = function (_) {
     return $super === VOID ? this.findAll_98v6rh_k$(input, startIndex) : $super.findAll_98v6rh_k$.call(this, input, startIndex);
   };
   protoOf(Regex).replace_1ix0wf_k$ = function (input, replacement) {
-    if (!contains_0(replacement, _Char___init__impl__6a9atx(92)) && !contains_0(replacement, _Char___init__impl__6a9atx(36))) {
+    if (!contains_1(replacement, _Char___init__impl__6a9atx(92)) && !contains_1(replacement, _Char___init__impl__6a9atx(36))) {
       var tmp0 = toString_1(input);
       // Inline function 'kotlin.text.nativeReplace' call
       var pattern = this.nativePattern_1;
@@ -4214,6 +4497,14 @@ var qwelcore = function (_) {
     } else
       return regionMatches(_this__u8e3s4, _this__u8e3s4.length - suffix.length | 0, suffix, 0, suffix.length, ignoreCase);
   }
+  function replace_0(_this__u8e3s4, oldChar, newChar, ignoreCase) {
+    ignoreCase = ignoreCase === VOID ? false : ignoreCase;
+    var tmp1 = new RegExp(Companion_getInstance_3().escape_984trb_k$(toString(oldChar)), ignoreCase ? 'gui' : 'gu');
+    // Inline function 'kotlin.text.nativeReplace' call
+    var replacement = toString(newChar);
+    // Inline function 'kotlin.js.asDynamic' call
+    return _this__u8e3s4.replace(tmp1, replacement);
+  }
   function regionMatches(_this__u8e3s4, thisOffset, other, otherOffset, length, ignoreCase) {
     ignoreCase = ignoreCase === VOID ? false : ignoreCase;
     return regionMatchesImpl(_this__u8e3s4, thisOffset, other, otherOffset, length, ignoreCase);
@@ -4326,6 +4617,14 @@ var qwelcore = function (_) {
   protoOf(Companion_4).checkPositionIndex_w4k0on_k$ = function (index, size) {
     if (index < 0 || index > size) {
       throw IndexOutOfBoundsException_init_$Create$_0('index: ' + index + ', size: ' + size);
+    }
+  };
+  protoOf(Companion_4).checkRangeIndexes_mmy49x_k$ = function (fromIndex, toIndex, size) {
+    if (fromIndex < 0 || toIndex > size) {
+      throw IndexOutOfBoundsException_init_$Create$_0('fromIndex: ' + fromIndex + ', toIndex: ' + toIndex + ', size: ' + size);
+    }
+    if (fromIndex > toIndex) {
+      throw IllegalArgumentException_init_$Create$_0('fromIndex: ' + fromIndex + ' > toIndex: ' + toIndex);
     }
   };
   protoOf(Companion_4).checkBoundsIndexes_tsopv1_k$ = function (startIndex, endIndex, size) {
@@ -4571,11 +4870,14 @@ var qwelcore = function (_) {
   function arrayListOf(elements) {
     return elements.length === 0 ? ArrayList_init_$Create$() : ArrayList_init_$Create$_1(new ArrayAsCollection(elements, true));
   }
-  function emptyList() {
-    return EmptyList_getInstance();
+  function mutableListOf(elements) {
+    return elements.length === 0 ? ArrayList_init_$Create$() : ArrayList_init_$Create$_1(new ArrayAsCollection(elements, true));
   }
   function get_lastIndex_0(_this__u8e3s4) {
     return _this__u8e3s4.get_size_woubt6_k$() - 1 | 0;
+  }
+  function emptyList() {
+    return EmptyList_getInstance();
   }
   function optimizeReadOnlyList(_this__u8e3s4) {
     switch (_this__u8e3s4.get_size_woubt6_k$()) {
@@ -4589,6 +4891,9 @@ var qwelcore = function (_) {
   }
   function throwIndexOverflow() {
     throw ArithmeticException_init_$Create$_0('Index overflow has happened.');
+  }
+  function throwCountOverflow() {
+    throw ArithmeticException_init_$Create$_0('Count overflow has happened.');
   }
   function EmptyList() {
     EmptyList_instance = this;
@@ -4749,20 +5054,15 @@ var qwelcore = function (_) {
     this.index_1 = _unary__edvuaz + 1 | 0;
     return new IndexedValue(checkIndexOverflow(_unary__edvuaz), this.iterator_1.next_20eer_k$());
   };
-  function mapOf(pairs) {
-    return pairs.length > 0 ? toMap(pairs, LinkedHashMap_init_$Create$_0(mapCapacity(pairs.length))) : emptyMap();
-  }
   function emptyMap() {
     var tmp = EmptyMap_getInstance();
     return isInterface(tmp, KtMap) ? tmp : THROW_CCE();
   }
+  function mapOf(pairs) {
+    return pairs.length > 0 ? toMap(pairs, LinkedHashMap_init_$Create$_0(mapCapacity(pairs.length))) : emptyMap();
+  }
   function toMutableMap(_this__u8e3s4) {
     return LinkedHashMap_init_$Create$_1(_this__u8e3s4);
-  }
-  function toMap(_this__u8e3s4, destination) {
-    // Inline function 'kotlin.apply' call
-    putAll(destination, _this__u8e3s4);
-    return destination;
   }
   function EmptyMap() {
     EmptyMap_instance = this;
@@ -4813,6 +5113,11 @@ var qwelcore = function (_) {
     if (EmptyMap_instance == null)
       new EmptyMap();
     return EmptyMap_instance;
+  }
+  function toMap(_this__u8e3s4, destination) {
+    // Inline function 'kotlin.apply' call
+    putAll(destination, _this__u8e3s4);
+    return destination;
   }
   function putAll(_this__u8e3s4, pairs) {
     var inductionVariable = 0;
@@ -5475,6 +5780,16 @@ var qwelcore = function (_) {
     }
     return tmp;
   }
+  function contains_0(_this__u8e3s4, other, ignoreCase) {
+    ignoreCase = ignoreCase === VOID ? false : ignoreCase;
+    var tmp;
+    if (typeof other === 'string') {
+      tmp = indexOf_3(_this__u8e3s4, other, VOID, ignoreCase) >= 0;
+    } else {
+      tmp = indexOf_2(_this__u8e3s4, other, 0, charSequenceLength(_this__u8e3s4), ignoreCase) >= 0;
+    }
+    return tmp;
+  }
   function padStart(_this__u8e3s4, length, padChar) {
     padChar = padChar === VOID ? _Char___init__impl__6a9atx(32) : padChar;
     return toString_1(padStart_0(isCharSequence(_this__u8e3s4) ? _this__u8e3s4 : THROW_CCE(), length, padChar));
@@ -5829,7 +6144,7 @@ var qwelcore = function (_) {
   function DelimitedRangesSequence$iterator$1(this$0) {
     this.this$0__1 = this$0;
     this.nextState_1 = -1;
-    this.currentStartIndex_1 = coerceIn_0(this$0.startIndex_1, 0, charSequenceLength(this$0.input_1));
+    this.currentStartIndex_1 = coerceIn(this$0.startIndex_1, 0, charSequenceLength(this$0.input_1));
     this.nextSearchIndex_1 = this.currentStartIndex_1;
     this.nextItem_1 = null;
     this.counter_1 = 0;
@@ -5861,7 +6176,7 @@ var qwelcore = function (_) {
   protoOf(DelimitedRangesSequence).iterator_jk1svi_k$ = function () {
     return new DelimitedRangesSequence$iterator$1(this);
   };
-  function contains_0(_this__u8e3s4, char, ignoreCase) {
+  function contains_1(_this__u8e3s4, char, ignoreCase) {
     ignoreCase = ignoreCase === VOID ? false : ignoreCase;
     return indexOf_1(_this__u8e3s4, char, VOID, ignoreCase) >= 0;
   }
@@ -6022,6 +6337,180 @@ var qwelcore = function (_) {
     // Inline function 'kotlin.uintToLong' call
     var tmp$ret$1 = toLong(tmp1).and_5hkqyb_k$(new Long(-1, 0));
     return ulongToString(tmp$ret$1, base);
+  }
+  function set_blendSamples(_set____db54di) {
+    _init_properties_Blend_kt__of2lr5();
+    blendSamples = _set____db54di;
+  }
+  function get_blendSamples() {
+    _init_properties_Blend_kt__of2lr5();
+    return blendSamples;
+  }
+  var blendSamples;
+  function samplePoly(n) {
+    _init_properties_Blend_kt__of2lr5();
+    return get_blendSamples().get_wei43m_k$(n.id_1);
+  }
+  function area(p) {
+    _init_properties_Blend_kt__of2lr5();
+    var a = 0.0;
+    var inductionVariable = 0;
+    if (inductionVariable < 96)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var j = (i + 1 | 0) % 96 | 0;
+        a = a + (p[imul(i, 2)] * p[imul(j, 2) + 1 | 0] - p[imul(j, 2)] * p[imul(i, 2) + 1 | 0]);
+      }
+       while (inductionVariable < 96);
+    return a;
+  }
+  function lerpArgb(a, b, t) {
+    _init_properties_Blend_kt__of2lr5();
+    return lerpArgb$ch(a, b, t, 24) << 24 | lerpArgb$ch(a, b, t, 16) << 16 | lerpArgb$ch(a, b, t, 8) << 8 | lerpArgb$ch(a, b, t, 0);
+  }
+  function num(v) {
+    _init_properties_Blend_kt__of2lr5();
+    return formatNumber('%.4f', [v]);
+  }
+  function blendNodes(a, b, steps) {
+    _init_properties_Blend_kt__of2lr5();
+    if (a.kind_1.equals(NodeKind_TEXT_getInstance()) || a.kind_1.equals(NodeKind_IMAGE_getInstance()) || b.kind_1.equals(NodeKind_TEXT_getInstance()) || b.kind_1.equals(NodeKind_IMAGE_getInstance()))
+      return null;
+    var tmp0_elvis_lhs = samplePoly(a);
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return null;
+    } else {
+      tmp = tmp0_elvis_lhs;
+    }
+    var pa = tmp;
+    var tmp1_elvis_lhs = samplePoly(b);
+    var tmp_0;
+    if (tmp1_elvis_lhs == null) {
+      return null;
+    } else {
+      tmp_0 = tmp1_elvis_lhs;
+    }
+    var pb = tmp_0;
+    if (!(area(pa) < 0.0 === area(pb) < 0.0)) {
+      var r = new Float32Array(pb.length);
+      var inductionVariable = 0;
+      if (inductionVariable < 96)
+        do {
+          var i = inductionVariable;
+          inductionVariable = inductionVariable + 1 | 0;
+          var k = 95 - i | 0;
+          r[imul(i, 2)] = pb[imul(k, 2)];
+          r[imul(i, 2) + 1 | 0] = pb[imul(k, 2) + 1 | 0];
+        }
+         while (inductionVariable < 96);
+      pb = r;
+    }
+    var best = 0;
+    var bestD = 3.4028235E38;
+    var inductionVariable_0 = 0;
+    if (inductionVariable_0 < 96)
+      do {
+        var s = inductionVariable_0;
+        inductionVariable_0 = inductionVariable_0 + 1 | 0;
+        var d = 0.0;
+        var inductionVariable_1 = 0;
+        if (inductionVariable_1 < 96)
+          do {
+            var i_0 = inductionVariable_1;
+            inductionVariable_1 = inductionVariable_1 + 1 | 0;
+            var k_0 = (i_0 + s | 0) % 96 | 0;
+            var dx = pa[imul(i_0, 2)] - pb[imul(k_0, 2)];
+            var dy = pa[imul(i_0, 2) + 1 | 0] - pb[imul(k_0, 2) + 1 | 0];
+            d = d + (dx * dx + dy * dy);
+          }
+           while (inductionVariable_1 < 96);
+        if (d < bestD) {
+          bestD = d;
+          best = s;
+        }
+      }
+       while (inductionVariable_0 < 96);
+    var count = coerceIn(steps, 1, 40);
+    var out = ArrayList_init_$Create$_0(count);
+    var pts = new Float32Array(192);
+    var inductionVariable_2 = 1;
+    if (inductionVariable_2 <= count)
+      do {
+        var k_1 = inductionVariable_2;
+        inductionVariable_2 = inductionVariable_2 + 1 | 0;
+        var t = k_1 / (count + 1.0);
+        var l = 3.4028235E38;
+        var tp = 3.4028235E38;
+        var r_0 = -3.4028235E38;
+        var bt = -3.4028235E38;
+        var inductionVariable_3 = 0;
+        if (inductionVariable_3 < 96)
+          do {
+            var i_1 = inductionVariable_3;
+            inductionVariable_3 = inductionVariable_3 + 1 | 0;
+            var j = (i_1 + best | 0) % 96 | 0;
+            var x = pa[imul(i_1, 2)] + (pb[imul(j, 2)] - pa[imul(i_1, 2)]) * t;
+            var y = pa[imul(i_1, 2) + 1 | 0] + (pb[imul(j, 2) + 1 | 0] - pa[imul(i_1, 2) + 1 | 0]) * t;
+            pts[imul(i_1, 2)] = x;
+            pts[imul(i_1, 2) + 1 | 0] = y;
+            // Inline function 'kotlin.math.min' call
+            var a_0 = l;
+            l = Math.min(a_0, x);
+            // Inline function 'kotlin.math.max' call
+            var a_1 = r_0;
+            r_0 = Math.max(a_1, x);
+            // Inline function 'kotlin.math.min' call
+            var a_2 = tp;
+            tp = Math.min(a_2, y);
+            // Inline function 'kotlin.math.max' call
+            var a_3 = bt;
+            bt = Math.max(a_3, y);
+          }
+           while (inductionVariable_3 < 96);
+        // Inline function 'kotlin.math.max' call
+        var a_4 = r_0 - l;
+        var w = Math.max(a_4, 0.01);
+        // Inline function 'kotlin.math.max' call
+        var a_5 = bt - tp;
+        var h = Math.max(a_5, 0.01);
+        var sb = StringBuilder_init_$Create$_0();
+        var inductionVariable_4 = 0;
+        if (inductionVariable_4 < 96)
+          do {
+            var i_2 = inductionVariable_4;
+            inductionVariable_4 = inductionVariable_4 + 1 | 0;
+            sb.append_22ad7x_k$(i_2 === 0 ? 'M ' : 'L ').append_22ad7x_k$(num((pts[imul(i_2, 2)] - l) / w)).append_58al37_k$(_Char___init__impl__6a9atx(32)).append_22ad7x_k$(num((pts[imul(i_2, 2) + 1 | 0] - tp) / h)).append_58al37_k$(_Char___init__impl__6a9atx(32));
+          }
+           while (inductionVariable_4 < 96);
+        sb.append_22ad7x_k$('Z');
+        var tmp2_id = newId();
+        var tmp3_kind = NodeKind_PATH_getInstance();
+        var tmp4_name = a.name_1 + ' - ' + b.name_1 + ' ' + k_1;
+        var tmp5_x = l;
+        var tmp6_y = tp;
+        var tmp7_fill = lerpArgb(a.fill_1, b.fill_1, t);
+        var tmp8_stroke = lerpArgb(a.stroke_1, b.stroke_1, t);
+        var tmp9_strokeWidth = a.strokeWidth_1 + (b.strokeWidth_1 - a.strokeWidth_1) * t;
+        var tmp10_opacity = a.opacity_1 + (b.opacity_1 - a.opacity_1) * t;
+        var tmp11_fillToken = a.fillToken_1 === b.fillToken_1 ? a.fillToken_1 : -1;
+        var tmp12_strokeToken = a.strokeToken_1 === b.strokeToken_1 ? a.strokeToken_1 : -1;
+        var tmp13_path = sb.toString();
+        out.add_utx5q5_k$(new Node(tmp2_id, tmp3_kind, tmp4_name, tmp5_x, tmp6_y, w, h, VOID, tmp7_fill, tmp8_stroke, tmp9_strokeWidth, tmp10_opacity, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, VOID, tmp13_path, VOID, VOID, VOID, tmp11_fillToken, tmp12_strokeToken));
+      }
+       while (!(k_1 === count));
+    return out;
+  }
+  function lerpArgb$ch($a, $b, $t, sh) {
+    return coerceIn(numberToInt((($a >>> sh | 0) & 255) + ((($b >>> sh | 0) & 255) - (($a >>> sh | 0) & 255) | 0) * $t), 0, 255);
+  }
+  var properties_initialized_Blend_kt_684yqn;
+  function _init_properties_Blend_kt__of2lr5() {
+    if (!properties_initialized_Blend_kt_684yqn) {
+      properties_initialized_Blend_kt_684yqn = true;
+      blendSamples = emptyMap();
+    }
   }
   function Companion_10() {
     this.TAG_1 = '~';
@@ -6324,14 +6813,14 @@ var qwelcore = function (_) {
       return _get_byId__d4l6m1(receiver);
     }, null);
   }
-  function num($this, v) {
+  function num_0($this, v) {
     // Inline function 'kotlin.math.roundToInt' call
     var this_0 = v * 100.0;
     var r = roundToInt(this_0) / 100.0;
     return r === numberToInt(r) ? numberToInt(r).toString() : trimEnd(trimEnd(formatNumber('%.2f', [r]), charArrayOf([_Char___init__impl__6a9atx(48)])), charArrayOf([_Char___init__impl__6a9atx(46)]));
   }
   function dp($this, v) {
-    return num($this, v) + '.dp';
+    return num_0($this, v) + '.dp';
   }
   function hex($this, argb) {
     return 'Color(0x' + formatNumber('%08X', [argb]) + ')';
@@ -6661,11 +7150,19 @@ var qwelcore = function (_) {
           tmp = 'Brush.horizontalGradient(listOf(' + cols + '))';
         } else {
           c.needAngle_1 = true;
-          tmp = 'angledGradient(' + num($this, n.gradAngle_1) + 'f, ' + cols + ')';
+          tmp = 'angledGradient(' + num_0($this, n.gradAngle_1) + 'f, ' + cols + ')';
         }
       }
     }
     return tmp;
+  }
+  function ExportOpts(pageIds, fnName, pkg, rPkg, fonts) {
+    fonts = fonts === VOID ? emptyMap() : fonts;
+    this.pageIds_1 = pageIds;
+    this.fnName_1 = fnName;
+    this.pkg_1 = pkg;
+    this.rPkg_1 = rPkg;
+    this.fonts_1 = fonts;
   }
   function actionExpr($this, n, c) {
     var a = n.action_1;
@@ -6749,12 +7246,12 @@ var qwelcore = function (_) {
     var x = n.rotation_1;
     if (Math.abs(x) > 0.01) {
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_1 = 'rotate(' + num($this, n.rotation_1) + 'f)';
+      var element_1 = 'rotate(' + num_0($this, n.rotation_1) + 'f)';
       mods.add_utx5q5_k$(element_1);
     }
     if (n.opacity_1 < 0.999) {
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_2 = 'alpha(' + num($this, n.opacity_1) + 'f)';
+      var element_2 = 'alpha(' + num_0($this, n.opacity_1) + 'f)';
       mods.add_utx5q5_k$(element_2);
     }
     var _destruct__k2r9zo = shapeOf($this, n, c);
@@ -6783,7 +7280,7 @@ var qwelcore = function (_) {
       // Inline function 'kotlin.math.min' call
       var a_0 = n.pressCorner_1;
       var down = Math.min(a_0, half);
-      pre._v = ind + '// pressed: the corner goes ' + num($this, rest) + ' -> ' + num($this, down) + ' while held\n' + (ind + 'val ' + id + 'Source = remember { MutableInteractionSource() }\n') + (ind + 'val ' + id + 'Down by ' + id + 'Source.collectIsPressedAsState()\n') + (ind + 'val ' + id + 'Corner by animateDpAsState(\n') + (ind + '    targetValue = if (' + id + 'Down) ' + dp($this, down) + ' else ' + dp($this, rest) + ',\n') + (ind + '    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),\n') + (ind + '    label = "' + id + '",\n' + ind + ')\n');
+      pre._v = ind + '// pressed: the corner goes ' + num_0($this, rest) + ' -> ' + num_0($this, down) + ' while held\n' + (ind + 'val ' + id + 'Source = remember { MutableInteractionSource() }\n') + (ind + 'val ' + id + 'Down by ' + id + 'Source.collectIsPressedAsState()\n') + (ind + 'val ' + id + 'Corner by animateDpAsState(\n') + (ind + '    targetValue = if (' + id + 'Down) ' + dp($this, down) + ' else ' + dp($this, rest) + ',\n') + (ind + '    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),\n') + (ind + '    label = "' + id + '",\n' + ind + ')\n');
       shapeArg = 'RoundedCornerShape(' + id + 'Corner)';
       // Inline function 'kotlin.collections.plusAssign' call
       var element_3 = 'clickable(interactionSource = ' + id + 'Source, indication = null, onClick = { ' + (act == null ? '' : act) + ' })';
@@ -6810,7 +7307,7 @@ var qwelcore = function (_) {
       }
       if (tmp) {
         // Inline function 'kotlin.collections.plusAssign' call
-        var element_6 = 'shadow offset (' + num($this, n.shadowDx_1) + ', ' + num($this, n.shadowDy_1) + '): Modifier.shadow has no offset, wrap the layer in a Box with that offset if it matters';
+        var element_6 = 'shadow offset (' + num_0($this, n.shadowDx_1) + ', ' + num_0($this, n.shadowDy_1) + '): Modifier.shadow has no offset, wrap the layer in a Box with that offset if it matters';
         notes.add_utx5q5_k$(element_6);
       }
     }
@@ -6824,7 +7321,7 @@ var qwelcore = function (_) {
     }
     if (n.blur_1 > 0.5) {
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_9 = 'backdrop blur ' + num($this, n.blur_1) + ': not built into Compose, use the Haze library (Modifier.hazeEffect)';
+      var element_9 = 'backdrop blur ' + num_0($this, n.blur_1) + ': not built into Compose, use the Haze library (Modifier.hazeEffect)';
       notes.add_utx5q5_k$(element_9);
     }
     if (!n.kind_1.equals(NodeKind_TEXT_getInstance()) && !n.kind_1.equals(NodeKind_IMAGE_getInstance())) {
@@ -6884,7 +7381,7 @@ var qwelcore = function (_) {
     // Inline function 'kotlin.math.abs' call
     var x_3 = mask.rotation_1;
     if (Math.abs(x_3) > 0.01) {
-      sb.append_22ad7x_k$(' (mask rotation ').append_22ad7x_k$(num($this, mask.rotation_1)).append_22ad7x_k$(' is not applied)');
+      sb.append_22ad7x_k$(' (mask rotation ').append_22ad7x_k$(num_0($this, mask.rotation_1)).append_22ad7x_k$(' is not applied)');
     }
     if (mComment == null)
       null;
@@ -7010,7 +7507,7 @@ var qwelcore = function (_) {
       tmp_0 = false;
     }
     if (tmp_0) {
-      extra.append_22ad7x_k$(', fontSize = ' + num(ComposeCode_getInstance(), n.fontSize_1) + '.sp');
+      extra.append_22ad7x_k$(', fontSize = ' + num_0(ComposeCode_getInstance(), n.fontSize_1) + '.sp');
     }
     if (!(t == null) && !(n.weight_1 === t.weight_1)) {
       extra.append_22ad7x_k$(', fontWeight = FontWeight.W' + n.weight_1);
@@ -7080,10 +7577,10 @@ var qwelcore = function (_) {
     return iconCall($this, n, c, plain, modifier);
   }
   function clamp01($this, v) {
-    return coerceIn(v, 0.0, 1.0);
+    return coerceIn_0(v, 0.0, 1.0);
   }
   function f($this, v) {
-    return num($this, v) + 'f';
+    return num_0($this, v) + 'f';
   }
   function emitMaterial($this, k, c, s) {
     switch (k.id_1) {
@@ -7847,7 +8344,7 @@ var qwelcore = function (_) {
       tmp = tmp0_elvis_lhs;
     }
     var def = tmp;
-    var tpl = def.build_gglqo9_k$(0.0, 0.0, 'x', Companion_getInstance_11().Baseline_1);
+    var tpl = def.build_gglqo9_k$(0.0, 0.0, 'x', Companion_getInstance_17().Baseline_1);
     if (!(tpl.get_size_woubt6_k$() === members.get_size_woubt6_k$()))
       return null;
     var inductionVariable = 0;
@@ -8058,7 +8555,7 @@ var qwelcore = function (_) {
     var b = new StringBuilder(pre._v);
     switch ($n.kind_1.ordinal_1) {
       case 3:
-        b.append_22ad7x_k$($ind).append_22ad7x_k$('Text(\n').append_22ad7x_k$($ind).append_22ad7x_k$('    text = "').append_22ad7x_k$(esc(ComposeCode_getInstance(), $n.text_1)).append_22ad7x_k$('",\n').append_22ad7x_k$($ind).append_22ad7x_k$('    modifier = ').append_22ad7x_k$(modifier).append_22ad7x_k$(',\n').append_22ad7x_k$($ind).append_22ad7x_k$('    color = ').append_22ad7x_k$(colorExpr(ComposeCode_getInstance(), $n.fill_1, $n.fillToken_1)).append_22ad7x_k$(',\n').append_22ad7x_k$($ind).append_22ad7x_k$('    fontSize = ').append_22ad7x_k$(num(ComposeCode_getInstance(), $n.fontSize_1)).append_22ad7x_k$('.sp,\n').append_22ad7x_k$($ind).append_22ad7x_k$('    fontWeight = FontWeight.W').append_uppzia_k$($n.weight_1).append_22ad7x_k$(',\n').append_22ad7x_k$($ind).append_22ad7x_k$('    softWrap = false,\n');
+        b.append_22ad7x_k$($ind).append_22ad7x_k$('Text(\n').append_22ad7x_k$($ind).append_22ad7x_k$('    text = "').append_22ad7x_k$(esc(ComposeCode_getInstance(), $n.text_1)).append_22ad7x_k$('",\n').append_22ad7x_k$($ind).append_22ad7x_k$('    modifier = ').append_22ad7x_k$(modifier).append_22ad7x_k$(',\n').append_22ad7x_k$($ind).append_22ad7x_k$('    color = ').append_22ad7x_k$(colorExpr(ComposeCode_getInstance(), $n.fill_1, $n.fillToken_1)).append_22ad7x_k$(',\n').append_22ad7x_k$($ind).append_22ad7x_k$('    fontSize = ').append_22ad7x_k$(num_0(ComposeCode_getInstance(), $n.fontSize_1)).append_22ad7x_k$('.sp,\n').append_22ad7x_k$($ind).append_22ad7x_k$('    fontWeight = FontWeight.W').append_uppzia_k$($n.weight_1).append_22ad7x_k$(',\n').append_22ad7x_k$($ind).append_22ad7x_k$('    softWrap = false,\n');
         var tmp1_safe_receiver = $c.opts_1;
         var tmp2_safe_receiver = tmp1_safe_receiver == null ? null : tmp1_safe_receiver.fonts_1;
         var fam = tmp2_safe_receiver == null ? null : tmp2_safe_receiver.get_wei43m_k$($n.font_1);
@@ -8240,6 +8737,9 @@ var qwelcore = function (_) {
     this.PATH_HELPER_1 = '/** \u041A\u043E\u043D\u0442\u0443\u0440 \u0432 \u0435\u0434\u0438\u043D\u0438\u0447\u043D\u043E\u043C \u043A\u0432\u0430\u0434\u0440\u0430\u0442\u0435 ("M x y L x y C ... Z") -> Path \u0440\u0430\u0437\u043C\u0435\u0440\u0430 w x h. */\nprivate fun vexelPath(data: String, w: Float, h: Float): Path {\n    val p = Path()\n    val t = data.split(\' \').filter { it.isNotEmpty() }\n    var i = 0\n    while (i < t.size) {\n        when (t[i]) {\n            "M" -> { p.moveTo(t[i + 1].toFloat() * w, t[i + 2].toFloat() * h); i += 3 }\n            "L" -> { p.lineTo(t[i + 1].toFloat() * w, t[i + 2].toFloat() * h); i += 3 }\n            "Q" -> { p.quadraticTo(t[i + 1].toFloat() * w, t[i + 2].toFloat() * h, t[i + 3].toFloat() * w, t[i + 4].toFloat() * h); i += 5 }\n            "C" -> { p.cubicTo(t[i + 1].toFloat() * w, t[i + 2].toFloat() * h, t[i + 3].toFloat() * w, t[i + 4].toFloat() * h, t[i + 5].toFloat() * w, t[i + 6].toFloat() * h); i += 7 }\n            "Z" -> { p.close(); i += 1 }\n            else -> i += 1\n        }\n    }\n    return p\n}\n';
     this.ANGLE_HELPER_1 = '/** \u041B\u0438\u043D\u0435\u0439\u043D\u044B\u0439 \u0433\u0440\u0430\u0434\u0438\u0435\u043D\u0442 \u043F\u043E\u0434 \u043B\u044E\u0431\u044B\u043C \u0443\u0433\u043B\u043E\u043C (0 - \u0441\u043B\u0435\u0432\u0430 \u043D\u0430\u043F\u0440\u0430\u0432\u043E, 90 - \u0441\u0432\u0435\u0440\u0445\u0443 \u0432\u043D\u0438\u0437) \u043D\u0430 \u0432\u0441\u044E \u043F\u043B\u043E\u0449\u0430\u0434\u044C \u0441\u043B\u043E\u044F. */\nprivate fun angledGradient(angle: Float, vararg colors: Color): Brush = object : ShaderBrush() {\n    override fun createShader(size: Size): Shader {\n        val r = Math.toRadians(angle.toDouble())\n        val dx = cos(r).toFloat()\n        val dy = sin(r).toFloat()\n        val half = (abs(size.width * dx) + abs(size.height * dy)) / 2f\n        val cx = size.width / 2f\n        val cy = size.height / 2f\n        return LinearGradientShader(Offset(cx - dx * half, cy - dy * half), Offset(cx + dx * half, cy + dy * half), colors.toList())\n    }\n}\n';
   }
+  protoOf(ComposeCode).get_tokens_k1vwdf_k$ = function () {
+    return this.tokenNames_1;
+  };
   protoOf(ComposeCode).functionName_64af4n_k$ = function (title) {
     // Inline function 'kotlin.text.split' call
     // Inline function 'kotlin.collections.filter' call
@@ -8270,6 +8770,68 @@ var qwelcore = function (_) {
       tmp = name;
     }
     return tmp;
+  };
+  protoOf(ComposeCode).fontsUsed_msnrls_k$ = function (nodes) {
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination = ArrayList_init_$Create$();
+    var _iterator__ex2g4s = nodes.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      var tmp;
+      if (element.kind_1.equals(NodeKind_TEXT_getInstance())) {
+        // Inline function 'kotlin.text.isNotEmpty' call
+        var this_0 = element.font_1;
+        tmp = charSequenceLength(this_0) > 0;
+      } else {
+        tmp = false;
+      }
+      if (tmp) {
+        destination.add_utx5q5_k$(element);
+      }
+    }
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_0 = ArrayList_init_$Create$_0(collectionSizeOrDefault(destination, 10));
+    var _iterator__ex2g4s_0 = destination.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s_0.next_20eer_k$();
+      var tmp$ret$4 = item.font_1;
+      destination_0.add_utx5q5_k$(tmp$ret$4);
+    }
+    return distinct(destination_0);
+  };
+  protoOf(ComposeCode).imageResources_mwsx4n_k$ = function (nodes) {
+    // Inline function 'kotlin.collections.filter' call
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination = ArrayList_init_$Create$();
+    var _iterator__ex2g4s = nodes.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      var tmp;
+      if (element.kind_1.equals(NodeKind_IMAGE_getInstance())) {
+        // Inline function 'kotlin.text.isNotEmpty' call
+        var this_0 = element.asset_1;
+        tmp = charSequenceLength(this_0) > 0;
+      } else {
+        tmp = false;
+      }
+      if (tmp) {
+        destination.add_utx5q5_k$(element);
+      }
+    }
+    // Inline function 'kotlin.collections.associate' call
+    var capacity = coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(destination, 10)), 16);
+    // Inline function 'kotlin.collections.associateTo' call
+    var destination_0 = LinkedHashMap_init_$Create$_0(capacity);
+    var _iterator__ex2g4s_0 = destination.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      // Inline function 'kotlin.collections.plusAssign' call
+      var pair = to(element_0.asset_1, ComposeCode_getInstance().imageResName_9jbftv_k$(element_0.asset_1));
+      destination_0.put_4fpzoq_k$(pair.first_1, pair.second_1);
+    }
+    return destination_0;
   };
   protoOf(ComposeCode).imageResName_9jbftv_k$ = function (asset) {
     // Inline function 'kotlin.text.lowercase' call
@@ -8616,7 +9178,7 @@ var qwelcore = function (_) {
   }
   protoOf(Echo).copies_ne07ek_k$ = function (src, p) {
     var rnd = new Random(toLong(p.seed_1));
-    var n = coerceIn_0(p.count_1, 1, 40);
+    var n = coerceIn(p.count_1, 1, 40);
     var hasLine = src.strokeWidth_1 > 0.0 && !((src.stroke_1 >>> 24 | 0) === 0);
     var lineColor = hasLine ? src.stroke_1 : src.fill_1;
     var lineToken = hasLine ? src.strokeToken_1 : src.fillToken_1;
@@ -8637,7 +9199,7 @@ var qwelcore = function (_) {
         // Inline function 'kotlin.math.abs' call
         var x = p.rotateStep_1;
         var rot = tmp + tmp_0 * Math.abs(x) * 0.5;
-        var op = coerceIn(src.opacity_1 * (1.0 - p.fade_1 * t) * (1.0 + copies$j(rnd, p) * 0.3), 0.04, 1.0);
+        var op = coerceIn_0(src.opacity_1 * (1.0 - p.fade_1 * t) * (1.0 + copies$j(rnd, p) * 0.3), 0.04, 1.0);
         var line = (src.strokeWidth_1 > 0.0 ? src.strokeWidth_1 : 1.2) * (0.6 + rnd.nextFloat_jqti5l_k$() * 1.2);
         var tmp0_id = newId();
         var tmp1_name = src.name_1 + ' ' + i;
@@ -9401,6 +9963,1998 @@ var qwelcore = function (_) {
       new ExpressiveComponents();
     return ExpressiveComponents_instance;
   }
+  function Companion_11() {
+    Companion_instance_11 = this;
+    this.Unrounded_1 = new CornerRounding();
+  }
+  var Companion_instance_11;
+  function Companion_getInstance_11() {
+    if (Companion_instance_11 == null)
+      new Companion_11();
+    return Companion_instance_11;
+  }
+  function CornerRounding(radius, smoothing) {
+    Companion_getInstance_11();
+    radius = radius === VOID ? 0.0 : radius;
+    smoothing = smoothing === VOID ? 0.0 : smoothing;
+    this.radius_1 = radius;
+    this.smoothing_1 = smoothing;
+  }
+  function Cubic_init_$Init$(anchor0, control0, control1, anchor1, $this) {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([get_x(anchor0), get_y(anchor0), get_x(control0), get_y(control0), get_x(control1), get_y(control1), get_x(anchor1), get_y(anchor1)]);
+    Cubic.call($this, tmp$ret$0);
+    return $this;
+  }
+  function Cubic_init_$Create$(anchor0, control0, control1, anchor1) {
+    return Cubic_init_$Init$(anchor0, control0, control1, anchor1, objectCreate(protoOf(Cubic)));
+  }
+  function zeroIsh($this, value) {
+    // Inline function 'kotlin.math.abs' call
+    return Math.abs(value) < 1.0E-4;
+  }
+  function Companion_12() {
+  }
+  protoOf(Companion_12).straightLine_8gqrri_k$ = function (x0, y0, x1, y1) {
+    return Cubic_0(x0, y0, interpolate_0(x0, x1, 1.0 / 3.0), interpolate_0(y0, y1, 1.0 / 3.0), interpolate_0(x0, x1, 2.0 / 3.0), interpolate_0(y0, y1, 2.0 / 3.0), x1, y1);
+  };
+  protoOf(Companion_12).circularArc_dohtv7_k$ = function (centerX, centerY, x0, y0, x1, y1) {
+    var p0d = directionVector(x0 - centerX, y0 - centerY);
+    var p1d = directionVector(x1 - centerX, y1 - centerY);
+    var rotatedP0 = rotate90(p0d);
+    var rotatedP1 = rotate90(p1d);
+    var clockwise = dotProduct_0(rotatedP0, x1 - centerX, y1 - centerY) >= 0;
+    var cosa = dotProduct(p0d, p1d);
+    if (cosa > 0.999)
+      return this.straightLine_8gqrri_k$(x0, y0, x1, y1);
+    var tmp = distance(x0 - centerX, y0 - centerY) * 4.0 / 3.0;
+    // Inline function 'kotlin.math.sqrt' call
+    var x = 2 * (1 - cosa);
+    var tmp_0 = Math.sqrt(x);
+    // Inline function 'kotlin.math.sqrt' call
+    var x_0 = 1 - cosa * cosa;
+    var k = tmp * (tmp_0 - Math.sqrt(x_0)) / (1 - cosa) * (clockwise ? 1.0 : -1.0);
+    return Cubic_0(x0, y0, x0 + get_x(rotatedP0) * k, y0 + get_y(rotatedP0) * k, x1 - get_x(rotatedP1) * k, y1 - get_y(rotatedP1) * k, x1, y1);
+  };
+  var Companion_instance_12;
+  function Companion_getInstance_12() {
+    return Companion_instance_12;
+  }
+  function Cubic(points) {
+    points = points === VOID ? new Float32Array(8) : points;
+    this.points_1 = points;
+    // Inline function 'kotlin.require' call
+    if (!(this.points_1.length === 8)) {
+      var message = 'Points array size should be 8';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+  }
+  protoOf(Cubic).get_anchor0X_n5yicm_k$ = function () {
+    return this.points_1[0];
+  };
+  protoOf(Cubic).get_anchor0Y_n5yicn_k$ = function () {
+    return this.points_1[1];
+  };
+  protoOf(Cubic).get_control0X_1zau8s_k$ = function () {
+    return this.points_1[2];
+  };
+  protoOf(Cubic).get_control0Y_1zau8t_k$ = function () {
+    return this.points_1[3];
+  };
+  protoOf(Cubic).get_control1X_1zau9n_k$ = function () {
+    return this.points_1[4];
+  };
+  protoOf(Cubic).get_control1Y_1zau9o_k$ = function () {
+    return this.points_1[5];
+  };
+  protoOf(Cubic).get_anchor1X_n5yidh_k$ = function () {
+    return this.points_1[6];
+  };
+  protoOf(Cubic).get_anchor1Y_n5yidi_k$ = function () {
+    return this.points_1[7];
+  };
+  protoOf(Cubic).pointOnCurve_cuyp05_k$ = function (t) {
+    var u = 1 - t;
+    return new FloatFloatPair(this.get_anchor0X_n5yicm_k$() * (u * u * u) + this.get_control0X_1zau8s_k$() * (3 * t * u * u) + this.get_control1X_1zau9n_k$() * (3 * t * t * u) + this.get_anchor1X_n5yidh_k$() * (t * t * t), this.get_anchor0Y_n5yicn_k$() * (u * u * u) + this.get_control0Y_1zau8t_k$() * (3 * t * u * u) + this.get_control1Y_1zau9o_k$() * (3 * t * t * u) + this.get_anchor1Y_n5yidi_k$() * (t * t * t));
+  };
+  protoOf(Cubic).zeroLength_gp3pxh_k$ = function () {
+    var tmp;
+    // Inline function 'kotlin.math.abs' call
+    var x = this.get_anchor0X_n5yicm_k$() - this.get_anchor1X_n5yidh_k$();
+    if (Math.abs(x) < 1.0E-4) {
+      // Inline function 'kotlin.math.abs' call
+      var x_0 = this.get_anchor0Y_n5yicn_k$() - this.get_anchor1Y_n5yidi_k$();
+      tmp = Math.abs(x_0) < 1.0E-4;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  };
+  protoOf(Cubic).calculateBounds_8kdqbp_k$ = function (bounds, approximate) {
+    if (this.zeroLength_gp3pxh_k$()) {
+      bounds[0] = this.get_anchor0X_n5yicm_k$();
+      bounds[1] = this.get_anchor0Y_n5yicn_k$();
+      bounds[2] = this.get_anchor0X_n5yicm_k$();
+      bounds[3] = this.get_anchor0Y_n5yicn_k$();
+      return Unit_instance;
+    }
+    var tmp0 = this.get_anchor0X_n5yicm_k$();
+    // Inline function 'kotlin.math.min' call
+    var b = this.get_anchor1X_n5yidh_k$();
+    var minX = Math.min(tmp0, b);
+    var tmp2 = this.get_anchor0Y_n5yicn_k$();
+    // Inline function 'kotlin.math.min' call
+    var b_0 = this.get_anchor1Y_n5yidi_k$();
+    var minY = Math.min(tmp2, b_0);
+    var tmp4 = this.get_anchor0X_n5yicm_k$();
+    // Inline function 'kotlin.math.max' call
+    var b_1 = this.get_anchor1X_n5yidh_k$();
+    var maxX = Math.max(tmp4, b_1);
+    var tmp6 = this.get_anchor0Y_n5yicn_k$();
+    // Inline function 'kotlin.math.max' call
+    var b_2 = this.get_anchor1Y_n5yidi_k$();
+    var maxY = Math.max(tmp6, b_2);
+    if (approximate) {
+      var tmp10 = minX;
+      var tmp8 = this.get_control0X_1zau8s_k$();
+      // Inline function 'kotlin.math.min' call
+      var b_3 = this.get_control1X_1zau9n_k$();
+      // Inline function 'kotlin.math.min' call
+      var b_4 = Math.min(tmp8, b_3);
+      bounds[0] = Math.min(tmp10, b_4);
+      var tmp14 = minY;
+      var tmp12 = this.get_control0Y_1zau8t_k$();
+      // Inline function 'kotlin.math.min' call
+      var b_5 = this.get_control1Y_1zau9o_k$();
+      // Inline function 'kotlin.math.min' call
+      var b_6 = Math.min(tmp12, b_5);
+      bounds[1] = Math.min(tmp14, b_6);
+      var tmp18 = maxX;
+      var tmp16 = this.get_control0X_1zau8s_k$();
+      // Inline function 'kotlin.math.max' call
+      var b_7 = this.get_control1X_1zau9n_k$();
+      // Inline function 'kotlin.math.max' call
+      var b_8 = Math.max(tmp16, b_7);
+      bounds[2] = Math.max(tmp18, b_8);
+      var tmp22 = maxY;
+      var tmp20 = this.get_control0Y_1zau8t_k$();
+      // Inline function 'kotlin.math.max' call
+      var b_9 = this.get_control1Y_1zau9o_k$();
+      // Inline function 'kotlin.math.max' call
+      var b_10 = Math.max(tmp20, b_9);
+      bounds[3] = Math.max(tmp22, b_10);
+      return Unit_instance;
+    }
+    var xa = -this.get_anchor0X_n5yicm_k$() + 3 * this.get_control0X_1zau8s_k$() - 3 * this.get_control1X_1zau9n_k$() + this.get_anchor1X_n5yidh_k$();
+    var xb = 2 * this.get_anchor0X_n5yicm_k$() - 4 * this.get_control0X_1zau8s_k$() + 2 * this.get_control1X_1zau9n_k$();
+    var xc = -this.get_anchor0X_n5yicm_k$() + this.get_control0X_1zau8s_k$();
+    if (zeroIsh(this, xa)) {
+      if (!(xb === 0.0)) {
+        var t = 2 * xc / (-2 * xb);
+        if (0.0 <= t ? t <= 1.0 : false) {
+          // Inline function 'kotlin.let' call
+          var it = get_x(this.pointOnCurve_cuyp05_k$(t));
+          if (it < minX)
+            minX = it;
+          if (it > maxX)
+            maxX = it;
+        }
+      }
+    } else {
+      var xs = xb * xb - 4 * xa * xc;
+      if (xs >= 0) {
+        var tmp = -xb;
+        // Inline function 'kotlin.math.sqrt' call
+        var t1 = (tmp + Math.sqrt(xs)) / (2 * xa);
+        if (0.0 <= t1 ? t1 <= 1.0 : false) {
+          // Inline function 'kotlin.let' call
+          var it_0 = get_x(this.pointOnCurve_cuyp05_k$(t1));
+          if (it_0 < minX)
+            minX = it_0;
+          if (it_0 > maxX)
+            maxX = it_0;
+        }
+        var tmp_0 = -xb;
+        // Inline function 'kotlin.math.sqrt' call
+        var t2 = (tmp_0 - Math.sqrt(xs)) / (2 * xa);
+        if (0.0 <= t2 ? t2 <= 1.0 : false) {
+          // Inline function 'kotlin.let' call
+          var it_1 = get_x(this.pointOnCurve_cuyp05_k$(t2));
+          if (it_1 < minX)
+            minX = it_1;
+          if (it_1 > maxX)
+            maxX = it_1;
+        }
+      }
+    }
+    var ya = -this.get_anchor0Y_n5yicn_k$() + 3 * this.get_control0Y_1zau8t_k$() - 3 * this.get_control1Y_1zau9o_k$() + this.get_anchor1Y_n5yidi_k$();
+    var yb = 2 * this.get_anchor0Y_n5yicn_k$() - 4 * this.get_control0Y_1zau8t_k$() + 2 * this.get_control1Y_1zau9o_k$();
+    var yc = -this.get_anchor0Y_n5yicn_k$() + this.get_control0Y_1zau8t_k$();
+    if (zeroIsh(this, ya)) {
+      if (!(yb === 0.0)) {
+        var t_0 = 2 * yc / (-2 * yb);
+        if (0.0 <= t_0 ? t_0 <= 1.0 : false) {
+          // Inline function 'kotlin.let' call
+          var it_2 = get_y(this.pointOnCurve_cuyp05_k$(t_0));
+          if (it_2 < minY)
+            minY = it_2;
+          if (it_2 > maxY)
+            maxY = it_2;
+        }
+      }
+    } else {
+      var ys = yb * yb - 4 * ya * yc;
+      if (ys >= 0) {
+        var tmp_1 = -yb;
+        // Inline function 'kotlin.math.sqrt' call
+        var t1_0 = (tmp_1 + Math.sqrt(ys)) / (2 * ya);
+        if (0.0 <= t1_0 ? t1_0 <= 1.0 : false) {
+          // Inline function 'kotlin.let' call
+          var it_3 = get_y(this.pointOnCurve_cuyp05_k$(t1_0));
+          if (it_3 < minY)
+            minY = it_3;
+          if (it_3 > maxY)
+            maxY = it_3;
+        }
+        var tmp_2 = -yb;
+        // Inline function 'kotlin.math.sqrt' call
+        var t2_0 = (tmp_2 - Math.sqrt(ys)) / (2 * ya);
+        if (0.0 <= t2_0 ? t2_0 <= 1.0 : false) {
+          // Inline function 'kotlin.let' call
+          var it_4 = get_y(this.pointOnCurve_cuyp05_k$(t2_0));
+          if (it_4 < minY)
+            minY = it_4;
+          if (it_4 > maxY)
+            maxY = it_4;
+        }
+      }
+    }
+    bounds[0] = minX;
+    bounds[1] = minY;
+    bounds[2] = maxX;
+    bounds[3] = maxY;
+  };
+  protoOf(Cubic).split_tr05pe_k$ = function (t) {
+    var u = 1 - t;
+    var pointOnCurve = this.pointOnCurve_cuyp05_k$(t);
+    return to(Cubic_0(this.get_anchor0X_n5yicm_k$(), this.get_anchor0Y_n5yicn_k$(), this.get_anchor0X_n5yicm_k$() * u + this.get_control0X_1zau8s_k$() * t, this.get_anchor0Y_n5yicn_k$() * u + this.get_control0Y_1zau8t_k$() * t, this.get_anchor0X_n5yicm_k$() * (u * u) + this.get_control0X_1zau8s_k$() * (2 * u * t) + this.get_control1X_1zau9n_k$() * (t * t), this.get_anchor0Y_n5yicn_k$() * (u * u) + this.get_control0Y_1zau8t_k$() * (2 * u * t) + this.get_control1Y_1zau9o_k$() * (t * t), get_x(pointOnCurve), get_y(pointOnCurve)), Cubic_0(get_x(pointOnCurve), get_y(pointOnCurve), this.get_control0X_1zau8s_k$() * (u * u) + this.get_control1X_1zau9n_k$() * (2 * u * t) + this.get_anchor1X_n5yidh_k$() * (t * t), this.get_control0Y_1zau8t_k$() * (u * u) + this.get_control1Y_1zau9o_k$() * (2 * u * t) + this.get_anchor1Y_n5yidi_k$() * (t * t), this.get_control1X_1zau9n_k$() * u + this.get_anchor1X_n5yidh_k$() * t, this.get_control1Y_1zau9o_k$() * u + this.get_anchor1Y_n5yidi_k$() * t, this.get_anchor1X_n5yidh_k$(), this.get_anchor1Y_n5yidi_k$()));
+  };
+  protoOf(Cubic).reverse_i6tiw2_k$ = function () {
+    return Cubic_0(this.get_anchor1X_n5yidh_k$(), this.get_anchor1Y_n5yidi_k$(), this.get_control1X_1zau9n_k$(), this.get_control1Y_1zau9o_k$(), this.get_control0X_1zau8s_k$(), this.get_control0Y_1zau8t_k$(), this.get_anchor0X_n5yicm_k$(), this.get_anchor0Y_n5yicn_k$());
+  };
+  protoOf(Cubic).toString = function () {
+    return 'anchor0: (' + this.get_anchor0X_n5yicm_k$() + ', ' + this.get_anchor0Y_n5yicn_k$() + ') control0: (' + this.get_control0X_1zau8s_k$() + ', ' + this.get_control0Y_1zau8t_k$() + '), ' + ('control1: (' + this.get_control1X_1zau9n_k$() + ', ' + this.get_control1Y_1zau9o_k$() + '), anchor1: (' + this.get_anchor1X_n5yidh_k$() + ', ' + this.get_anchor1Y_n5yidi_k$() + ')');
+  };
+  protoOf(Cubic).equals = function (other) {
+    if (this === other)
+      return true;
+    if (!(other instanceof Cubic)) {
+      return false;
+    }
+    return contentEquals(this.points_1, other.points_1);
+  };
+  protoOf(Cubic).transformed_7qm8j5_k$ = function (f) {
+    var newCubic = new MutableCubic();
+    var tmp0 = this.points_1;
+    // Inline function 'kotlin.collections.copyInto' call
+    var destination = newCubic.points_1;
+    var endIndex = tmp0.length;
+    // Inline function 'kotlin.js.unsafeCast' call
+    // Inline function 'kotlin.js.asDynamic' call
+    var tmp = tmp0;
+    // Inline function 'kotlin.js.unsafeCast' call
+    // Inline function 'kotlin.js.asDynamic' call
+    arrayCopy(tmp, destination, 0, 0, endIndex);
+    newCubic.transform_6ptfsy_k$(f);
+    return newCubic;
+  };
+  protoOf(Cubic).hashCode = function () {
+    return contentHashCode(this.points_1);
+  };
+  function Cubic_0(anchor0X, anchor0Y, control0X, control0Y, control1X, control1Y, anchor1X, anchor1Y) {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([anchor0X, anchor0Y, control0X, control0Y, control1X, control1Y, anchor1X, anchor1Y]);
+    return new Cubic(tmp$ret$0);
+  }
+  function PointTransformer() {
+  }
+  function transformOnePoint($this, f, ix) {
+    var result = f.transform_dn8fg_k$($this.points_1[ix], $this.points_1[ix + 1 | 0]);
+    $this.points_1[ix] = result.first_1;
+    $this.points_1[ix + 1 | 0] = result.second_1;
+  }
+  function MutableCubic() {
+    Cubic.call(this);
+  }
+  protoOf(MutableCubic).transform_6ptfsy_k$ = function (f) {
+    transformOnePoint(this, f, 0);
+    transformOnePoint(this, f, 2);
+    transformOnePoint(this, f, 4);
+    transformOnePoint(this, f, 6);
+  };
+  var LOG_TAG;
+  function ProgressableFeature(progress, feature) {
+    this.progress_1 = progress;
+    this.feature_1 = feature;
+  }
+  protoOf(ProgressableFeature).toString = function () {
+    return 'ProgressableFeature(progress=' + this.progress_1 + ', feature=' + toString_1(this.feature_1) + ')';
+  };
+  protoOf(ProgressableFeature).hashCode = function () {
+    var result = getNumberHashCode(this.progress_1);
+    result = imul(result, 31) + hashCode(this.feature_1) | 0;
+    return result;
+  };
+  protoOf(ProgressableFeature).equals = function (other) {
+    if (this === other)
+      return true;
+    if (!(other instanceof ProgressableFeature))
+      return false;
+    var tmp0_other_with_cast = other instanceof ProgressableFeature ? other : THROW_CCE();
+    if (!equals(this.progress_1, tmp0_other_with_cast.progress_1))
+      return false;
+    if (!equals(this.feature_1, tmp0_other_with_cast.feature_1))
+      return false;
+    return true;
+  };
+  function featureMapper(features1, features2) {
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var inductionVariable = 0;
+    var last = features1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var tmp = features1.get_c1px32_k$(i).feature_1;
+        if (tmp instanceof Corner) {
+          this_0.add_utx5q5_k$(features1.get_c1px32_k$(i));
+        }
+      }
+       while (inductionVariable <= last);
+    var filteredFeatures1 = this_0.build_nmwvly_k$();
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_1 = ArrayList_init_$Create$();
+    var inductionVariable_0 = 0;
+    var last_0 = features2.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable_0 <= last_0)
+      do {
+        var i_0 = inductionVariable_0;
+        inductionVariable_0 = inductionVariable_0 + 1 | 0;
+        var tmp_0 = features2.get_c1px32_k$(i_0).feature_1;
+        if (tmp_0 instanceof Corner) {
+          this_1.add_utx5q5_k$(features2.get_c1px32_k$(i_0));
+        }
+      }
+       while (inductionVariable_0 <= last_0);
+    var filteredFeatures2 = this_1.build_nmwvly_k$();
+    var tmp_1;
+    if (filteredFeatures1.get_size_woubt6_k$() > filteredFeatures2.get_size_woubt6_k$()) {
+      tmp_1 = to(doMapping(filteredFeatures2, filteredFeatures1), filteredFeatures2);
+    } else {
+      tmp_1 = to(filteredFeatures1, doMapping(filteredFeatures1, filteredFeatures2));
+    }
+    var _destruct__k2r9zo = tmp_1;
+    var m1 = _destruct__k2r9zo.component1_7eebsc_k$();
+    var m2 = _destruct__k2r9zo.component2_7eebsb_k$();
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_2 = ArrayList_init_$Create$();
+    var inductionVariable_1 = 0;
+    var last_1 = m1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable_1 <= last_1)
+      $l$loop: do {
+        var i_1 = inductionVariable_1;
+        inductionVariable_1 = inductionVariable_1 + 1 | 0;
+        if (i_1 === m2.get_size_woubt6_k$())
+          break $l$loop;
+        this_2.add_utx5q5_k$(to(m1.get_c1px32_k$(i_1).progress_1, m2.get_c1px32_k$(i_1).progress_1));
+      }
+       while (inductionVariable_1 <= last_1);
+    var mm = this_2.build_nmwvly_k$();
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag = LOG_TAG;
+    if (false) {
+      var tmp$ret$12 = joinToString_0(mm, VOID, VOID, VOID, VOID, VOID, featureMapper$lambda);
+      println(tag + ': ' + tmp$ret$12);
+    }
+    // Inline function 'kotlin.collections.toTypedArray' call
+    var tmp$ret$14 = copyToArray(mm);
+    // Inline function 'kotlin.also' call
+    var this_3 = new DoubleMapper(tmp$ret$14.slice());
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag_0 = LOG_TAG;
+    if (false) {
+      var N = 10;
+      var tmp_2 = numberRangeToNumber(0, N);
+      var tmp_3 = 'Map: ' + joinToString_0(tmp_2, VOID, VOID, VOID, VOID, VOID, featureMapper$lambda_0(this_3, N)) + '\nMb : ';
+      var tmp_4 = numberRangeToNumber(0, N);
+      var tmp$ret$15 = tmp_3 + joinToString_0(tmp_4, VOID, VOID, VOID, VOID, VOID, featureMapper$lambda_1(this_3, N));
+      println(tag_0 + ': ' + tmp$ret$15);
+    }
+    return this_3;
+  }
+  function featureDistSquared(f1, f2) {
+    var tmp;
+    var tmp_0;
+    if (f1 instanceof Corner) {
+      tmp_0 = f2 instanceof Corner;
+    } else {
+      tmp_0 = false;
+    }
+    if (tmp_0) {
+      tmp = !(f1.convex_1 === f2.convex_1);
+    } else {
+      tmp = false;
+    }
+    if (tmp) {
+      // Inline function 'androidx.graphics.shapes.debugLog' call
+      var tag = LOG_TAG;
+      if (false) {
+        var tmp$ret$0 = '*** Feature distance \u221E for convex-vs-concave corners';
+        println(tag + ': ' + tmp$ret$0);
+      }
+      return 3.4028235E38;
+    }
+    var c1x = (first(f1.cubics_1).get_anchor0X_n5yicm_k$() + last(f1.cubics_1).get_anchor1X_n5yidh_k$()) / 2.0;
+    var c1y = (first(f1.cubics_1).get_anchor0Y_n5yicn_k$() + last(f1.cubics_1).get_anchor1Y_n5yidi_k$()) / 2.0;
+    var c2x = (first(f2.cubics_1).get_anchor0X_n5yicm_k$() + last(f2.cubics_1).get_anchor1X_n5yidh_k$()) / 2.0;
+    var c2y = (first(f2.cubics_1).get_anchor0Y_n5yicn_k$() + last(f2.cubics_1).get_anchor1Y_n5yidi_k$()) / 2.0;
+    var dx = c1x - c2x;
+    var dy = c1y - c2y;
+    return dx * dx + dy * dy;
+  }
+  function doMapping(f1, f2) {
+    var tmp0 = get_indices(f2);
+    var tmp$ret$0;
+    $l$block: {
+      // Inline function 'kotlin.collections.minBy' call
+      var iterator = tmp0.iterator_jk1svi_k$();
+      if (!iterator.hasNext_bitz1p_k$())
+        throw NoSuchElementException_init_$Create$();
+      var minElem = iterator.next_20eer_k$();
+      if (!iterator.hasNext_bitz1p_k$()) {
+        tmp$ret$0 = minElem;
+        break $l$block;
+      }
+      var it = minElem;
+      var minValue = featureDistSquared(f1.get_c1px32_k$(0).feature_1, f2.get_c1px32_k$(it).feature_1);
+      do {
+        var e = iterator.next_20eer_k$();
+        var v = featureDistSquared(f1.get_c1px32_k$(0).feature_1, f2.get_c1px32_k$(e).feature_1);
+        if (compareTo(minValue, v) > 0) {
+          minElem = e;
+          minValue = v;
+        }
+      }
+       while (iterator.hasNext_bitz1p_k$());
+      tmp$ret$0 = minElem;
+    }
+    var ix = tmp$ret$0;
+    var m = f1.get_size_woubt6_k$();
+    var n = f2.get_size_woubt6_k$();
+    var ret = mutableListOf([f2.get_c1px32_k$(ix)]);
+    var lastPicked = ix;
+    var inductionVariable = 1;
+    if (inductionVariable < m)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        // Inline function 'kotlin.let' call
+        var it_0 = ix - (m - i | 0) | 0;
+        var last = it_0 > lastPicked ? it_0 : it_0 + n | 0;
+        var tmp5 = numberRangeToNumber(lastPicked + 1 | 0, last);
+        var tmp$ret$5;
+        $l$block_0: {
+          // Inline function 'kotlin.collections.minBy' call
+          var iterator_0 = tmp5.iterator_jk1svi_k$();
+          if (!iterator_0.hasNext_bitz1p_k$())
+            throw NoSuchElementException_init_$Create$();
+          var minElem_0 = iterator_0.next_20eer_k$();
+          if (!iterator_0.hasNext_bitz1p_k$()) {
+            tmp$ret$5 = minElem_0;
+            break $l$block_0;
+          }
+          var it_1 = minElem_0;
+          var minValue_0 = featureDistSquared(f1.get_c1px32_k$(i).feature_1, f2.get_c1px32_k$(it_1 % n | 0).feature_1);
+          do {
+            var e_0 = iterator_0.next_20eer_k$();
+            var v_0 = featureDistSquared(f1.get_c1px32_k$(i).feature_1, f2.get_c1px32_k$(e_0 % n | 0).feature_1);
+            if (compareTo(minValue_0, v_0) > 0) {
+              minElem_0 = e_0;
+              minValue_0 = v_0;
+            }
+          }
+           while (iterator_0.hasNext_bitz1p_k$());
+          tmp$ret$5 = minElem_0;
+        }
+        var best = tmp$ret$5;
+        ret.add_utx5q5_k$(f2.get_c1px32_k$(best % n | 0));
+        lastPicked = best;
+      }
+       while (inductionVariable < m);
+    return ret;
+  }
+  function featureMapper$lambda(it) {
+    return '' + it.first_1 + ' -> ' + it.second_1;
+  }
+  function featureMapper$lambda_0($dm, $N) {
+    return function (i) {
+      return toStringWithLessPrecision($dm.map_6ek76s_k$(i / $N));
+    };
+  }
+  function featureMapper$lambda_1($dm, $N) {
+    return function (i) {
+      return toStringWithLessPrecision($dm.mapBack_3wij3p_k$(i / $N));
+    };
+  }
+  function Edge(cubics) {
+    Feature.call(this, cubics);
+  }
+  protoOf(Edge).transformed_20wsma_k$ = function (f) {
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var inductionVariable = 0;
+    var last = this.cubics_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        this_0.add_utx5q5_k$(this.cubics_1.get_c1px32_k$(i).transformed_7qm8j5_k$(f));
+      }
+       while (inductionVariable <= last);
+    var tmp$ret$3 = this_0.build_nmwvly_k$();
+    return new Edge(tmp$ret$3);
+  };
+  protoOf(Edge).toString = function () {
+    return 'Edge';
+  };
+  function Corner(cubics, vertex, roundedCenter, convex) {
+    convex = convex === VOID ? true : convex;
+    Feature.call(this, cubics);
+    this.vertex_1 = vertex;
+    this.roundedCenter_1 = roundedCenter;
+    this.convex_1 = convex;
+  }
+  protoOf(Corner).transformed_20wsma_k$ = function (f) {
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var inductionVariable = 0;
+    var last = this.cubics_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        this_0.add_utx5q5_k$(this.cubics_1.get_c1px32_k$(i).transformed_7qm8j5_k$(f));
+      }
+       while (inductionVariable <= last);
+    var tmp$ret$3 = this_0.build_nmwvly_k$();
+    return new Corner(tmp$ret$3, transformed(this.vertex_1, f), transformed(this.roundedCenter_1, f), this.convex_1);
+  };
+  protoOf(Corner).toString = function () {
+    return 'Corner: vertex=' + this.vertex_1.toString() + ', center=' + this.roundedCenter_1.toString() + ', convex=' + this.convex_1;
+  };
+  function Feature(cubics) {
+    this.cubics_1 = cubics;
+  }
+  function progressInRange(progress, progressFrom, progressTo) {
+    var tmp;
+    if (progressTo >= progressFrom) {
+      tmp = progressFrom <= progress ? progress <= progressTo : false;
+    } else {
+      tmp = progress >= progressFrom || progress <= progressTo;
+    }
+    return tmp;
+  }
+  function linearMap(xValues, yValues, x) {
+    // Inline function 'kotlin.require' call
+    if (!(0.0 <= x ? x <= 1.0 : false)) {
+      var message = 'Invalid progress: ' + x;
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    var tmp1 = get_indices(xValues);
+    var tmp$ret$3;
+    $l$block: {
+      // Inline function 'kotlin.collections.first' call
+      var inductionVariable = tmp1.first_1;
+      var last = tmp1.last_1;
+      if (inductionVariable <= last)
+        do {
+          var element = inductionVariable;
+          inductionVariable = inductionVariable + 1 | 0;
+          var it = element;
+          if (progressInRange(x, xValues.get_c1px32_k$(it), xValues.get_c1px32_k$((it + 1 | 0) % xValues.get_size_woubt6_k$() | 0))) {
+            tmp$ret$3 = element;
+            break $l$block;
+          }
+        }
+         while (!(element === last));
+      throw NoSuchElementException_init_$Create$_0('Collection contains no element matching the predicate.');
+    }
+    var segmentStartIndex = tmp$ret$3;
+    var segmentEndIndex = (segmentStartIndex + 1 | 0) % xValues.get_size_woubt6_k$() | 0;
+    var segmentSizeX = positiveModulo(xValues.get_c1px32_k$(segmentEndIndex) - xValues.get_c1px32_k$(segmentStartIndex), 1.0);
+    var segmentSizeY = positiveModulo(yValues.get_c1px32_k$(segmentEndIndex) - yValues.get_c1px32_k$(segmentStartIndex), 1.0);
+    // Inline function 'kotlin.let' call
+    var positionInSegment = segmentSizeX < 0.001 ? 0.5 : positiveModulo(x - xValues.get_c1px32_k$(segmentStartIndex), 1.0) / segmentSizeX;
+    return positiveModulo(yValues.get_c1px32_k$(segmentStartIndex) + segmentSizeY * positionInSegment, 1.0);
+  }
+  function Companion_13() {
+    Companion_instance_13 = this;
+    this.Identity_1 = new DoubleMapper([to(0.0, 0.0), to(0.5, 0.5)]);
+  }
+  var Companion_instance_13;
+  function Companion_getInstance_13() {
+    if (Companion_instance_13 == null)
+      new Companion_13();
+    return Companion_instance_13;
+  }
+  function DoubleMapper(mappings) {
+    Companion_getInstance_13();
+    this.sourceValues_1 = ArrayList_init_$Create$_0(mappings.length);
+    this.targetValues_1 = ArrayList_init_$Create$_0(mappings.length);
+    var inductionVariable = 0;
+    var last = mappings.length - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        this.sourceValues_1.add_utx5q5_k$(mappings[i].first_1);
+        this.targetValues_1.add_utx5q5_k$(mappings[i].second_1);
+      }
+       while (inductionVariable <= last);
+    validateProgress(this.sourceValues_1);
+    validateProgress(this.targetValues_1);
+  }
+  protoOf(DoubleMapper).map_6ek76s_k$ = function (x) {
+    return linearMap(this.sourceValues_1, this.targetValues_1, x);
+  };
+  protoOf(DoubleMapper).mapBack_3wij3p_k$ = function (x) {
+    return linearMap(this.targetValues_1, this.sourceValues_1, x);
+  };
+  function validateProgress(p) {
+    // Inline function 'kotlin.collections.fold' call
+    var accumulator = true;
+    var _iterator__ex2g4s = p.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      accumulator = (accumulator && (0.0 <= element ? element <= 1.0 : false));
+    }
+    // Inline function 'kotlin.require' call
+    if (!accumulator) {
+      var message = 'FloatMapping - Progress outside of range: ' + joinToString_0(p);
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    var tmp5 = until(1, p.get_size_woubt6_k$());
+    var tmp$ret$4;
+    $l$block: {
+      // Inline function 'kotlin.collections.count' call
+      var tmp;
+      if (isInterface(tmp5, Collection)) {
+        tmp = tmp5.isEmpty_y1axqb_k$();
+      } else {
+        tmp = false;
+      }
+      if (tmp) {
+        tmp$ret$4 = 0;
+        break $l$block;
+      }
+      var count = 0;
+      var inductionVariable = tmp5.first_1;
+      var last = tmp5.last_1;
+      if (inductionVariable <= last)
+        do {
+          var element_0 = inductionVariable;
+          inductionVariable = inductionVariable + 1 | 0;
+          var it = element_0;
+          if (p.get_c1px32_k$(it) < p.get_c1px32_k$(it - 1 | 0)) {
+            count = count + 1 | 0;
+            checkCountOverflow(count);
+          }
+        }
+         while (!(element_0 === last));
+      tmp$ret$4 = count;
+    }
+    var wraps = tmp$ret$4;
+    // Inline function 'kotlin.require' call
+    if (!(wraps <= 1)) {
+      var message_0 = 'FloatMapping - Progress wraps more than once: ' + joinToString_0(p);
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message_0));
+    }
+  }
+  function toStringWithLessPrecision(_this__u8e3s4) {
+    return _this__u8e3s4.toString();
+  }
+  var LOG_TAG_0;
+  function Morph$Companion$match$lambda(it) {
+    return toStringWithLessPrecision(get_x(it) * 100) + ' ' + toStringWithLessPrecision(get_y(it) * 100);
+  }
+  function Morph$Companion$match$lambda_0($showPoint) {
+    return function (it) {
+      return 'C ' + $showPoint(new FloatFloatPair(it.get_control0X_1zau8s_k$(), it.get_control0Y_1zau8t_k$())) + ', ' + $showPoint(new FloatFloatPair(it.get_control1X_1zau9n_k$(), it.get_control1Y_1zau9o_k$())) + ', ' + $showPoint(new FloatFloatPair(it.get_anchor1X_n5yidh_k$(), it.get_anchor1Y_n5yidi_k$()));
+    };
+  }
+  function Companion_14() {
+  }
+  protoOf(Companion_14).match_e3no9e_k$ = function (p1, p2) {
+    var measuredPolygon1 = Companion_instance_15.measurePolygon_b66d3k_k$(new AngleMeasurer(p1.centerX_1, p1.centerY_1), p1);
+    var measuredPolygon2 = Companion_instance_15.measurePolygon_b66d3k_k$(new AngleMeasurer(p2.centerX_1, p2.centerY_1), p2);
+    var features1 = measuredPolygon1.features_1;
+    var features2 = measuredPolygon2.features_1;
+    var doubleMapper = featureMapper(features1, features2);
+    var polygon2CutPoint = doubleMapper.map_6ek76s_k$(0.0);
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag = LOG_TAG_0;
+    if (false) {
+      var tmp$ret$0 = 'polygon2CutPoint = ' + polygon2CutPoint;
+      println(tag + ': ' + tmp$ret$0);
+    }
+    var bs1 = measuredPolygon1;
+    var bs2 = measuredPolygon2.cutAndShift_f282rv_k$(polygon2CutPoint);
+    if (false) {
+      // Inline function 'kotlin.collections.forEach' call
+      var progression = until(0, bs1.get_size_woubt6_k$());
+      var inductionVariable = progression.first_1;
+      var last = progression.last_1;
+      if (inductionVariable <= last)
+        do {
+          var element = inductionVariable;
+          inductionVariable = inductionVariable + 1 | 0;
+          var index = element;
+          // Inline function 'androidx.graphics.shapes.debugLog' call
+          var tag_0 = LOG_TAG_0;
+          if (false) {
+            var tmp$ret$2 = 'start ' + index + ': ' + toString_0(getOrNull(bs1, index));
+            println(tag_0 + ': ' + tmp$ret$2);
+          }
+        }
+         while (!(element === last));
+      // Inline function 'kotlin.collections.forEach' call
+      var progression_0 = until(0, bs2.get_size_woubt6_k$());
+      var inductionVariable_0 = progression_0.first_1;
+      var last_0 = progression_0.last_1;
+      if (inductionVariable_0 <= last_0)
+        do {
+          var element_0 = inductionVariable_0;
+          inductionVariable_0 = inductionVariable_0 + 1 | 0;
+          var index_0 = element_0;
+          // Inline function 'androidx.graphics.shapes.debugLog' call
+          var tag_1 = LOG_TAG_0;
+          if (false) {
+            var tmp$ret$6 = 'End ' + index_0 + ': ' + toString_0(getOrNull(bs2, index_0));
+            println(tag_1 + ': ' + tmp$ret$6);
+          }
+        }
+         while (!(element_0 === last_0));
+    }
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var ret = ArrayList_init_$Create$();
+    var i1 = 0;
+    var i2 = 0;
+    var _unary__edvuaz = i1;
+    i1 = _unary__edvuaz + 1 | 0;
+    var b1 = getOrNull(bs1, _unary__edvuaz);
+    var _unary__edvuaz_0 = i2;
+    i2 = _unary__edvuaz_0 + 1 | 0;
+    var b2 = getOrNull(bs2, _unary__edvuaz_0);
+    while (!(b1 == null) && !(b2 == null)) {
+      var b1a = i1 === bs1.get_size_woubt6_k$() ? 1.0 : b1.endOutlineProgress_1;
+      var b2a = i2 === bs2.get_size_woubt6_k$() ? 1.0 : doubleMapper.mapBack_3wij3p_k$(positiveModulo(b2.endOutlineProgress_1 + polygon2CutPoint, 1.0));
+      // Inline function 'kotlin.math.min' call
+      var minb = Math.min(b1a, b2a);
+      // Inline function 'androidx.graphics.shapes.debugLog' call
+      var tag_2 = LOG_TAG_0;
+      if (false) {
+        var tmp$ret$12 = '' + b1a + ' ' + b2a + ' | ' + minb;
+        println(tag_2 + ': ' + tmp$ret$12);
+      }
+      var tmp;
+      if (b1a > minb + 1.0E-6) {
+        // Inline function 'androidx.graphics.shapes.debugLog' call
+        var tag_3 = LOG_TAG_0;
+        if (false) {
+          println(tag_3 + ': ' + 'Cut 1');
+        }
+        tmp = b1.cutAtProgress_u982sq_k$(minb);
+      } else {
+        var tmp_0 = b1;
+        var _unary__edvuaz_1 = i1;
+        i1 = _unary__edvuaz_1 + 1 | 0;
+        tmp = to(tmp_0, getOrNull(bs1, _unary__edvuaz_1));
+      }
+      var _destruct__k2r9zo = tmp;
+      var seg1 = _destruct__k2r9zo.component1_7eebsc_k$();
+      var newb1 = _destruct__k2r9zo.component2_7eebsb_k$();
+      var tmp_1;
+      if (b2a > minb + 1.0E-6) {
+        // Inline function 'androidx.graphics.shapes.debugLog' call
+        var tag_4 = LOG_TAG_0;
+        if (false) {
+          println(tag_4 + ': ' + 'Cut 2');
+        }
+        tmp_1 = b2.cutAtProgress_u982sq_k$(positiveModulo(doubleMapper.map_6ek76s_k$(minb) - polygon2CutPoint, 1.0));
+      } else {
+        var tmp_2 = b2;
+        var _unary__edvuaz_2 = i2;
+        i2 = _unary__edvuaz_2 + 1 | 0;
+        tmp_1 = to(tmp_2, getOrNull(bs2, _unary__edvuaz_2));
+      }
+      var _destruct__k2r9zo_0 = tmp_1;
+      var seg2 = _destruct__k2r9zo_0.component1_7eebsc_k$();
+      var newb2 = _destruct__k2r9zo_0.component2_7eebsb_k$();
+      // Inline function 'androidx.graphics.shapes.debugLog' call
+      var tag_5 = LOG_TAG_0;
+      if (false) {
+        var tmp$ret$18 = 'Match: ' + seg1.toString() + ' -> ' + seg2.toString();
+        println(tag_5 + ': ' + tmp$ret$18);
+      }
+      ret.add_utx5q5_k$(to(seg1.cubic_1, seg2.cubic_1));
+      b1 = newb1;
+      b2 = newb2;
+    }
+    // Inline function 'kotlin.require' call
+    if (!(b1 == null && b2 == null)) {
+      var message = "Expected both Polygon's Cubic to be fully matched";
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    if (false) {
+      var showPoint = Morph$Companion$match$lambda;
+      // Inline function 'kotlin.repeat' call
+      var inductionVariable_1 = 0;
+      if (inductionVariable_1 < 2)
+        do {
+          var index_1 = inductionVariable_1;
+          inductionVariable_1 = inductionVariable_1 + 1 | 0;
+          // Inline function 'kotlin.collections.map' call
+          // Inline function 'kotlin.collections.mapTo' call
+          var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(ret, 10));
+          var _iterator__ex2g4s = ret.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+            var item = _iterator__ex2g4s.next_20eer_k$();
+            var tmp$ret$22 = index_1 === 0 ? item.first_1 : item.second_1;
+            destination.add_utx5q5_k$(tmp$ret$22);
+          }
+          var points = destination;
+          // Inline function 'androidx.graphics.shapes.debugLog' call
+          var tag_6 = LOG_TAG_0;
+          if (false) {
+            var tmp_3 = 'M ' + showPoint(new FloatFloatPair(first(points).get_anchor0X_n5yicm_k$(), first(points).get_anchor0Y_n5yicn_k$())) + ' ';
+            var tmp$ret$25 = tmp_3 + joinToString_0(points, ' ', VOID, VOID, VOID, VOID, Morph$Companion$match$lambda_0(showPoint)) + ' Z';
+            println(tag_6 + ': ' + tmp$ret$25);
+          }
+        }
+         while (inductionVariable_1 < 2);
+    }
+    return ret;
+  };
+  var Companion_instance_14;
+  function Companion_getInstance_14() {
+    return Companion_instance_14;
+  }
+  function Morph(start, end) {
+    this.start_1 = start;
+    this.end_1 = end;
+    this._morphMatch_1 = Companion_instance_14.match_e3no9e_k$(this.start_1, this.end_1);
+  }
+  protoOf(Morph).asCubics_usch25_k$ = function (progress) {
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var firstCubic = null;
+    var lastCubic = null;
+    var inductionVariable = 0;
+    var last = this._morphMatch_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var tmp = 0;
+        var tmp_0 = new Float32Array(8);
+        while (tmp < 8) {
+          var tmp_1 = tmp;
+          tmp_0[tmp_1] = interpolate_0(this._morphMatch_1.get_c1px32_k$(i).first_1.points_1[tmp_1], this._morphMatch_1.get_c1px32_k$(i).second_1.points_1[tmp_1], progress);
+          tmp = tmp + 1 | 0;
+        }
+        var cubic = new Cubic(tmp_0);
+        if (firstCubic == null)
+          firstCubic = cubic;
+        if (!(lastCubic == null)) {
+          this_0.add_utx5q5_k$(lastCubic);
+        }
+        lastCubic = cubic;
+      }
+       while (inductionVariable <= last);
+    if (!(lastCubic == null) && !(firstCubic == null)) {
+      this_0.add_utx5q5_k$(Cubic_0(lastCubic.get_anchor0X_n5yicm_k$(), lastCubic.get_anchor0Y_n5yicn_k$(), lastCubic.get_control0X_1zau8s_k$(), lastCubic.get_control0Y_1zau8t_k$(), lastCubic.get_control1X_1zau9n_k$(), lastCubic.get_control1Y_1zau9o_k$(), firstCubic.get_anchor0X_n5yicm_k$(), firstCubic.get_anchor0Y_n5yicn_k$()));
+    }
+    return this_0.build_nmwvly_k$();
+  };
+  function get_x(_this__u8e3s4) {
+    return _this__u8e3s4.first_1;
+  }
+  function get_y(_this__u8e3s4) {
+    return _this__u8e3s4.second_1;
+  }
+  function getDistance(_this__u8e3s4) {
+    // Inline function 'kotlin.math.sqrt' call
+    var x = get_x(_this__u8e3s4) * get_x(_this__u8e3s4) + get_y(_this__u8e3s4) * get_y(_this__u8e3s4);
+    return Math.sqrt(x);
+  }
+  function dotProduct(_this__u8e3s4, other) {
+    return get_x(_this__u8e3s4) * get_x(other) + get_y(_this__u8e3s4) * get_y(other);
+  }
+  function dotProduct_0(_this__u8e3s4, otherX, otherY) {
+    return get_x(_this__u8e3s4) * otherX + get_y(_this__u8e3s4) * otherY;
+  }
+  function clockwise(_this__u8e3s4, other) {
+    return get_x(_this__u8e3s4) * get_y(other) - get_y(_this__u8e3s4) * get_x(other) > 0;
+  }
+  function getDirection(_this__u8e3s4) {
+    // Inline function 'kotlin.run' call
+    var d = getDistance(_this__u8e3s4);
+    // Inline function 'kotlin.require' call
+    if (!(d > 0.0)) {
+      var message = "Can't get the direction of a 0-length vector";
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    return div(_this__u8e3s4, d);
+  }
+  function minus(_this__u8e3s4, other) {
+    return new FloatFloatPair(get_x(_this__u8e3s4) - get_x(other), get_y(_this__u8e3s4) - get_y(other));
+  }
+  function plus_2(_this__u8e3s4, other) {
+    return new FloatFloatPair(get_x(_this__u8e3s4) + get_x(other), get_y(_this__u8e3s4) + get_y(other));
+  }
+  function times(_this__u8e3s4, operand) {
+    return new FloatFloatPair(get_x(_this__u8e3s4) * operand, get_y(_this__u8e3s4) * operand);
+  }
+  function div(_this__u8e3s4, operand) {
+    return new FloatFloatPair(get_x(_this__u8e3s4) / operand, get_y(_this__u8e3s4) / operand);
+  }
+  function interpolate(start, stop, fraction) {
+    return new FloatFloatPair(interpolate_0(get_x(start), get_x(stop), fraction), interpolate_0(get_y(start), get_y(stop), fraction));
+  }
+  function transformed(_this__u8e3s4, f) {
+    var result = f.transform_dn8fg_k$(get_x(_this__u8e3s4), get_y(_this__u8e3s4));
+    return new FloatFloatPair(result.first_1, result.second_1);
+  }
+  var LOG_TAG_1;
+  function MeasuredPolygon_init_$Init$(measurer, features, cubics, outlineProgress, $this) {
+    AbstractList.call($this);
+    MeasuredPolygon.call($this);
+    // Inline function 'kotlin.require' call
+    if (!(outlineProgress.get_size_woubt6_k$() === (cubics.get_size_woubt6_k$() + 1 | 0))) {
+      var message = 'Outline progress size is expected to be the cubics size + 1';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    // Inline function 'kotlin.require' call
+    if (!(first(outlineProgress) === 0.0)) {
+      var message_0 = 'First outline progress value is expected to be zero';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message_0));
+    }
+    // Inline function 'kotlin.require' call
+    if (!(last(outlineProgress) === 1.0)) {
+      var message_1 = 'Last outline progress value is expected to be one';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message_1));
+    }
+    $this.measurer_1 = measurer;
+    $this.features_1 = features;
+    if (false) {
+      // Inline function 'androidx.graphics.shapes.debugLog' call
+      var tag = LOG_TAG_1;
+      if (false) {
+        var tmp$ret$6 = 'CTOR: cubics = ' + joinToString_0(cubics) + '\nCTOR: op = ' + joinToString_0(outlineProgress);
+        println(tag + ': ' + tmp$ret$6);
+      }
+    }
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var measuredCubics = ArrayList_init_$Create$();
+    var startOutlineProgress = 0.0;
+    var inductionVariable = 0;
+    var last_0 = cubics.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last_0)
+      do {
+        var index = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        if (outlineProgress.get_c1px32_k$(index + 1 | 0) - outlineProgress.get_c1px32_k$(index) > 1.0E-4) {
+          measuredCubics.add_utx5q5_k$(new MeasuredCubic($this, cubics.get_c1px32_k$(index), startOutlineProgress, outlineProgress.get_c1px32_k$(index + 1 | 0)));
+          startOutlineProgress = outlineProgress.get_c1px32_k$(index + 1 | 0);
+        }
+      }
+       while (inductionVariable <= last_0);
+    measuredCubics.get_c1px32_k$(get_lastIndex_0(measuredCubics)).updateProgressRange$default_in6n4c_k$(VOID, 1.0);
+    $this.cubics_1 = measuredCubics;
+    return $this;
+  }
+  function MeasuredPolygon_init_$Create$(measurer, features, cubics, outlineProgress) {
+    return MeasuredPolygon_init_$Init$(measurer, features, cubics, outlineProgress, objectCreate(protoOf(MeasuredPolygon)));
+  }
+  function MeasuredCubic($outer, cubic, startOutlineProgress, endOutlineProgress) {
+    this.$this_1 = $outer;
+    this.cubic_1 = cubic;
+    // Inline function 'kotlin.require' call
+    if (!(endOutlineProgress >= startOutlineProgress)) {
+      var message = 'endOutlineProgress is expected to be equal or greater than startOutlineProgress';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    this.measuredSize_1 = this.$this_1.measurer_1.measureCubic_p3ww3f_k$(this.cubic_1);
+    this.startOutlineProgress_1 = startOutlineProgress;
+    this.endOutlineProgress_1 = endOutlineProgress;
+  }
+  protoOf(MeasuredCubic).updateProgressRange_lu4o04_k$ = function (startOutlineProgress, endOutlineProgress) {
+    // Inline function 'kotlin.require' call
+    if (!(endOutlineProgress >= startOutlineProgress)) {
+      var message = 'endOutlineProgress is expected to be equal or greater than startOutlineProgress';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    this.startOutlineProgress_1 = startOutlineProgress;
+    this.endOutlineProgress_1 = endOutlineProgress;
+  };
+  protoOf(MeasuredCubic).updateProgressRange$default_in6n4c_k$ = function (startOutlineProgress, endOutlineProgress, $super) {
+    startOutlineProgress = startOutlineProgress === VOID ? this.startOutlineProgress_1 : startOutlineProgress;
+    endOutlineProgress = endOutlineProgress === VOID ? this.endOutlineProgress_1 : endOutlineProgress;
+    var tmp;
+    if ($super === VOID) {
+      this.updateProgressRange_lu4o04_k$(startOutlineProgress, endOutlineProgress);
+      tmp = Unit_instance;
+    } else {
+      tmp = $super.updateProgressRange_lu4o04_k$.call(this, startOutlineProgress, endOutlineProgress);
+    }
+    return tmp;
+  };
+  protoOf(MeasuredCubic).cutAtProgress_u982sq_k$ = function (cutOutlineProgress) {
+    var boundedCutOutlineProgress = coerceIn_0(cutOutlineProgress, this.startOutlineProgress_1, this.endOutlineProgress_1);
+    var outlineProgressSize = this.endOutlineProgress_1 - this.startOutlineProgress_1;
+    var progressFromStart = boundedCutOutlineProgress - this.startOutlineProgress_1;
+    var relativeProgress = progressFromStart / outlineProgressSize;
+    var t = this.$this_1.measurer_1.findCubicCutPoint_23i940_k$(this.cubic_1, relativeProgress * this.measuredSize_1);
+    // Inline function 'kotlin.require' call
+    if (!(0.0 <= t ? t <= 1.0 : false)) {
+      var message = 'Cubic cut point is expected to be between 0 and 1';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag = LOG_TAG_1;
+    if (false) {
+      var tmp$ret$2 = 'cutAtProgress: progress = ' + boundedCutOutlineProgress + ' / ' + ('this = [' + this.startOutlineProgress_1 + ' .. ' + this.endOutlineProgress_1 + '] / ') + ('ps = ' + progressFromStart + ' / rp = ' + relativeProgress + ' / t = ' + t);
+      println(tag + ': ' + tmp$ret$2);
+    }
+    var _destruct__k2r9zo = this.cubic_1.split_tr05pe_k$(t);
+    var c1 = _destruct__k2r9zo.component1_7eebsc_k$();
+    var c2 = _destruct__k2r9zo.component2_7eebsb_k$();
+    return to(new MeasuredCubic(this.$this_1, c1, this.startOutlineProgress_1, boundedCutOutlineProgress), new MeasuredCubic(this.$this_1, c2, boundedCutOutlineProgress, this.endOutlineProgress_1));
+  };
+  protoOf(MeasuredCubic).toString = function () {
+    return 'MeasuredCubic(outlineProgress=' + ('[' + this.startOutlineProgress_1 + ' .. ' + this.endOutlineProgress_1 + '], ') + ('size=' + this.measuredSize_1 + ', cubic=' + this.cubic_1.toString() + ')');
+  };
+  function Companion_15() {
+  }
+  protoOf(Companion_15).measurePolygon_b66d3k_k$ = function (measurer, polygon) {
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var cubics = ArrayList_init_$Create$();
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var featureToCubic = ArrayList_init_$Create$();
+    var inductionVariable = 0;
+    var last_0 = polygon.features_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last_0)
+      do {
+        var featureIndex = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var feature = polygon.features_1.get_c1px32_k$(featureIndex);
+        var inductionVariable_0 = 0;
+        var last_1 = feature.cubics_1.get_size_woubt6_k$() - 1 | 0;
+        if (inductionVariable_0 <= last_1)
+          do {
+            var cubicIndex = inductionVariable_0;
+            inductionVariable_0 = inductionVariable_0 + 1 | 0;
+            var tmp;
+            if (feature instanceof Corner) {
+              tmp = cubicIndex === (feature.cubics_1.get_size_woubt6_k$() / 2 | 0);
+            } else {
+              tmp = false;
+            }
+            if (tmp) {
+              featureToCubic.add_utx5q5_k$(to(feature, cubics.get_size_woubt6_k$()));
+            }
+            cubics.add_utx5q5_k$(feature.cubics_1.get_c1px32_k$(cubicIndex));
+          }
+           while (inductionVariable_0 <= last_1);
+      }
+       while (inductionVariable <= last_0);
+    // Inline function 'kotlin.collections.scan' call
+    var tmp$ret$2;
+    $l$block: {
+      // Inline function 'kotlin.collections.runningFold' call
+      var estimatedSize = collectionSizeOrDefault(cubics, 9);
+      if (estimatedSize === 0) {
+        tmp$ret$2 = listOf(0.0);
+        break $l$block;
+      }
+      // Inline function 'kotlin.apply' call
+      var this_0 = ArrayList_init_$Create$_0(estimatedSize + 1 | 0);
+      this_0.add_utx5q5_k$(0.0);
+      var result = this_0;
+      var accumulator = 0.0;
+      var _iterator__ex2g4s = cubics.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+        var element = _iterator__ex2g4s.next_20eer_k$();
+        var measure = accumulator;
+        // Inline function 'kotlin.also' call
+        var this_1 = measurer.measureCubic_p3ww3f_k$(element);
+        // Inline function 'kotlin.require' call
+        if (!(this_1 >= 0.0)) {
+          var message = 'Measured cubic is expected to be greater or equal to zero';
+          throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+        }
+        accumulator = measure + this_1;
+        result.add_utx5q5_k$(accumulator);
+      }
+      tmp$ret$2 = result;
+    }
+    var measures = tmp$ret$2;
+    var totalMeasure = last(measures);
+    var outlineProgress = ArrayList_init_$Create$_0(measures.get_size_woubt6_k$());
+    var inductionVariable_1 = 0;
+    var last_2 = measures.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable_1 <= last_2)
+      do {
+        var i = inductionVariable_1;
+        inductionVariable_1 = inductionVariable_1 + 1 | 0;
+        outlineProgress.add_utx5q5_k$(measures.get_c1px32_k$(i) / totalMeasure);
+      }
+       while (inductionVariable_1 <= last_2);
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag = LOG_TAG_1;
+    if (false) {
+      var tmp$ret$11 = 'Total size: ' + totalMeasure;
+      println(tag + ': ' + tmp$ret$11);
+    }
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_2 = ArrayList_init_$Create$();
+    var inductionVariable_2 = 0;
+    var last_3 = featureToCubic.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable_2 <= last_3)
+      do {
+        var i_0 = inductionVariable_2;
+        inductionVariable_2 = inductionVariable_2 + 1 | 0;
+        var ix = featureToCubic.get_c1px32_k$(i_0).second_1;
+        this_2.add_utx5q5_k$(new ProgressableFeature((outlineProgress.get_c1px32_k$(ix) + outlineProgress.get_c1px32_k$(ix + 1 | 0)) / 2, featureToCubic.get_c1px32_k$(i_0).first_1));
+      }
+       while (inductionVariable_2 <= last_3);
+    var features = this_2.build_nmwvly_k$();
+    return MeasuredPolygon_init_$Create$(measurer, features, cubics, outlineProgress);
+  };
+  var Companion_instance_15;
+  function Companion_getInstance_15() {
+    return Companion_instance_15;
+  }
+  protoOf(MeasuredPolygon).cutAndShift_f282rv_k$ = function (cuttingPoint) {
+    // Inline function 'kotlin.require' call
+    if (!(0.0 <= cuttingPoint ? cuttingPoint <= 1.0 : false)) {
+      var message = 'Cutting point is expected to be between 0 and 1';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    if (cuttingPoint < 1.0E-4)
+      return this;
+    var tmp1 = this.cubics_1;
+    var tmp$ret$3;
+    $l$block: {
+      // Inline function 'kotlin.collections.indexOfFirst' call
+      var index = 0;
+      var _iterator__ex2g4s = tmp1.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+        var item = _iterator__ex2g4s.next_20eer_k$();
+        var containsLower = item.startOutlineProgress_1;
+        if (cuttingPoint <= item.endOutlineProgress_1 ? containsLower <= cuttingPoint : false) {
+          tmp$ret$3 = index;
+          break $l$block;
+        }
+        index = index + 1 | 0;
+      }
+      tmp$ret$3 = -1;
+    }
+    var targetIndex = tmp$ret$3;
+    var target = this.cubics_1.get_c1px32_k$(targetIndex);
+    if (false) {
+      // Inline function 'kotlin.collections.forEachIndexed' call
+      var index_0 = 0;
+      var _iterator__ex2g4s_0 = this.cubics_1.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+        var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+        var _unary__edvuaz = index_0;
+        index_0 = _unary__edvuaz + 1 | 0;
+        var index_1 = checkIndexOverflow(_unary__edvuaz);
+        // Inline function 'androidx.graphics.shapes.debugLog' call
+        var tag = LOG_TAG_1;
+        if (false) {
+          var tmp$ret$4 = 'cut&Shift | cubic #' + index_1 + ' : ' + item_0.toString() + ' ';
+          println(tag + ': ' + tmp$ret$4);
+        }
+      }
+      // Inline function 'androidx.graphics.shapes.debugLog' call
+      var tag_0 = LOG_TAG_1;
+      if (false) {
+        var tmp$ret$8 = 'cut&Shift, cuttingPoint = ' + cuttingPoint + ', target = (' + targetIndex + ') ' + target.toString();
+        println(tag_0 + ': ' + tmp$ret$8);
+      }
+    }
+    var _destruct__k2r9zo = target.cutAtProgress_u982sq_k$(cuttingPoint);
+    var b1 = _destruct__k2r9zo.component1_7eebsc_k$();
+    var b2 = _destruct__k2r9zo.component2_7eebsb_k$();
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag_1 = LOG_TAG_1;
+    if (false) {
+      var tmp$ret$10 = 'Split | ' + target.toString() + ' -> ' + b1.toString() + ' & ' + b2.toString();
+      println(tag_1 + ': ' + tmp$ret$10);
+    }
+    var retCubics = mutableListOf([b2.cubic_1]);
+    var inductionVariable = 1;
+    var last = this.cubics_1.get_size_woubt6_k$();
+    if (inductionVariable < last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        retCubics.add_utx5q5_k$(this.cubics_1.get_c1px32_k$((i + targetIndex | 0) % this.cubics_1.get_size_woubt6_k$() | 0).cubic_1);
+      }
+       while (inductionVariable < last);
+    retCubics.add_utx5q5_k$(b1.cubic_1);
+    var retOutlineProgress = ArrayList_init_$Create$_0(this.cubics_1.get_size_woubt6_k$() + 2 | 0);
+    var inductionVariable_0 = 0;
+    var last_0 = this.cubics_1.get_size_woubt6_k$() + 2 | 0;
+    if (inductionVariable_0 < last_0)
+      do {
+        var index_2 = inductionVariable_0;
+        inductionVariable_0 = inductionVariable_0 + 1 | 0;
+        var tmp;
+        if (index_2 === 0) {
+          tmp = 0.0;
+        } else if (index_2 === (this.cubics_1.get_size_woubt6_k$() + 1 | 0)) {
+          tmp = 1.0;
+        } else {
+          var cubicIndex = ((targetIndex + index_2 | 0) - 1 | 0) % this.cubics_1.get_size_woubt6_k$() | 0;
+          tmp = positiveModulo(this.cubics_1.get_c1px32_k$(cubicIndex).endOutlineProgress_1 - cuttingPoint, 1.0);
+        }
+        retOutlineProgress.add_utx5q5_k$(tmp);
+      }
+       while (inductionVariable_0 < last_0);
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var inductionVariable_1 = 0;
+    var last_1 = this.features_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable_1 <= last_1)
+      do {
+        var i_0 = inductionVariable_1;
+        inductionVariable_1 = inductionVariable_1 + 1 | 0;
+        this_0.add_utx5q5_k$(new ProgressableFeature(positiveModulo(this.features_1.get_c1px32_k$(i_0).progress_1 - cuttingPoint, 1.0), this.features_1.get_c1px32_k$(i_0).feature_1));
+      }
+       while (inductionVariable_1 <= last_1);
+    var newFeatures = this_0.build_nmwvly_k$();
+    return MeasuredPolygon_init_$Create$(this.measurer_1, newFeatures, retCubics, retOutlineProgress);
+  };
+  protoOf(MeasuredPolygon).get_size_woubt6_k$ = function () {
+    return this.cubics_1.get_size_woubt6_k$();
+  };
+  protoOf(MeasuredPolygon).get_c1px32_k$ = function (index) {
+    return this.cubics_1.get_c1px32_k$(index);
+  };
+  function MeasuredPolygon() {
+  }
+  function sam$androidx_graphics_shapes_FindMinimumFunction$0(function_0) {
+    this.function_1 = function_0;
+  }
+  protoOf(sam$androidx_graphics_shapes_FindMinimumFunction$0).invoke_vumjuo_k$ = function (value) {
+    return this.function_1(value);
+  };
+  protoOf(sam$androidx_graphics_shapes_FindMinimumFunction$0).getFunctionDelegate_jtodtf_k$ = function () {
+    return this.function_1;
+  };
+  protoOf(sam$androidx_graphics_shapes_FindMinimumFunction$0).equals = function (other) {
+    var tmp;
+    if (!(other == null) ? isInterface(other, FindMinimumFunction) : false) {
+      var tmp_0;
+      if (!(other == null) ? isInterface(other, FunctionAdapter) : false) {
+        tmp_0 = equals(this.getFunctionDelegate_jtodtf_k$(), other.getFunctionDelegate_jtodtf_k$());
+      } else {
+        tmp_0 = false;
+      }
+      tmp = tmp_0;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  };
+  protoOf(sam$androidx_graphics_shapes_FindMinimumFunction$0).hashCode = function () {
+    return hashCode(this.getFunctionDelegate_jtodtf_k$());
+  };
+  function AngleMeasurer$findCubicCutPoint$lambda($c, this$0, $angle0, $m) {
+    return function (t) {
+      var curvePoint = $c.pointOnCurve_cuyp05_k$(t);
+      var angle_0 = angle(get_x(curvePoint) - this$0.centerX_1, get_y(curvePoint) - this$0.centerY_1);
+      // Inline function 'kotlin.math.abs' call
+      var x = positiveModulo(angle_0 - $angle0, get_TwoPi()) - $m;
+      return Math.abs(x);
+    };
+  }
+  function AngleMeasurer(centerX, centerY) {
+    this.centerX_1 = centerX;
+    this.centerY_1 = centerY;
+  }
+  protoOf(AngleMeasurer).measureCubic_p3ww3f_k$ = function (c) {
+    // Inline function 'kotlin.let' call
+    var it = positiveModulo(angle(c.get_anchor1X_n5yidh_k$() - this.centerX_1, c.get_anchor1Y_n5yidi_k$() - this.centerY_1) - angle(c.get_anchor0X_n5yicm_k$() - this.centerX_1, c.get_anchor0Y_n5yicn_k$() - this.centerY_1), get_TwoPi());
+    return it > get_TwoPi() - 1.0E-4 ? 0.0 : it;
+  };
+  protoOf(AngleMeasurer).findCubicCutPoint_23i940_k$ = function (c, m) {
+    var angle0 = angle(c.get_anchor0X_n5yicm_k$() - this.centerX_1, c.get_anchor0Y_n5yicn_k$() - this.centerY_1);
+    var tmp = AngleMeasurer$findCubicCutPoint$lambda(c, this, angle0, m);
+    return findMinimum(0.0, 1.0, 1.0E-5, new sam$androidx_graphics_shapes_FindMinimumFunction$0(tmp));
+  };
+  function Companion_16() {
+  }
+  var Companion_instance_16;
+  function Companion_getInstance_16() {
+    return Companion_instance_16;
+  }
+  function sam$androidx_graphics_shapes_PointTransformer$0(function_0) {
+    this.function_1 = function_0;
+  }
+  protoOf(sam$androidx_graphics_shapes_PointTransformer$0).transform_dn8fg_k$ = function (x, y) {
+    return this.function_1(x, y);
+  };
+  protoOf(sam$androidx_graphics_shapes_PointTransformer$0).getFunctionDelegate_jtodtf_k$ = function () {
+    return this.function_1;
+  };
+  protoOf(sam$androidx_graphics_shapes_PointTransformer$0).equals = function (other) {
+    var tmp;
+    if (!(other == null) ? isInterface(other, PointTransformer) : false) {
+      var tmp_0;
+      if (!(other == null) ? isInterface(other, FunctionAdapter) : false) {
+        tmp_0 = equals(this.getFunctionDelegate_jtodtf_k$(), other.getFunctionDelegate_jtodtf_k$());
+      } else {
+        tmp_0 = false;
+      }
+      tmp = tmp_0;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  };
+  protoOf(sam$androidx_graphics_shapes_PointTransformer$0).hashCode = function () {
+    return hashCode(this.getFunctionDelegate_jtodtf_k$());
+  };
+  function RoundedPolygon$normalized$lambda($offsetX, $side, $offsetY) {
+    return function (x, y) {
+      return new FloatFloatPair((x + $offsetX) / $side, (y + $offsetY) / $side);
+    };
+  }
+  function RoundedPolygon(features, centerX, centerY) {
+    this.features_1 = features;
+    this.centerX_1 = centerX;
+    this.centerY_1 = centerY;
+    var tmp = this;
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var firstCubic = null;
+    var lastCubic = null;
+    var firstFeatureSplitStart = null;
+    var firstFeatureSplitEnd = null;
+    if (this.features_1.get_size_woubt6_k$() > 0 && this.features_1.get_c1px32_k$(0).cubics_1.get_size_woubt6_k$() === 3) {
+      var centerCubic = this.features_1.get_c1px32_k$(0).cubics_1.get_c1px32_k$(1);
+      var _destruct__k2r9zo = centerCubic.split_tr05pe_k$(0.5);
+      var start = _destruct__k2r9zo.component1_7eebsc_k$();
+      var end = _destruct__k2r9zo.component2_7eebsb_k$();
+      firstFeatureSplitStart = mutableListOf([this.features_1.get_c1px32_k$(0).cubics_1.get_c1px32_k$(0), start]);
+      firstFeatureSplitEnd = mutableListOf([end, this.features_1.get_c1px32_k$(0).cubics_1.get_c1px32_k$(2)]);
+    }
+    var inductionVariable = 0;
+    var last = this.features_1.get_size_woubt6_k$();
+    if (inductionVariable <= last)
+      $l$loop: do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var tmp_0;
+        if (i === 0 && !(firstFeatureSplitEnd == null)) {
+          tmp_0 = firstFeatureSplitEnd;
+        } else if (i === this.features_1.get_size_woubt6_k$()) {
+          var tmp_1;
+          if (!(firstFeatureSplitStart == null)) {
+            tmp_1 = firstFeatureSplitStart;
+          } else {
+            break $l$loop;
+          }
+          tmp_0 = tmp_1;
+        } else {
+          tmp_0 = this.features_1.get_c1px32_k$(i).cubics_1;
+        }
+        var featureCubics = tmp_0;
+        var inductionVariable_0 = 0;
+        var last_0 = featureCubics.get_size_woubt6_k$() - 1 | 0;
+        if (inductionVariable_0 <= last_0)
+          do {
+            var j = inductionVariable_0;
+            inductionVariable_0 = inductionVariable_0 + 1 | 0;
+            var cubic = featureCubics.get_c1px32_k$(j);
+            if (!cubic.zeroLength_gp3pxh_k$()) {
+              if (!(lastCubic == null)) {
+                this_0.add_utx5q5_k$(lastCubic);
+              }
+              lastCubic = cubic;
+              if (firstCubic == null)
+                firstCubic = cubic;
+            } else {
+              if (!(lastCubic == null)) {
+                lastCubic.points_1[6] = cubic.get_anchor1X_n5yidh_k$();
+                lastCubic.points_1[7] = cubic.get_anchor1Y_n5yidi_k$();
+              }
+            }
+          }
+           while (inductionVariable_0 <= last_0);
+      }
+       while (!(i === last));
+    if (!(lastCubic == null) && !(firstCubic == null)) {
+      this_0.add_utx5q5_k$(Cubic_0(lastCubic.get_anchor0X_n5yicm_k$(), lastCubic.get_anchor0Y_n5yicn_k$(), lastCubic.get_control0X_1zau8s_k$(), lastCubic.get_control0Y_1zau8t_k$(), lastCubic.get_control1X_1zau9n_k$(), lastCubic.get_control1Y_1zau9o_k$(), firstCubic.get_anchor0X_n5yicm_k$(), firstCubic.get_anchor0Y_n5yicn_k$()));
+    }
+    tmp.cubics_1 = this_0.build_nmwvly_k$();
+    var prevCubic = this.cubics_1.get_c1px32_k$(this.cubics_1.get_size_woubt6_k$() - 1 | 0);
+    // Inline function 'androidx.graphics.shapes.debugLog' call
+    var tag = 'RoundedPolygon';
+    if (false) {
+      var tmp$ret$4 = 'Cubic-1 = ' + prevCubic.toString();
+      println(tag + ': ' + tmp$ret$4);
+    }
+    var inductionVariable_1 = 0;
+    var last_1 = this.cubics_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable_1 <= last_1)
+      do {
+        var index = inductionVariable_1;
+        inductionVariable_1 = inductionVariable_1 + 1 | 0;
+        var cubic_0 = this.cubics_1.get_c1px32_k$(index);
+        // Inline function 'androidx.graphics.shapes.debugLog' call
+        var tag_0 = 'RoundedPolygon';
+        if (false) {
+          var tmp$ret$6 = 'Cubic = ' + cubic_0.toString();
+          println(tag_0 + ': ' + tmp$ret$6);
+        }
+        var tmp_2;
+        // Inline function 'kotlin.math.abs' call
+        var x = cubic_0.get_anchor0X_n5yicm_k$() - prevCubic.get_anchor1X_n5yidh_k$();
+        if (Math.abs(x) > 1.0E-4) {
+          tmp_2 = true;
+        } else {
+          // Inline function 'kotlin.math.abs' call
+          var x_0 = cubic_0.get_anchor0Y_n5yicn_k$() - prevCubic.get_anchor1Y_n5yidi_k$();
+          tmp_2 = Math.abs(x_0) > 1.0E-4;
+        }
+        if (tmp_2) {
+          // Inline function 'androidx.graphics.shapes.debugLog' call
+          var tag_1 = 'RoundedPolygon';
+          if (false) {
+            var tmp$ret$10 = 'Ix: ' + index + ' | (' + cubic_0.get_anchor0X_n5yicm_k$() + ',' + cubic_0.get_anchor0Y_n5yicn_k$() + ') vs ' + prevCubic.toString();
+            println(tag_1 + ': ' + tmp$ret$10);
+          }
+          throw IllegalArgumentException_init_$Create$_0('RoundedPolygon must be contiguous, with the anchor points of all curves matching the anchor points of the preceding and succeeding cubics');
+        }
+        prevCubic = cubic_0;
+      }
+       while (inductionVariable_1 <= last_1);
+  }
+  protoOf(RoundedPolygon).transformed_7qm8j5_k$ = function (f) {
+    var center = transformed(new FloatFloatPair(this.centerX_1, this.centerY_1), f);
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$();
+    var inductionVariable = 0;
+    var last = this.features_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        this_0.add_utx5q5_k$(this.features_1.get_c1px32_k$(i).transformed_20wsma_k$(f));
+      }
+       while (inductionVariable <= last);
+    var tmp$ret$3 = this_0.build_nmwvly_k$();
+    return new RoundedPolygon(tmp$ret$3, get_x(center), get_y(center));
+  };
+  protoOf(RoundedPolygon).normalized_kr8009_k$ = function () {
+    var bounds = this.calculateBounds$default_3yufca_k$();
+    var width = bounds[2] - bounds[0];
+    var height = bounds[3] - bounds[1];
+    // Inline function 'kotlin.math.max' call
+    var side = Math.max(width, height);
+    var offsetX = (side - width) / 2 - bounds[0];
+    var offsetY = (side - height) / 2 - bounds[1];
+    var tmp = RoundedPolygon$normalized$lambda(offsetX, side, offsetY);
+    return this.transformed_7qm8j5_k$(new sam$androidx_graphics_shapes_PointTransformer$0(tmp));
+  };
+  protoOf(RoundedPolygon).toString = function () {
+    return '[RoundedPolygon. Cubics = ' + joinToString_0(this.cubics_1) + ' || Features = ' + joinToString_0(this.features_1) + (' || Center = (' + this.centerX_1 + ', ' + this.centerY_1 + ')]');
+  };
+  protoOf(RoundedPolygon).calculateBounds_vv4e48_k$ = function (bounds, approximate) {
+    // Inline function 'kotlin.require' call
+    if (!(bounds.length >= 4)) {
+      var message = 'Required bounds size of 4';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    var minX = 3.4028235E38;
+    var minY = 3.4028235E38;
+    var maxX = 1.4E-45;
+    var maxY = 1.4E-45;
+    var inductionVariable = 0;
+    var last = this.cubics_1.get_size_woubt6_k$() - 1 | 0;
+    if (inductionVariable <= last)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var cubic = this.cubics_1.get_c1px32_k$(i);
+        cubic.calculateBounds_8kdqbp_k$(bounds, approximate);
+        var tmp1 = minX;
+        // Inline function 'kotlin.math.min' call
+        var b = bounds[0];
+        minX = Math.min(tmp1, b);
+        var tmp3 = minY;
+        // Inline function 'kotlin.math.min' call
+        var b_0 = bounds[1];
+        minY = Math.min(tmp3, b_0);
+        var tmp5 = maxX;
+        // Inline function 'kotlin.math.max' call
+        var b_1 = bounds[2];
+        maxX = Math.max(tmp5, b_1);
+        var tmp7 = maxY;
+        // Inline function 'kotlin.math.max' call
+        var b_2 = bounds[3];
+        maxY = Math.max(tmp7, b_2);
+      }
+       while (inductionVariable <= last);
+    bounds[0] = minX;
+    bounds[1] = minY;
+    bounds[2] = maxX;
+    bounds[3] = maxY;
+    return bounds;
+  };
+  protoOf(RoundedPolygon).calculateBounds$default_3yufca_k$ = function (bounds, approximate, $super) {
+    bounds = bounds === VOID ? new Float32Array(4) : bounds;
+    approximate = approximate === VOID ? true : approximate;
+    return $super === VOID ? this.calculateBounds_vv4e48_k$(bounds, approximate) : $super.calculateBounds_vv4e48_k$.call(this, bounds, approximate);
+  };
+  protoOf(RoundedPolygon).equals = function (other) {
+    if (this === other)
+      return true;
+    if (!(other instanceof RoundedPolygon))
+      return false;
+    return equals(this.features_1, other.features_1);
+  };
+  protoOf(RoundedPolygon).hashCode = function () {
+    return hashCode(this.features_1);
+  };
+  function RoundedPolygon_0(numVertices, radius, centerX, centerY, rounding, perVertexRounding) {
+    radius = radius === VOID ? 1.0 : radius;
+    centerX = centerX === VOID ? 0.0 : centerX;
+    centerY = centerY === VOID ? 0.0 : centerY;
+    rounding = rounding === VOID ? Companion_getInstance_11().Unrounded_1 : rounding;
+    perVertexRounding = perVertexRounding === VOID ? null : perVertexRounding;
+    return RoundedPolygon_1(verticesFromNumVerts(numVertices, radius, centerX, centerY), rounding, perVertexRounding, centerX, centerY);
+  }
+  function RoundedPolygon_1(vertices, rounding, perVertexRounding, centerX, centerY) {
+    rounding = rounding === VOID ? Companion_getInstance_11().Unrounded_1 : rounding;
+    perVertexRounding = perVertexRounding === VOID ? null : perVertexRounding;
+    centerX = centerX === VOID ? 1.4E-45 : centerX;
+    centerY = centerY === VOID ? 1.4E-45 : centerY;
+    if (vertices.length < 6) {
+      throw IllegalArgumentException_init_$Create$_0('Polygons must have at least 3 vertices');
+    }
+    if ((vertices.length % 2 | 0) === 1) {
+      throw IllegalArgumentException_init_$Create$_0('The vertices array should have even size');
+    }
+    if (!(perVertexRounding == null) && !(imul(perVertexRounding.get_size_woubt6_k$(), 2) === vertices.length)) {
+      throw IllegalArgumentException_init_$Create$_0('perVertexRounding list should be either null or the same size as the number of vertices (vertices.size / 2)');
+    }
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var corners = ArrayList_init_$Create$();
+    var n = vertices.length / 2 | 0;
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var roundedCorners = ArrayList_init_$Create$();
+    var inductionVariable = 0;
+    if (inductionVariable < n)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var tmp1_elvis_lhs = perVertexRounding == null ? null : perVertexRounding.get_c1px32_k$(i);
+        var vtxRounding = tmp1_elvis_lhs == null ? rounding : tmp1_elvis_lhs;
+        var prevIndex = imul(((i + n | 0) - 1 | 0) % n | 0, 2);
+        var nextIndex = imul((i + 1 | 0) % n | 0, 2);
+        roundedCorners.add_utx5q5_k$(new RoundedCorner(new FloatFloatPair(vertices[prevIndex], vertices[prevIndex + 1 | 0]), new FloatFloatPair(vertices[imul(i, 2)], vertices[imul(i, 2) + 1 | 0]), new FloatFloatPair(vertices[nextIndex], vertices[nextIndex + 1 | 0]), vtxRounding));
+      }
+       while (inductionVariable < n);
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = until(0, n);
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(this_0, 10));
+    var inductionVariable_0 = this_0.first_1;
+    var last_0 = this_0.last_1;
+    if (inductionVariable_0 <= last_0)
+      do {
+        var item = inductionVariable_0;
+        inductionVariable_0 = inductionVariable_0 + 1 | 0;
+        var ix = item;
+        var expectedRoundCut = roundedCorners.get_c1px32_k$(ix).expectedRoundCut_1 + roundedCorners.get_c1px32_k$((ix + 1 | 0) % n | 0).expectedRoundCut_1;
+        var expectedCut = roundedCorners.get_c1px32_k$(ix).get_expectedCut_vue1vj_k$() + roundedCorners.get_c1px32_k$((ix + 1 | 0) % n | 0).get_expectedCut_vue1vj_k$();
+        var vtxX = vertices[imul(ix, 2)];
+        var vtxY = vertices[imul(ix, 2) + 1 | 0];
+        var nextVtxX = vertices[imul((ix + 1 | 0) % n | 0, 2)];
+        var nextVtxY = vertices[imul((ix + 1 | 0) % n | 0, 2) + 1 | 0];
+        var sideSize = distance(vtxX - nextVtxX, vtxY - nextVtxY);
+        var tmp;
+        if (expectedRoundCut > sideSize) {
+          tmp = to(sideSize / expectedRoundCut, 0.0);
+        } else if (expectedCut > sideSize) {
+          tmp = to(1.0, (sideSize - expectedRoundCut) / (expectedCut - expectedRoundCut));
+        } else {
+          tmp = to(1.0, 1.0);
+        }
+        var tmp$ret$2 = tmp;
+        destination.add_utx5q5_k$(tmp$ret$2);
+      }
+       while (!(item === last_0));
+    var cutAdjusts = destination;
+    var inductionVariable_1 = 0;
+    if (inductionVariable_1 < n)
+      do {
+        var i_0 = inductionVariable_1;
+        inductionVariable_1 = inductionVariable_1 + 1 | 0;
+        var allowedCuts = ArrayList_init_$Create$_0(2);
+        var inductionVariable_2 = 0;
+        if (inductionVariable_2 <= 1)
+          do {
+            var delta = inductionVariable_2;
+            inductionVariable_2 = inductionVariable_2 + 1 | 0;
+            var _destruct__k2r9zo = cutAdjusts.get_c1px32_k$((((i_0 + n | 0) - 1 | 0) + delta | 0) % n | 0);
+            var roundCutRatio = _destruct__k2r9zo.component1_7eebsc_k$();
+            var cutRatio = _destruct__k2r9zo.component2_7eebsb_k$();
+            allowedCuts.add_utx5q5_k$(roundedCorners.get_c1px32_k$(i_0).expectedRoundCut_1 * roundCutRatio + (roundedCorners.get_c1px32_k$(i_0).get_expectedCut_vue1vj_k$() - roundedCorners.get_c1px32_k$(i_0).expectedRoundCut_1) * cutRatio);
+          }
+           while (inductionVariable_2 <= 1);
+        corners.add_utx5q5_k$(roundedCorners.get_c1px32_k$(i_0).getCubics_nwegwv_k$(allowedCuts.get_c1px32_k$(0), allowedCuts.get_c1px32_k$(1)));
+      }
+       while (inductionVariable_1 < n);
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var tempFeatures = ArrayList_init_$Create$();
+    var inductionVariable_3 = 0;
+    if (inductionVariable_3 < n)
+      do {
+        var i_1 = inductionVariable_3;
+        inductionVariable_3 = inductionVariable_3 + 1 | 0;
+        var prevVtxIndex = ((i_1 + n | 0) - 1 | 0) % n | 0;
+        var nextVtxIndex = (i_1 + 1 | 0) % n | 0;
+        var currVertex = new FloatFloatPair(vertices[imul(i_1, 2)], vertices[imul(i_1, 2) + 1 | 0]);
+        var prevVertex = new FloatFloatPair(vertices[imul(prevVtxIndex, 2)], vertices[imul(prevVtxIndex, 2) + 1 | 0]);
+        var nextVertex = new FloatFloatPair(vertices[imul(nextVtxIndex, 2)], vertices[imul(nextVtxIndex, 2) + 1 | 0]);
+        var convex = clockwise(minus(currVertex, prevVertex), minus(nextVertex, currVertex));
+        tempFeatures.add_utx5q5_k$(new Corner(corners.get_c1px32_k$(i_1), currVertex, roundedCorners.get_c1px32_k$(i_1).center_1, convex));
+        tempFeatures.add_utx5q5_k$(new Edge(listOf(Companion_instance_12.straightLine_8gqrri_k$(last(corners.get_c1px32_k$(i_1)).get_anchor1X_n5yidh_k$(), last(corners.get_c1px32_k$(i_1)).get_anchor1Y_n5yidi_k$(), first(corners.get_c1px32_k$((i_1 + 1 | 0) % n | 0)).get_anchor0X_n5yicm_k$(), first(corners.get_c1px32_k$((i_1 + 1 | 0) % n | 0)).get_anchor0Y_n5yicn_k$()))));
+      }
+       while (inductionVariable_3 < n);
+    var tmp_0;
+    if (centerX === 1.4E-45 || centerY === 1.4E-45) {
+      tmp_0 = calculateCenter(vertices);
+    } else {
+      tmp_0 = new FloatFloatPair(centerX, centerY);
+    }
+    var _destruct__k2r9zo_0 = tmp_0;
+    var cx = _destruct__k2r9zo_0.component1_7eebsc_k$();
+    var cy = _destruct__k2r9zo_0.component2_7eebsb_k$();
+    return new RoundedPolygon(tempFeatures, cx, cy);
+  }
+  function calculateCenter(vertices) {
+    var cumulativeX = 0.0;
+    var cumulativeY = 0.0;
+    var index = 0;
+    while (index < vertices.length) {
+      var tmp = cumulativeX;
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      cumulativeX = tmp + vertices[_unary__edvuaz];
+      var tmp_0 = cumulativeY;
+      var _unary__edvuaz_0 = index;
+      index = _unary__edvuaz_0 + 1 | 0;
+      cumulativeY = tmp_0 + vertices[_unary__edvuaz_0];
+    }
+    return new FloatFloatPair(cumulativeX / vertices.length / 2, cumulativeY / vertices.length / 2);
+  }
+  function calculateActualSmoothingValue($this, allowedCut) {
+    var tmp;
+    if (allowedCut > $this.get_expectedCut_vue1vj_k$()) {
+      tmp = $this.smoothing_1;
+    } else if (allowedCut > $this.expectedRoundCut_1) {
+      tmp = $this.smoothing_1 * (allowedCut - $this.expectedRoundCut_1) / ($this.get_expectedCut_vue1vj_k$() - $this.expectedRoundCut_1);
+    } else {
+      tmp = 0.0;
+    }
+    return tmp;
+  }
+  function computeFlankingCurve($this, actualRoundCut, actualSmoothingValues, corner, sideStart, circleSegmentIntersection, otherCircleSegmentIntersection, circleCenter, actualR) {
+    var sideDirection = getDirection(minus(sideStart, corner));
+    var curveStart = plus_2(corner, times(times(sideDirection, actualRoundCut), 1 + actualSmoothingValues));
+    var p = interpolate(circleSegmentIntersection, div(plus_2(circleSegmentIntersection, otherCircleSegmentIntersection), 2.0), actualSmoothingValues);
+    var curveEnd = plus_2(circleCenter, times(directionVector(get_x(p) - get_x(circleCenter), get_y(p) - get_y(circleCenter)), actualR));
+    var circleTangent = rotate90(minus(curveEnd, circleCenter));
+    var tmp0_elvis_lhs = lineIntersection($this, sideStart, sideDirection, curveEnd, circleTangent);
+    var anchorEnd = tmp0_elvis_lhs == null ? circleSegmentIntersection : tmp0_elvis_lhs;
+    var anchorStart = div(plus_2(curveStart, times(anchorEnd, 2.0)), 3.0);
+    return Cubic_init_$Create$(curveStart, anchorStart, anchorEnd, curveEnd);
+  }
+  function lineIntersection($this, p0, d0, p1, d1) {
+    var rotatedD1 = rotate90(d1);
+    var den = dotProduct(d0, rotatedD1);
+    // Inline function 'kotlin.math.abs' call
+    if (Math.abs(den) < 1.0E-4)
+      return null;
+    var num = dotProduct(minus(p1, p0), rotatedD1);
+    // Inline function 'kotlin.math.abs' call
+    var tmp = Math.abs(den);
+    // Inline function 'kotlin.math.abs' call
+    if (tmp < 1.0E-4 * Math.abs(num))
+      return null;
+    var k = num / den;
+    return plus_2(p0, times(d0, k));
+  }
+  function RoundedCorner(p0, p1, p2, rounding) {
+    rounding = rounding === VOID ? null : rounding;
+    this.p0__1 = p0;
+    this.p1__1 = p1;
+    this.p2__1 = p2;
+    this.rounding_1 = rounding;
+    this.d1__1 = getDirection(minus(this.p0__1, this.p1__1));
+    this.d2__1 = getDirection(minus(this.p2__1, this.p1__1));
+    var tmp = this;
+    var tmp0_safe_receiver = this.rounding_1;
+    var tmp1_elvis_lhs = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.radius_1;
+    tmp.cornerRadius_1 = tmp1_elvis_lhs == null ? 0.0 : tmp1_elvis_lhs;
+    var tmp_0 = this;
+    var tmp0_safe_receiver_0 = this.rounding_1;
+    var tmp1_elvis_lhs_0 = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.smoothing_1;
+    tmp_0.smoothing_1 = tmp1_elvis_lhs_0 == null ? 0.0 : tmp1_elvis_lhs_0;
+    this.cosAngle_1 = dotProduct(this.d1__1, this.d2__1);
+    var tmp_1 = this;
+    // Inline function 'kotlin.math.sqrt' call
+    var x = 1 - square(this.cosAngle_1);
+    tmp_1.sinAngle_1 = Math.sqrt(x);
+    var tmp_2 = this;
+    var tmp_3;
+    if (this.sinAngle_1 > 0.001) {
+      tmp_3 = this.cornerRadius_1 * (this.cosAngle_1 + 1) / this.sinAngle_1;
+    } else {
+      tmp_3 = 0.0;
+    }
+    tmp_2.expectedRoundCut_1 = tmp_3;
+    this.center_1 = new FloatFloatPair(0.0, 0.0);
+  }
+  protoOf(RoundedCorner).get_expectedCut_vue1vj_k$ = function () {
+    return (1 + this.smoothing_1) * this.expectedRoundCut_1;
+  };
+  protoOf(RoundedCorner).getCubics_nwegwv_k$ = function (allowedCut0, allowedCut1) {
+    // Inline function 'kotlin.math.min' call
+    var allowedCut = Math.min(allowedCut0, allowedCut1);
+    if (this.expectedRoundCut_1 < 1.0E-4 || allowedCut < 1.0E-4 || this.cornerRadius_1 < 1.0E-4) {
+      this.center_1 = this.p1__1;
+      return listOf(Companion_instance_12.straightLine_8gqrri_k$(get_x(this.p1__1), get_y(this.p1__1), get_x(this.p1__1), get_y(this.p1__1)));
+    }
+    // Inline function 'kotlin.math.min' call
+    var b = this.expectedRoundCut_1;
+    var actualRoundCut = Math.min(allowedCut, b);
+    var actualSmoothing0 = calculateActualSmoothingValue(this, allowedCut0);
+    var actualSmoothing1 = calculateActualSmoothingValue(this, allowedCut1);
+    var actualR = this.cornerRadius_1 * actualRoundCut / this.expectedRoundCut_1;
+    // Inline function 'kotlin.math.sqrt' call
+    var x = square(actualR) + square(actualRoundCut);
+    var centerDistance = Math.sqrt(x);
+    this.center_1 = plus_2(this.p1__1, times(getDirection(div(plus_2(this.d1__1, this.d2__1), 2.0)), centerDistance));
+    var circleIntersection0 = plus_2(this.p1__1, times(this.d1__1, actualRoundCut));
+    var circleIntersection2 = plus_2(this.p1__1, times(this.d2__1, actualRoundCut));
+    var flanking0 = computeFlankingCurve(this, actualRoundCut, actualSmoothing0, this.p1__1, this.p0__1, circleIntersection0, circleIntersection2, this.center_1, actualR);
+    var flanking2 = computeFlankingCurve(this, actualRoundCut, actualSmoothing1, this.p1__1, this.p2__1, circleIntersection2, circleIntersection0, this.center_1, actualR).reverse_i6tiw2_k$();
+    return listOf_0([flanking0, Companion_instance_12.circularArc_dohtv7_k$(get_x(this.center_1), get_y(this.center_1), flanking0.get_anchor1X_n5yidh_k$(), flanking0.get_anchor1Y_n5yidi_k$(), flanking2.get_anchor0X_n5yicm_k$(), flanking2.get_anchor0Y_n5yicn_k$()), flanking2]);
+  };
+  function verticesFromNumVerts(numVertices, radius, centerX, centerY) {
+    var result = new Float32Array(imul(numVertices, 2));
+    var arrayIndex = 0;
+    var inductionVariable = 0;
+    if (inductionVariable < numVertices)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var vertex = plus_2(radialToCartesian(radius, get_FloatPi() / numVertices * 2 * i), new FloatFloatPair(centerX, centerY));
+        var _unary__edvuaz = arrayIndex;
+        arrayIndex = _unary__edvuaz + 1 | 0;
+        result[_unary__edvuaz] = get_x(vertex);
+        var _unary__edvuaz_0 = arrayIndex;
+        arrayIndex = _unary__edvuaz_0 + 1 | 0;
+        result[_unary__edvuaz_0] = get_y(vertex);
+      }
+       while (inductionVariable < numVertices);
+    return result;
+  }
+  function circle(_this__u8e3s4, numVertices, radius, centerX, centerY) {
+    numVertices = numVertices === VOID ? 8 : numVertices;
+    radius = radius === VOID ? 1.0 : radius;
+    centerX = centerX === VOID ? 0.0 : centerX;
+    centerY = centerY === VOID ? 0.0 : centerY;
+    if (numVertices < 3)
+      throw IllegalArgumentException_init_$Create$_0('Circle must have at least three vertices');
+    var theta = get_FloatPi() / numVertices;
+    // Inline function 'kotlin.math.cos' call
+    var polygonRadius = radius / Math.cos(theta);
+    var tmp0_rounding = new CornerRounding(radius);
+    return RoundedPolygon_0(numVertices, polygonRadius, centerX, centerY, tmp0_rounding);
+  }
+  function star(_this__u8e3s4, numVerticesPerRadius, radius, innerRadius, rounding, innerRounding, perVertexRounding, centerX, centerY) {
+    radius = radius === VOID ? 1.0 : radius;
+    innerRadius = innerRadius === VOID ? 0.5 : innerRadius;
+    rounding = rounding === VOID ? Companion_getInstance_11().Unrounded_1 : rounding;
+    innerRounding = innerRounding === VOID ? null : innerRounding;
+    perVertexRounding = perVertexRounding === VOID ? null : perVertexRounding;
+    centerX = centerX === VOID ? 0.0 : centerX;
+    centerY = centerY === VOID ? 0.0 : centerY;
+    if (radius <= 0.0 || innerRadius <= 0.0) {
+      throw IllegalArgumentException_init_$Create$_0('Star radii must both be greater than 0');
+    }
+    if (innerRadius >= radius) {
+      throw IllegalArgumentException_init_$Create$_0('innerRadius must be less than radius');
+    }
+    var pvRounding = perVertexRounding;
+    if (pvRounding == null && !(innerRounding == null)) {
+      // Inline function 'kotlin.collections.flatMap' call
+      var tmp0 = until(0, numVerticesPerRadius);
+      // Inline function 'kotlin.collections.flatMapTo' call
+      var destination = ArrayList_init_$Create$();
+      var inductionVariable = tmp0.first_1;
+      var last = tmp0.last_1;
+      if (inductionVariable <= last)
+        do {
+          var element = inductionVariable;
+          inductionVariable = inductionVariable + 1 | 0;
+          var list = listOf_0([rounding, innerRounding]);
+          addAll(destination, list);
+        }
+         while (!(element === last));
+      pvRounding = destination;
+    }
+    return RoundedPolygon_1(starVerticesFromNumVerts(numVerticesPerRadius, radius, innerRadius, centerX, centerY), rounding, pvRounding, centerX, centerY);
+  }
+  function starVerticesFromNumVerts(numVerticesPerRadius, radius, innerRadius, centerX, centerY) {
+    var result = new Float32Array(imul(numVerticesPerRadius, 4));
+    var arrayIndex = 0;
+    var inductionVariable = 0;
+    if (inductionVariable < numVerticesPerRadius)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var vertex = radialToCartesian(radius, get_FloatPi() / numVerticesPerRadius * 2 * i);
+        var _unary__edvuaz = arrayIndex;
+        arrayIndex = _unary__edvuaz + 1 | 0;
+        result[_unary__edvuaz] = get_x(vertex) + centerX;
+        var _unary__edvuaz_0 = arrayIndex;
+        arrayIndex = _unary__edvuaz_0 + 1 | 0;
+        result[_unary__edvuaz_0] = get_y(vertex) + centerY;
+        vertex = radialToCartesian(innerRadius, get_FloatPi() / numVerticesPerRadius * (imul(2, i) + 1 | 0));
+        var _unary__edvuaz_1 = arrayIndex;
+        arrayIndex = _unary__edvuaz_1 + 1 | 0;
+        result[_unary__edvuaz_1] = get_x(vertex) + centerX;
+        var _unary__edvuaz_2 = arrayIndex;
+        arrayIndex = _unary__edvuaz_2 + 1 | 0;
+        result[_unary__edvuaz_2] = get_y(vertex) + centerY;
+      }
+       while (inductionVariable < numVerticesPerRadius);
+    return result;
+  }
+  function get_Zero() {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return Zero;
+  }
+  var Zero;
+  function get_FloatPi() {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return FloatPi;
+  }
+  var FloatPi;
+  function get_TwoPi() {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return TwoPi;
+  }
+  var TwoPi;
+  function distance(x, y) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    // Inline function 'kotlin.math.sqrt' call
+    var x_0 = x * x + y * y;
+    return Math.sqrt(x_0);
+  }
+  function directionVector(x, y) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    var d = distance(x, y);
+    // Inline function 'kotlin.require' call
+    if (!(d > 0.0)) {
+      var message = 'Required distance greater than zero';
+      throw IllegalArgumentException_init_$Create$_0(toString_1(message));
+    }
+    return new FloatFloatPair(x / d, y / d);
+  }
+  function directionVector_0(angleRadians) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    // Inline function 'kotlin.math.cos' call
+    var tmp = Math.cos(angleRadians);
+    // Inline function 'kotlin.math.sin' call
+    var tmp$ret$1 = Math.sin(angleRadians);
+    return new FloatFloatPair(tmp, tmp$ret$1);
+  }
+  function angle(x, y) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    // Inline function 'kotlin.math.atan2' call
+    return (Math.atan2(y, x) + get_TwoPi()) % get_TwoPi();
+  }
+  function radialToCartesian(radius, angleRadians, center) {
+    center = center === VOID ? get_Zero() : center;
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return plus_2(times(directionVector_0(angleRadians), radius), center);
+  }
+  function rotate90(_this__u8e3s4) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return new FloatFloatPair(-get_y(_this__u8e3s4), get_x(_this__u8e3s4));
+  }
+  function square(x) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return x * x;
+  }
+  function interpolate_0(start, stop, fraction) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return (1 - fraction) * start + fraction * stop;
+  }
+  function positiveModulo(num, mod) {
+    _init_properties_GraphicsUtils_kt__hvac24();
+    return (num % mod + mod) % mod;
+  }
+  function findMinimum(v0, v1, tolerance, f) {
+    tolerance = tolerance === VOID ? 0.001 : tolerance;
+    _init_properties_GraphicsUtils_kt__hvac24();
+    var a = v0;
+    var b = v1;
+    while (b - a > tolerance) {
+      var c1 = (2 * a + b) / 3;
+      var c2 = (2 * b + a) / 3;
+      if (f.invoke_vumjuo_k$(c1) < f.invoke_vumjuo_k$(c2)) {
+        b = c2;
+      } else {
+        a = c1;
+      }
+    }
+    return (a + b) / 2;
+  }
+  function FindMinimumFunction() {
+  }
+  var properties_initialized_GraphicsUtils_kt_9z9xhy;
+  function _init_properties_GraphicsUtils_kt__hvac24() {
+    if (!properties_initialized_GraphicsUtils_kt_9z9xhy) {
+      properties_initialized_GraphicsUtils_kt_9z9xhy = true;
+      Zero = new FloatFloatPair(0.0, 0.0);
+      FloatPi = 3.141592653589793;
+      TwoPi = 2 * 3.141592653589793;
+    }
+  }
   function IconNodes() {
   }
   protoOf(IconNodes).make_7gle7u_k$ = function (t, name, g, cx, cy, size, tok, fill) {
@@ -9945,7 +12499,7 @@ var qwelcore = function (_) {
     return true;
   };
   function Project(id, name, width, height, background, nodes, created, updated, tone, bgToken, pages, activePage) {
-    tone = tone === VOID ? Companion_getInstance_11().Baseline_1 : tone;
+    tone = tone === VOID ? Companion_getInstance_17().Baseline_1 : tone;
     bgToken = bgToken === VOID ? -1 : bgToken;
     pages = pages === VOID ? emptyList() : pages;
     activePage = activePage === VOID ? 0 : activePage;
@@ -10620,7 +13174,7 @@ var qwelcore = function (_) {
     if (items.isEmpty_y1axqb_k$())
       return Unit_instance;
     var n = items.get_size_woubt6_k$();
-    var vv = coerceIn(v, 0.0, n - 1 | 0);
+    var vv = coerceIn_0(v, 0.0, n - 1 | 0);
     // Inline function 'kotlin.math.floor' call
     var tmp$ret$0 = Math.floor(vv);
     var k0 = numberToInt(tmp$ret$0);
@@ -10653,7 +13207,7 @@ var qwelcore = function (_) {
       // Inline function 'kotlin.math.abs' call
       var x = vv - idx;
       var tmp$ret$6 = Math.abs(x);
-      var weight = coerceIn(1.0 - tmp$ret$6, 0.0, 1.0);
+      var weight = coerceIn_0(1.0 - tmp$ret$6, 0.0, 1.0);
       var _iterator__ex2g4s_0 = it.nodes_1.iterator_jk1svi_k$();
       $l$loop_0: while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
         var nd = _iterator__ex2g4s_0.next_20eer_k$();
@@ -10829,7 +13383,7 @@ var qwelcore = function (_) {
         }
       }
       var tmp$ret$1 = count;
-      return coerceIn(tmp$ret$1 / 40, 0.0, 1.0);
+      return coerceIn_0(tmp$ret$1 / 40, 0.0, 1.0);
     }
     var tmp0_elvis_lhs = bar($this, w);
     var tmp;
@@ -10839,7 +13393,7 @@ var qwelcore = function (_) {
       tmp = tmp0_elvis_lhs;
     }
     var b = tmp;
-    return coerceIn(b.active_1.w_1 / b.total_1, 0.0, 1.0);
+    return coerceIn_0(b.active_1.w_1 / b.total_1, 0.0, 1.0);
   }
   function patchProgress($this, w, v, out) {
     var arc = w.part_s8somf_k$('arc');
@@ -10934,7 +13488,7 @@ var qwelcore = function (_) {
     var l = tmp;
     // Inline function 'kotlin.math.roundToInt' call
     var tmp$ret$0 = roundToInt(v);
-    var txt = coerceIn_0(tmp$ret$0, 0, 99).toString();
+    var txt = coerceIn(tmp$ret$0, 0, 99).toString();
     if (txt === l.text_1)
       return Unit_instance;
     var tmp_0;
@@ -11048,7 +13602,7 @@ var qwelcore = function (_) {
     this.span_1 = coerceAtLeast(this.right_1 - this.left_1 - this.thumb_1.w_1, 1.0);
   }
   protoOf(Slider).value_cpglt3_k$ = function (x) {
-    return coerceIn((x - this.left_1 - this.thumb_1.w_1 / 2.0) / this.span_1, 0.0, 1.0);
+    return coerceIn_0((x - this.left_1 - this.thumb_1.w_1 / 2.0) / this.span_1, 0.0, 1.0);
   };
   function slider($this, w) {
     var tmp0_elvis_lhs = w.part_s8somf_k$('thumb');
@@ -11078,7 +13632,7 @@ var qwelcore = function (_) {
     return new Slider(t, a, k);
   }
   function mix($this, a, b, t) {
-    var k = coerceIn(t, 0.0, 1.0);
+    var k = coerceIn_0(t, 0.0, 1.0);
     return mix$ch(a, b, k, 24) | mix$ch(a, b, k, 16) | mix$ch(a, b, k, 8) | mix$ch(a, b, k, 0);
   }
   function clear($this, c) {
@@ -11371,7 +13925,7 @@ var qwelcore = function (_) {
   function mix$ch($a, $b, k, shift) {
     var x = ($a >>> shift | 0) & 255;
     var y = ($b >>> shift | 0) & 255;
-    return coerceIn_0(numberToInt(x + (y - x | 0) * k), 0, 255) << shift;
+    return coerceIn(numberToInt(x + (y - x | 0) * k), 0, 255) << shift;
   }
   function PlayMode$widgets$lambda($first) {
     return function (a, b) {
@@ -11668,7 +14222,7 @@ var qwelcore = function (_) {
   };
   protoOf(PlayMode).arcPath_w946m9_k$ = function (v) {
     // Inline function 'kotlin.math.roundToInt' call
-    var this_0 = coerceIn(v, 0.0, 1.0) * 40;
+    var this_0 = coerceIn_0(v, 0.0, 1.0) * 40;
     var n = roundToInt(this_0);
     var sb = StringBuilder_init_$Create$_0();
     var inductionVariable = 0;
@@ -11708,7 +14262,7 @@ var qwelcore = function (_) {
       tmp = tmp0_elvis_lhs;
     }
     var b = tmp;
-    return coerceIn((x - b.left_1) / b.total_1, 0.0, 1.0);
+    return coerceIn_0((x - b.left_1) / b.total_1, 0.0, 1.0);
   };
   protoOf(PlayMode).sliderValue_3e3kr0_k$ = function (w, docX) {
     var tmp0_safe_receiver = slider(this, w);
@@ -11985,6 +14539,446 @@ var qwelcore = function (_) {
       new PlayMode();
     return PlayMode_instance;
   }
+  function Result(files, images, fonts) {
+    fonts = fonts === VOID ? emptyMap() : fonts;
+    this.files_1 = files;
+    this.images_1 = images;
+    this.fonts_1 = fonts;
+  }
+  function screenNames($this, names) {
+    // Inline function 'kotlin.apply' call
+    var this_0 = HashSet_init_$Create$();
+    this_0.add_utx5q5_k$('VexelApp');
+    var used = this_0;
+    // Inline function 'kotlin.collections.mapIndexed' call
+    // Inline function 'kotlin.collections.mapIndexedTo' call
+    var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(names, 10));
+    var index = 0;
+    var _iterator__ex2g4s = names.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var i = checkIndexOverflow(_unary__edvuaz);
+      var f = ComposeCode_getInstance().functionName_64af4n_k$(item);
+      if (f === 'Screen' || used.contains_aljjnj_k$(f))
+        f = 'Screen' + (i + 1 | 0);
+      while (used.contains_aljjnj_k$(f))
+        f = f + 'X';
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element = f;
+      used.add_utx5q5_k$(element);
+      var tmp$ret$3 = f;
+      destination.add_utx5q5_k$(tmp$ret$3);
+    }
+    return destination;
+  }
+  function Core(files, images, fonts, names, code) {
+    this.files_1 = files;
+    this.images_1 = images;
+    this.fonts_1 = fonts;
+    this.names_1 = names;
+    this.code_1 = code;
+  }
+  function core($this, p, pkg, rPkg, srcRoot, resRoot, fontRoot, faces) {
+    var multi = p.pages_1.get_size_woubt6_k$() > 1;
+    var tmp;
+    if (multi) {
+      // Inline function 'kotlin.collections.map' call
+      var this_0 = p.pages_1;
+      // Inline function 'kotlin.collections.mapTo' call
+      var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(this_0, 10));
+      var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+        var item = _iterator__ex2g4s.next_20eer_k$();
+        var tmp$ret$0 = to(item.name_1, item.nodes_1);
+        destination.add_utx5q5_k$(tmp$ret$0);
+      }
+      tmp = destination;
+    } else {
+      tmp = listOf(to(p.name_1, p.nodes_1));
+    }
+    var pageNodes = tmp;
+    var tmp_0;
+    if (multi) {
+      // Inline function 'kotlin.collections.map' call
+      var this_1 = p.pages_1;
+      // Inline function 'kotlin.collections.mapTo' call
+      var destination_0 = ArrayList_init_$Create$_0(collectionSizeOrDefault(this_1, 10));
+      var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+        var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+        var tmp$ret$3 = item_0.id_1;
+        destination_0.add_utx5q5_k$(tmp$ret$3);
+      }
+      tmp_0 = destination_0;
+    } else {
+      tmp_0 = listOf('');
+    }
+    var ids = tmp_0;
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_1 = ArrayList_init_$Create$_0(collectionSizeOrDefault(pageNodes, 10));
+    var _iterator__ex2g4s_1 = pageNodes.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$6 = item_1.first_1;
+      destination_1.add_utx5q5_k$(tmp$ret$6);
+    }
+    var fns = screenNames($this, destination_1);
+    var dir = srcRoot + replace_0(pkg, _Char___init__impl__6a9atx(46), _Char___init__impl__6a9atx(47)) + '/';
+    var files = LinkedHashMap_init_$Create$();
+    var images = LinkedHashMap_init_$Create$();
+    var allCode = StringBuilder_init_$Create$_0();
+    var fontFiles = LinkedHashMap_init_$Create$();
+    var fontNames = LinkedHashMap_init_$Create$();
+    var fam = StringBuilder_init_$Create$_0();
+    // Inline function 'kotlin.collections.flatMap' call
+    // Inline function 'kotlin.collections.flatMapTo' call
+    var destination_2 = ArrayList_init_$Create$();
+    var _iterator__ex2g4s_2 = pageNodes.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_2.next_20eer_k$();
+      var list = ComposeCode_getInstance().fontsUsed_msnrls_k$(element.second_1);
+      addAll(destination_2, list);
+    }
+    var _iterator__ex2g4s_3 = distinct(destination_2).iterator_jk1svi_k$();
+    $l$loop: while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var font = _iterator__ex2g4s_3.next_20eer_k$();
+      // Inline function 'kotlin.collections.sortedBy' call
+      var this_2 = faces(font);
+      // Inline function 'kotlin.comparisons.compareBy' call
+      var tmp_1 = ProjectExport$core$lambda;
+      var tmp$ret$12 = new sam$kotlin_Comparator$0_0(tmp_1);
+      var fs = sortedWith(this_2, tmp$ret$12);
+      if (fs.isEmpty_y1axqb_k$())
+        continue $l$loop;
+      var id = fontNames.get_size_woubt6_k$() + 1 | 0;
+      var v = 'Font' + id;
+      // Inline function 'kotlin.collections.set' call
+      fontNames.put_4fpzoq_k$(font, v);
+      fam.append_22ad7x_k$('    /** ').append_22ad7x_k$(replace(replace(font, '*/', ''), '\n', ' ')).append_22ad7x_k$(' */\n    val ').append_22ad7x_k$(v).append_22ad7x_k$(' = FontFamily(\n');
+      var _iterator__ex2g4s_4 = fs.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+        var _destruct__k2r9zo = _iterator__ex2g4s_4.next_20eer_k$();
+        var w = _destruct__k2r9zo.component1_7eebsc_k$();
+        var ext = _destruct__k2r9zo.component2_7eebsb_k$();
+        var res = 'vx_font' + id + '_w' + w;
+        var tmp15 = fontRoot + res + '.' + ext;
+        // Inline function 'kotlin.collections.set' call
+        var value = to(font, w);
+        fontFiles.put_4fpzoq_k$(tmp15, value);
+        fam.append_22ad7x_k$('        Font(R.font.').append_22ad7x_k$(res).append_22ad7x_k$(', FontWeight.W').append_uppzia_k$(w).append_22ad7x_k$('),\n');
+      }
+      fam.append_22ad7x_k$('    )\n');
+    }
+    var iterator = pageNodes.iterator_jk1svi_k$();
+    var index = 0;
+    while (iterator.hasNext_bitz1p_k$()) {
+      var i = index;
+      index = index + 1 | 0;
+      var pn = iterator.next_20eer_k$();
+      var code = ComposeCode_getInstance().generate_juvjz2_k$(p, pn.second_1, pn.first_1, null, new ExportOpts(ids, fns.get_c1px32_k$(i), pkg, rPkg, fontNames));
+      // Inline function 'kotlin.collections.set' call
+      var key = dir + fns.get_c1px32_k$(i) + '.kt';
+      files.put_4fpzoq_k$(key, code);
+      allCode.append_22ad7x_k$(code);
+      // Inline function 'kotlin.collections.iterator' call
+      var _iterator__ex2g4s_5 = ComposeCode_getInstance().imageResources_mwsx4n_k$(pn.second_1).get_entries_p20ztl_k$().iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
+        var _destruct__k2r9zo_0 = _iterator__ex2g4s_5.next_20eer_k$();
+        // Inline function 'kotlin.collections.component1' call
+        var asset = _destruct__k2r9zo_0.get_key_18j28a_k$();
+        // Inline function 'kotlin.collections.component2' call
+        var res_0 = _destruct__k2r9zo_0.get_value_j01efc_k$();
+        // Inline function 'kotlin.text.lowercase' call
+        // Inline function 'kotlin.js.asDynamic' call
+        // Inline function 'kotlin.collections.set' call
+        var value_0 = resRoot + res_0 + '.' + substringAfterLast(asset, _Char___init__impl__6a9atx(46), 'png').toLowerCase();
+        images.put_4fpzoq_k$(asset, value_0);
+      }
+    }
+    var tmp28 = dir + 'VexelApp.kt';
+    // Inline function 'kotlin.collections.set' call
+    var value_1 = app($this, p, pkg, fns);
+    files.put_4fpzoq_k$(tmp28, value_1);
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    if (!fontNames.isEmpty_y1axqb_k$()) {
+      var tmp32 = dir + 'VexelFonts.kt';
+      // Inline function 'kotlin.collections.set' call
+      var value_2 = 'package ' + pkg + '\n\nimport androidx.compose.ui.text.font.Font\nimport androidx.compose.ui.text.font.FontFamily\nimport androidx.compose.ui.text.font.FontWeight\nimport ' + rPkg + '.R\n\n/** Fonts used by the screens (files are in res/font). */\nobject VexelFonts {\n' + fam.toString() + '}\n';
+      files.put_4fpzoq_k$(tmp32, value_2);
+    }
+    return new Core(files, images, fontFiles, fns, allCode.toString());
+  }
+  function xml($this, s) {
+    return replace(replace(replace(replace(replace(s, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '"', '&quot;'), "'", "\\'");
+  }
+  function hex8($this, argb) {
+    return '0x' + formatNumber('%08X', [argb]);
+  }
+  function moduleToml($this, pkg, code) {
+    var deps = arrayListOf(['kotlin-stdlib', 'androidx.activity:activity-compose:1.13.0', 'androidx.compose.ui:ui:1.11.2', 'androidx.compose.foundation:foundation:1.11.2', 'androidx.compose.material3:material3:1.4.0', 'androidx.compose.ui:ui-tooling-preview:1.11.2']);
+    if (contains_0(code, 'androidx.compose.material.icons')) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element = 'androidx.compose.material:material-icons-extended:1.7.8';
+      deps.add_utx5q5_k$(element);
+    }
+    if (contains_0(code, 'androidx.graphics.shapes')) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_0 = 'androidx.graphics:graphics-shapes:1.1.0';
+      deps.add_utx5q5_k$(element_0);
+    }
+    var list = joinToString_0(deps, ', ', VOID, VOID, VOID, VOID, ProjectExport$moduleToml$lambda);
+    return 'version = 2\n\n[module]\ntype = "android-app"\nname = "app"\nlanguageLevel = "JAVA_8"\noutput = "build/classes"\n\n[sourceSets.main]\nscope = "IMPLEMENTATION"\naidl = ["src/main/aidl"]\nassets = ["src/main/assets"]\njava = ["src/main/java", "src/main/kotlin"]\njniLibs = ["src/main/jniLibs"]\nres = ["src/main/res"]\nresources = ["src/main/resources"]\n\n[sourceSets.debug]\nscope = "IMPLEMENTATION"\naidl = ["src/debug/aidl"]\nassets = ["src/debug/assets"]\njava = ["src/debug/java", "src/debug/kotlin"]\njniLibs = ["src/debug/jniLibs"]\nres = ["src/debug/res"]\nresources = ["src/debug/resources"]\n\n[sourceSets.release]\nscope = "IMPLEMENTATION"\naidl = ["src/release/aidl"]\nassets = ["src/release/assets"]\njava = ["src/release/java", "src/release/kotlin"]\njniLibs = ["src/release/jniLibs"]\nres = ["src/release/res"]\nresources = ["src/release/resources"]\n\n[dependencies]\nimplementation = [' + list + ']\n\n[android]\nnamespace = "' + pkg + '"\ncompileSdk = 36\nminSdk = 26\ntargetSdk = 36\nmanifest = "src/main/AndroidManifest.xml"\nversionCode = 1\nversionName = "1.0"\nisApplication = true\nmanifestPlaceholders = []\nbuildConfigFields = []\nbuildTypes = [{ name = "debug", debuggable = true, minifyEnabled = false, shrinkResources = false }, { name = "release", debuggable = false, minifyEnabled = false, shrinkResources = false, proguardFiles = ["proguard-android-optimize.txt", "proguard-rules.pro"] }]\ncompose = true\n';
+  }
+  function theme($this, p, pkg) {
+    var b = StringBuilder_init_$Create$_0();
+    b.append_22ad7x_k$('package ').append_22ad7x_k$(pkg).append_22ad7x_k$('\n\n');
+    b.append_22ad7x_k$('import androidx.compose.material3.MaterialTheme\n');
+    b.append_22ad7x_k$('import androidx.compose.material3.').append_22ad7x_k$(p.tone_1.dark_1 ? 'darkColorScheme' : 'lightColorScheme').append_22ad7x_k$('\n');
+    b.append_22ad7x_k$('import androidx.compose.runtime.Composable\n');
+    b.append_22ad7x_k$('import androidx.compose.ui.graphics.Color\n\n');
+    b.append_22ad7x_k$('/** Colors of the Vexel project palette (' + (p.tone_1.dark_1 ? 'dark' : 'light') + '). Change them here to restyle every screen. */\n');
+    b.append_22ad7x_k$('private val VexelColors = ').append_22ad7x_k$(p.tone_1.dark_1 ? 'darkColorScheme' : 'lightColorScheme').append_22ad7x_k$('(\n');
+    var iterator = ComposeCode_getInstance().get_tokens_k1vwdf_k$().iterator_jk1svi_k$();
+    var index = 0;
+    $l$loop: while (iterator.hasNext_bitz1p_k$()) {
+      var i = index;
+      index = index + 1 | 0;
+      var n = iterator.next_20eer_k$();
+      var c = p.tone_1.color_kvkafx_k$(i, 0);
+      if ((c >>> 24 | 0) === 0)
+        continue $l$loop;
+      b.append_22ad7x_k$('    ').append_22ad7x_k$(n).append_22ad7x_k$(' = Color(').append_22ad7x_k$(hex8($this, c)).append_22ad7x_k$('),\n');
+      if (n === 'surface') {
+        b.append_22ad7x_k$('    background = Color(').append_22ad7x_k$(hex8($this, c)).append_22ad7x_k$('),\n');
+      }
+    }
+    b.append_22ad7x_k$(')\n\n');
+    b.append_22ad7x_k$('@Composable\nfun VexelTheme(content: @Composable () -> Unit) {\n    MaterialTheme(colorScheme = VexelColors, content = content)\n}\n');
+    return b.toString();
+  }
+  function readmeCodeAssist($this, p, pkg, fns, hasImages) {
+    // Inline function 'kotlin.collections.mapIndexed' call
+    // Inline function 'kotlin.collections.mapIndexedTo' call
+    var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(fns, 10));
+    var index = 0;
+    var _iterator__ex2g4s = fns.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var tmp$ret$0 = '- `' + item + '` (screen ' + (checkIndexOverflow(_unary__edvuaz) + 1 | 0) + ')';
+      destination.add_utx5q5_k$(tmp$ret$0);
+    }
+    var screens = joinToString_0(destination, '\n');
+    return '# ' + p.name_1 + ': CodeAssist project from Vexel\n\nA ready Android app on Jetpack Compose. Unpack the archive, open the folder in CodeAssist (open project) and run.\n\n## Structure\n- `app/module.toml` : module config; package (namespace) is `' + pkg + '`.\n- `app/src/main/kotlin/' + replace_0(pkg, _Char___init__impl__6a9atx(46), _Char___init__impl__6a9atx(47)) + '/` : `MainActivity`, `VexelTheme` (colors of your project), `VexelApp` (switches screens) and one file per screen.\n' + (hasImages ? '- `app/src/main/res/drawable/` : pictures used by the screens.\n' : '') + '- `app/src/main/res/` : launcher icon, theme and the app name (`values/strings.xml`).\n\nScreens:\n' + screens + '\n\n## Notes\n- Dependencies are the same versions as in Vexel itself (material3 1.4.0), written in `app/module.toml`. If CodeAssist cannot resolve one, change the version there.\n- Shapes from the Material library are exported as plain outlines, because Expressive APIs are not public in material3 1.4.0.\n- Components from the Components tab are real Material 3 widgets with state; other layers are placed by coordinates like on the canvas. Actions (go to screen, back, link, show or hide) are wired in.\n- To use these screens in another app instead, take the screen files and `VexelApp.kt` and call `VexelApp()` inside your theme.\n- The code was generated, not compiled in your project. If something does not resolve, check versions in `app/module.toml`.\n';
+  }
+  function app($this, p, pkg, fns) {
+    var w = fmt($this, p.width_1);
+    var h = fmt($this, p.height_1);
+    // Inline function 'kotlin.collections.mapIndexed' call
+    // Inline function 'kotlin.collections.mapIndexedTo' call
+    var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(fns, 10));
+    var index = 0;
+    var _iterator__ex2g4s = fns.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var tmp$ret$0 = '                    ' + checkIndexOverflow(_unary__edvuaz) + ' -> ' + item + '(onGoTo = goTo, onBack = back)';
+      destination.add_utx5q5_k$(tmp$ret$0);
+    }
+    var cases = joinToString_0(destination, '\n');
+    return '// Generated by Vexel.\npackage ' + pkg + '\n\nimport androidx.activity.compose.BackHandler\nimport androidx.compose.animation.AnimatedContent\nimport androidx.compose.animation.fadeIn\nimport androidx.compose.animation.fadeOut\nimport androidx.compose.animation.togetherWith\nimport androidx.compose.foundation.background\nimport androidx.compose.foundation.layout.Box\nimport androidx.compose.foundation.layout.BoxWithConstraints\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.requiredSize\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.mutableIntStateOf\nimport androidx.compose.runtime.mutableStateListOf\nimport androidx.compose.runtime.remember\nimport androidx.compose.runtime.saveable.rememberSaveable\nimport androidx.compose.runtime.setValue\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.graphics.graphicsLayer\nimport androidx.compose.ui.unit.dp\n\n/**\n * All screens of the project with the transitions you set in Vexel (go to screen, back).\n * Call it inside your MaterialTheme: setContent { MyTheme { VexelApp() } }.\n * The design is ' + w + ' x ' + h + ' dp; it is scaled to fit the window and centered.\n */\n@Composable\nfun VexelApp(modifier: Modifier = Modifier) {\n    var current by rememberSaveable { mutableIntStateOf(0) }\n    val history = remember { mutableStateListOf<Int>() }\n    val goTo: (Int) -> Unit = { history.add(current); current = it }\n    val back: () -> Unit = { if (history.isNotEmpty()) current = history.removeAt(history.lastIndex) }\n    BackHandler(enabled = history.isNotEmpty(), onBack = back)\n\n    AnimatedContent(\n        targetState = current,\n        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),\n        transitionSpec = { fadeIn() togetherWith fadeOut() },\n        label = "vexel-screen",\n    ) { index ->\n        BoxWithConstraints(Modifier.fillMaxSize()) {\n            val scale = minOf(maxWidth / ' + w + '.dp, maxHeight / ' + h + '.dp)\n            Box(\n                Modifier\n                    .align(Alignment.Center)\n                    .requiredSize(' + w + '.dp, ' + h + '.dp)\n                    .graphicsLayer { scaleX = scale; scaleY = scale },\n            ) {\n                when (index) {\n' + cases + '\n                    else -> {}\n                }\n            }\n        }\n    }\n}\n';
+  }
+  function fmt($this, v) {
+    return v === numberToInt(v) ? numberToInt(v).toString() : formatNumber('%.1f', [v]);
+  }
+  function dependencies($this, code) {
+    var b = StringBuilder_init_$Create$_0();
+    b.append_22ad7x_k$('// Add to the module build.gradle.kts (dependencies { ... }). Versions come from your Compose BOM.\n');
+    b.append_22ad7x_k$('implementation(platform("androidx.compose:compose-bom:<your BOM version>"))\n');
+    b.append_22ad7x_k$('implementation("androidx.compose.ui:ui")\n');
+    b.append_22ad7x_k$('implementation("androidx.compose.foundation:foundation")\n');
+    b.append_22ad7x_k$('implementation("androidx.compose.material3:material3")\n');
+    b.append_22ad7x_k$('implementation("androidx.activity:activity-compose")\n');
+    if (contains_0(code, 'androidx.compose.material.icons')) {
+      b.append_22ad7x_k$('implementation("androidx.compose.material:material-icons-extended")\n');
+    }
+    if (contains_0(code, 'androidx.graphics.shapes')) {
+      b.append_22ad7x_k$('implementation("androidx.graphics:graphics-shapes:<version>")\n');
+    }
+    if (contains_0(code, 'ExperimentalMaterial3ExpressiveApi') || contains_0(code, 'MaterialShapes')) {
+      b.append_22ad7x_k$('// Expressive APIs (MaterialShapes and others) need a material3 1.5.0 alpha or newer; check your version in the release notes.\n');
+    }
+    return b.toString();
+  }
+  function readme($this, p, pkg, fns, hasImages) {
+    // Inline function 'kotlin.collections.mapIndexed' call
+    // Inline function 'kotlin.collections.mapIndexedTo' call
+    var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(fns, 10));
+    var index = 0;
+    var _iterator__ex2g4s = fns.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var tmp$ret$0 = '- `' + item + '` (screen ' + (checkIndexOverflow(_unary__edvuaz) + 1 | 0) + ')';
+      destination.add_utx5q5_k$(tmp$ret$0);
+    }
+    var screens = joinToString_0(destination, '\n');
+    return '# ' + p.name_1 + ': Compose export from Vexel\n\n## What is inside\n- `src/main/java/' + replace_0(pkg, _Char___init__impl__6a9atx(46), _Char___init__impl__6a9atx(47)) + '/` : one file per screen plus `VexelApp.kt` (switches between screens).\n' + (hasImages ? '- `src/main/res/drawable/` : pictures used by the screens.\n' : '') + '- `dependencies.txt` : what to add to build.gradle.kts.\n\nScreens:\n' + screens + '\n\n## How to add it to your app\n1. Copy the `src` folder into your app module (it merges with the existing `src/main`).\n2. Add the lines from `dependencies.txt` to your module dependencies.\n3. If the package of your app differs from `' + pkg + '`, either keep this package (it does not have to match the app id) or change the `package` lines.\n4. Show it: `setContent { YourTheme { VexelApp() } }` or call a single screen, for example `' + first(fns) + '()`.\n' + (hasImages ? '5. Pictures refer to `R.drawable`; the files in the first lines of each screen file say which `import <your app id>.R` it needs. The generated import uses `' + pkg + '.R`: change it to your app R package if they differ.\n' : '') + '\n## Notes\n- Colors go through `MaterialTheme.colorScheme`, so the screens follow your theme.\n- Components from the Components tab are real Material 3 widgets with state; other layers are placed by coordinates like on the canvas.\n- Actions (go to screen, back, link, show or hide) are wired in. Backdrop blur is not part of Compose (use the Haze library).\n- The code was generated, not compiled in your project. If something does not resolve, check the versions in `dependencies.txt`.\n';
+  }
+  function sam$kotlin_Comparator$0_0(function_0) {
+    this.function_1 = function_0;
+  }
+  protoOf(sam$kotlin_Comparator$0_0).compare_bczr_k$ = function (a, b) {
+    return this.function_1(a, b);
+  };
+  protoOf(sam$kotlin_Comparator$0_0).compare = function (a, b) {
+    return this.compare_bczr_k$(a, b);
+  };
+  protoOf(sam$kotlin_Comparator$0_0).getFunctionDelegate_jtodtf_k$ = function () {
+    return this.function_1;
+  };
+  protoOf(sam$kotlin_Comparator$0_0).equals = function (other) {
+    var tmp;
+    if (!(other == null) ? isInterface(other, Comparator) : false) {
+      var tmp_0;
+      if (!(other == null) ? isInterface(other, FunctionAdapter) : false) {
+        tmp_0 = equals(this.getFunctionDelegate_jtodtf_k$(), other.getFunctionDelegate_jtodtf_k$());
+      } else {
+        tmp_0 = false;
+      }
+      tmp = tmp_0;
+    } else {
+      tmp = false;
+    }
+    return tmp;
+  };
+  protoOf(sam$kotlin_Comparator$0_0).hashCode = function () {
+    return hashCode(this.getFunctionDelegate_jtodtf_k$());
+  };
+  function ProjectExport$core$lambda(a, b) {
+    // Inline function 'kotlin.comparisons.compareValuesBy' call
+    var tmp = a.first_1;
+    var tmp$ret$1 = b.first_1;
+    return compareValues(tmp, tmp$ret$1);
+  }
+  function ProjectExport$moduleToml$lambda(it) {
+    return '"' + it + '"';
+  }
+  function ProjectExport() {
+    ProjectExport_instance = this;
+    this.pkgRe_1 = Regex_init_$Create$('[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*');
+    this.DEFAULT_PACKAGE_1 = 'com.example.myapp.vexel';
+  }
+  protoOf(ProjectExport).cleanPackage_qyex7h_k$ = function (raw) {
+    // Inline function 'kotlin.text.trim' call
+    // Inline function 'kotlin.text.lowercase' call
+    // Inline function 'kotlin.js.asDynamic' call
+    // Inline function 'kotlin.takeIf' call
+    var this_0 = toString_1(trim(isCharSequence(raw) ? raw : THROW_CCE())).toLowerCase();
+    var tmp;
+    if (ProjectExport_getInstance().pkgRe_1.matches_evli6i_k$(this_0)) {
+      tmp = this_0;
+    } else {
+      tmp = null;
+    }
+    var tmp0_elvis_lhs = tmp;
+    return tmp0_elvis_lhs == null ? 'com.example.myapp.vexel' : tmp0_elvis_lhs;
+  };
+  protoOf(ProjectExport).build_zel6qf_k$ = function (p, pkgRaw, rPkgRaw, faces) {
+    var core_0 = core(this, p, this.cleanPackage_qyex7h_k$(pkgRaw), this.cleanPackage_qyex7h_k$(rPkgRaw), 'src/main/java/', 'src/main/res/drawable/', 'src/main/res/font/', faces);
+    var files = core_0.files_1;
+    var tmp1 = 'dependencies.txt';
+    // Inline function 'kotlin.collections.set' call
+    var value = dependencies(this, core_0.code_1);
+    files.put_4fpzoq_k$(tmp1, value);
+    var tmp5 = 'README.md';
+    var tmp = this.cleanPackage_qyex7h_k$(pkgRaw);
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    var tmp$ret$1 = !core_0.images_1.isEmpty_y1axqb_k$();
+    // Inline function 'kotlin.collections.set' call
+    var value_0 = readme(this, p, tmp, core_0.names_1, tmp$ret$1);
+    files.put_4fpzoq_k$(tmp5, value_0);
+    return new Result(files, core_0.images_1, core_0.fonts_1);
+  };
+  protoOf(ProjectExport).buildCodeAssist_dkb7yf_k$ = function (p, appIdRaw, faces) {
+    var pkg = this.cleanPackage_qyex7h_k$(appIdRaw);
+    var core_0 = core(this, p, pkg, pkg, 'app/src/main/kotlin/', 'app/src/main/res/drawable/', 'app/src/main/res/font/', faces);
+    var f = core_0.files_1;
+    var code = core_0.code_1;
+    // Inline function 'kotlin.text.ifBlank' call
+    var this_0 = p.name_1;
+    var tmp;
+    if (isBlank(this_0)) {
+      tmp = 'Vexel';
+    } else {
+      tmp = this_0;
+    }
+    var name = tmp;
+    var tmp2 = 'app/module.toml';
+    // Inline function 'kotlin.collections.set' call
+    var value = moduleToml(this, pkg, code);
+    f.put_4fpzoq_k$(tmp2, value);
+    var tmp5 = 'app/proguard-rules.pro';
+    // Inline function 'kotlin.collections.set' call
+    var value_0 = '# Rules for release builds. Nothing special is needed for the generated screens.\n';
+    f.put_4fpzoq_k$(tmp5, value_0);
+    var tmp8 = 'app/src/main/AndroidManifest.xml';
+    // Inline function 'kotlin.collections.set' call
+    var value_1 = '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="' + pkg + '">\n    <application\n        android:allowBackup="true"\n        android:icon="@mipmap/ic_launcher"\n        android:roundIcon="@mipmap/ic_launcher"\n        android:label="@string/app_name"\n        android:supportsRtl="true"\n        android:theme="@style/Theme.App">\n        <activity\n            android:name=".MainActivity"\n            android:exported="true"\n            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density|fontScale">\n            <intent-filter>\n                <action android:name="android.intent.action.MAIN"/>\n                <category android:name="android.intent.category.LAUNCHER"/>\n            <\/intent-filter>\n        <\/activity>\n    <\/application>\n<\/manifest>\n';
+    f.put_4fpzoq_k$(tmp8, value_1);
+    var dir = 'app/src/main/kotlin/' + replace_0(pkg, _Char___init__impl__6a9atx(46), _Char___init__impl__6a9atx(47)) + '/';
+    var tmp11 = dir + 'MainActivity.kt';
+    // Inline function 'kotlin.collections.set' call
+    var value_2 = 'package ' + pkg + '\n\nimport android.os.Bundle\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\n\nclass MainActivity : ComponentActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        setContent { VexelTheme { VexelApp() } }\n    }\n}\n';
+    f.put_4fpzoq_k$(tmp11, value_2);
+    var tmp14 = dir + 'VexelTheme.kt';
+    // Inline function 'kotlin.collections.set' call
+    var value_3 = theme(this, p, pkg);
+    f.put_4fpzoq_k$(tmp14, value_3);
+    var tmp17 = 'app/src/main/res/values/strings.xml';
+    // Inline function 'kotlin.collections.set' call
+    var value_4 = '<resources>\n    <string name="app_name">' + xml(this, name) + '<\/string>\n<\/resources>\n';
+    f.put_4fpzoq_k$(tmp17, value_4);
+    var tmp20 = 'app/src/main/res/values/themes.xml';
+    // Inline function 'kotlin.collections.set' call
+    var value_5 = '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <style name="Theme.App" parent="android:Theme.Material.Light.NoActionBar">\n        <item name="android:windowBackground">@color/window_background<\/item>\n    <\/style>\n<\/resources>\n';
+    f.put_4fpzoq_k$(tmp20, value_5);
+    var tmp23 = 'app/src/main/res/values/colors.xml';
+    // Inline function 'kotlin.collections.set' call
+    var value_6 = '<resources>\n    <color name="window_background">#' + formatNumber('%08X', [p.background_1]) + '<\/color>\n    <color name="ic_launcher_background">#FF' + formatNumber('%06X', [p.tone_1.color_kvkafx_k$(0, -10006364) & 16777215]) + '<\/color>\n<\/resources>\n';
+    f.put_4fpzoq_k$(tmp23, value_6);
+    var tmp26 = 'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml';
+    // Inline function 'kotlin.collections.set' call
+    var value_7 = '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/ic_launcher_background"/>\n    <foreground android:drawable="@drawable/ic_launcher_foreground"/>\n<\/adaptive-icon>\n';
+    f.put_4fpzoq_k$(tmp26, value_7);
+    var tmp29 = 'app/src/main/res/drawable/ic_launcher_foreground.xml';
+    // Inline function 'kotlin.collections.set' call
+    var value_8 = '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="#FFFFFFFF" android:pathData="M34,34h40a6,6 0 0 1 6,6v28a6,6 0 0 1 -6,6h-40a6,6 0 0 1 -6,-6v-28a6,6 0 0 1 6,-6z"/>\n<\/vector>\n';
+    f.put_4fpzoq_k$(tmp29, value_8);
+    var tmp32 = '.gitignore';
+    // Inline function 'kotlin.collections.set' call
+    var value_9 = 'build/\n.gradle/\n*.iml\nlocal.properties\n';
+    f.put_4fpzoq_k$(tmp32, value_9);
+    var tmp36 = 'README.md';
+    // Inline function 'kotlin.collections.isNotEmpty' call
+    var tmp$ret$13 = !core_0.images_1.isEmpty_y1axqb_k$();
+    // Inline function 'kotlin.collections.set' call
+    var value_10 = readmeCodeAssist(this, p, pkg, core_0.names_1, tmp$ret$13);
+    f.put_4fpzoq_k$(tmp36, value_10);
+    return new Result(f, core_0.images_1, core_0.fonts_1);
+  };
+  var ProjectExport_instance;
+  function ProjectExport_getInstance() {
+    if (ProjectExport_instance == null)
+      new ProjectExport();
+    return ProjectExport_instance;
+  }
   function decodeTone($this, o) {
     var arr = o.optJSONArray_9s960s_k$('colors');
     var tmp;
@@ -12006,7 +15000,7 @@ var qwelcore = function (_) {
          while (!(item === last));
       tmp = destination;
     } else {
-      tmp = Companion_getInstance_11().Baseline_1.colors_1;
+      tmp = Companion_getInstance_17().Baseline_1.colors_1;
     }
     var colors = tmp;
     return new Tone(o.optInt_piuztm_k$('mode', 0), o.optInt_piuztm_k$('seed', -16749974), o.optBoolean_n0bbhc_k$('dark', false), colors);
@@ -12291,7 +15285,7 @@ var qwelcore = function (_) {
       tmp = destination_0;
     }
     var pages = tmp;
-    var active = coerceIn_0(o.optInt_piuztm_k$('active', 0), 0, coerceAtLeast_0(pages.get_size_woubt6_k$() - 1 | 0, 0));
+    var active = coerceIn(o.optInt_piuztm_k$('active', 0), 0, coerceAtLeast_0(pages.get_size_woubt6_k$() - 1 | 0, 0));
     var tmp_2 = o.getString_gb1pt9_k$('id');
     var tmp_3 = o.getString_gb1pt9_k$('name');
     var tmp_4 = o.getDouble_v37ict_k$('w');
@@ -12308,31 +15302,31 @@ var qwelcore = function (_) {
       tmp_9 = decodeTone(ProjectStore_instance, tmp0_safe_receiver);
     }
     var tmp1_elvis_lhs = tmp_9;
-    return new Project(tmp_2, tmp_3, tmp_4, tmp_5, tmp_6, nodes, tmp_7, tmp_8, tmp1_elvis_lhs == null ? Companion_getInstance_11().Baseline_1 : tmp1_elvis_lhs, o.optInt_piuztm_k$('bgToken', -1), pages, active);
+    return new Project(tmp_2, tmp_3, tmp_4, tmp_5, tmp_6, nodes, tmp_7, tmp_8, tmp1_elvis_lhs == null ? Companion_getInstance_17().Baseline_1 : tmp1_elvis_lhs, o.optInt_piuztm_k$('bgToken', -1), pages, active);
   };
   var ProjectStore_instance;
   function ProjectStore_getInstance() {
     return ProjectStore_instance;
   }
-  function Companion_11() {
-    Companion_instance_11 = this;
+  function Companion_17() {
+    Companion_instance_17 = this;
     this.MODE_BASELINE_1 = 0;
     this.MODE_SEED_1 = 1;
     this.MODE_DYNAMIC_1 = 2;
     this.BASE_SEED_1 = -16749974;
     this.Baseline_1 = new Tone();
   }
-  protoOf(Companion_11).fromSeed_gjco7c_k$ = function (seed, dark) {
+  protoOf(Companion_17).fromSeed_gjco7c_k$ = function (seed, dark) {
     return new Tone(1, seed | -16777216, dark, ToneGen_instance.scheme_n1wg6q_k$(seed, dark));
   };
-  var Companion_instance_11;
-  function Companion_getInstance_11() {
-    if (Companion_instance_11 == null)
-      new Companion_11();
-    return Companion_instance_11;
+  var Companion_instance_17;
+  function Companion_getInstance_17() {
+    if (Companion_instance_17 == null)
+      new Companion_17();
+    return Companion_instance_17;
   }
   function Tone(mode, seed, dark, colors) {
-    Companion_getInstance_11();
+    Companion_getInstance_17();
     mode = mode === VOID ? 0 : mode;
     seed = seed === VOID ? -16749974 : seed;
     dark = dark === VOID ? false : dark;
@@ -12434,9 +15428,9 @@ var qwelcore = function (_) {
   }
   function fromOklch$ch(v) {
     // Inline function 'kotlin.math.roundToInt' call
-    var this_0 = fromLinear(ToneGen_instance, coerceIn(v, 0.0, 1.0)) * 255.0;
+    var this_0 = fromLinear(ToneGen_instance, coerceIn_0(v, 0.0, 1.0)) * 255.0;
     var tmp$ret$0 = roundToInt(this_0);
-    return coerceIn_0(tmp$ret$0, 0, 255);
+    return coerceIn(tmp$ret$0, 0, 255);
   }
   function scheme$p(hs, cp, t) {
     return ToneGen_instance.tone_vb5dx6_k$(hs, cp, t);
@@ -12541,7 +15535,7 @@ var qwelcore = function (_) {
     var c = _destruct__k2r9zo.component2_7eebsb_k$();
     var h = _destruct__k2r9zo.component3_7eebsa_k$();
     var gray = c < 0.02;
-    var cp = gray ? c : coerceIn(c, 0.11, 0.2);
+    var cp = gray ? c : coerceIn_0(c, 0.11, 0.2);
     var hs = h;
     var ht = (h + 60.0) % 360.0;
     var cn = gray ? 0.0 : 0.012;
@@ -12563,6 +15557,501 @@ var qwelcore = function (_) {
       destination.add_utx5q5_k$(tmp$ret$0);
     }
     return destination;
+  }
+  function ShapeDef$unit$delegate$lambda($source) {
+    return function () {
+      return $source().normalized_kr8009_k$();
+    };
+  }
+  function ShapeDef(id, defaultName, categories, source) {
+    this.id_1 = id;
+    this.defaultName_1 = defaultName;
+    this.categories_1 = categories;
+    var tmp = this;
+    tmp.unit$delegate_1 = lazy(ShapeDef$unit$delegate$lambda(source));
+  }
+  protoOf(ShapeDef).get_unit_wovp3h_k$ = function () {
+    var tmp0 = this.unit$delegate_1;
+    // Inline function 'kotlin.getValue' call
+    unit$factory();
+    return tmp0.get_value_j01efc_k$();
+  };
+  function ShapeLibrary$lambda() {
+    return Mat_instance.get_Circle_38hx53_k$();
+  }
+  function ShapeLibrary$lambda_0() {
+    return Mat_instance.get_Square_4go9ja_k$();
+  }
+  function ShapeLibrary$lambda_1() {
+    return Mat_instance.get_Slanted_6dbjss_k$();
+  }
+  function ShapeLibrary$lambda_2() {
+    return Mat_instance.get_Arch_wnyklb_k$();
+  }
+  function ShapeLibrary$lambda_3() {
+    return Mat_instance.get_Fan_18jtrq_k$();
+  }
+  function ShapeLibrary$lambda_4() {
+    return Mat_instance.get_Arrow_i77a2o_k$();
+  }
+  function ShapeLibrary$lambda_5() {
+    return Mat_instance.get_SemiCircle_de654p_k$();
+  }
+  function ShapeLibrary$lambda_6() {
+    return Mat_instance.get_Oval_wo7lbv_k$();
+  }
+  function ShapeLibrary$lambda_7() {
+    return Mat_instance.get_Pill_wo7yxu_k$();
+  }
+  function ShapeLibrary$lambda_8() {
+    return Mat_instance.get_Triangle_5ypy4v_k$();
+  }
+  function ShapeLibrary$lambda_9() {
+    return Mat_instance.get_Diamond_ev38vp_k$();
+  }
+  function ShapeLibrary$lambda_10() {
+    return Mat_instance.get_ClamShell_wuro4u_k$();
+  }
+  function ShapeLibrary$lambda_11() {
+    return Mat_instance.get_Pentagon_pahevr_k$();
+  }
+  function ShapeLibrary$lambda_12() {
+    return Mat_instance.get_Gem_18jsxm_k$();
+  }
+  function ShapeLibrary$lambda_13() {
+    return Mat_instance.get_Cookie4Sided_qek7ae_k$();
+  }
+  function ShapeLibrary$lambda_14() {
+    return Mat_instance.get_Cookie6Sided_rcng2s_k$();
+  }
+  function ShapeLibrary$lambda_15() {
+    return Mat_instance.get_Cookie7Sided_rtp2gz_k$();
+  }
+  function ShapeLibrary$lambda_16() {
+    return Mat_instance.get_Cookie9Sided_srsb9d_k$();
+  }
+  function ShapeLibrary$lambda_17() {
+    return Mat_instance.get_Cookie12Sided_msj081_k$();
+  }
+  function ShapeLibrary$lambda_18() {
+    return Mat_instance.get_Sunny_ih5eq6_k$();
+  }
+  function ShapeLibrary$lambda_19() {
+    return Mat_instance.get_VerySunny_kw5tbs_k$();
+  }
+  function ShapeLibrary$lambda_20() {
+    return Mat_instance.get_Burst_i7szpz_k$();
+  }
+  function ShapeLibrary$lambda_21() {
+    return Mat_instance.get_SoftBurst_6y2iq5_k$();
+  }
+  function ShapeLibrary$lambda_22() {
+    return Mat_instance.get_Boom_wnz5n8_k$();
+  }
+  function ShapeLibrary$lambda_23() {
+    return Mat_instance.get_SoftBoom_8xvx7m_k$();
+  }
+  function ShapeLibrary$lambda_24() {
+    return Mat_instance.get_Clover4Leaf_2fdx1o_k$();
+  }
+  function ShapeLibrary$lambda_25() {
+    return Mat_instance.get_Clover8Leaf_2hl3f4_k$();
+  }
+  function ShapeLibrary$lambda_26() {
+    return Mat_instance.get_Flower_1rr6gs_k$();
+  }
+  function ShapeLibrary$lambda_27() {
+    return Mat_instance.get_Puffy_ifhutn_k$();
+  }
+  function ShapeLibrary$lambda_28() {
+    return Mat_instance.get_PuffyDiamond_ed0eif_k$();
+  }
+  function ShapeLibrary$lambda_29() {
+    return Mat_instance.get_Ghostish_r3qnpk_k$();
+  }
+  function ShapeLibrary$lambda_30() {
+    return Mat_instance.get_Bun_18jw9a_k$();
+  }
+  function ShapeLibrary$lambda_31() {
+    return Mat_instance.get_Heart_iat6v1_k$();
+  }
+  function ShapeLibrary$lambda_32() {
+    return Mat_instance.get_PixelCircle_dlrpm5_k$();
+  }
+  function ShapeLibrary$lambda_33() {
+    return Mat_instance.get_PixelTriangle_h19ztn_k$();
+  }
+  function ShapeLibrary$lambda_34() {
+    return RoundedPolygon_0(6, VOID, VOID, VOID, new CornerRounding(0.2));
+  }
+  function ShapeLibrary$lambda_35() {
+    return RoundedPolygon_0(8, VOID, VOID, VOID, new CornerRounding(0.15));
+  }
+  function ShapeLibrary$lambda_36() {
+    return star(Companion_instance_16, 4, VOID, 0.45, new CornerRounding(0.15));
+  }
+  function ShapeLibrary$lambda_37() {
+    return star(Companion_instance_16, 5, VOID, 0.5, new CornerRounding(0.12));
+  }
+  function ShapeLibrary$lambda_38() {
+    return star(Companion_instance_16, 6, VOID, 0.55, new CornerRounding(0.12));
+  }
+  function ShapeLibrary$lambda_39() {
+    return star(Companion_instance_16, 8, VOID, 0.7, new CornerRounding(0.1));
+  }
+  function ShapeLibrary$lambda_40() {
+    return star(Companion_instance_16, 12, VOID, 0.8, new CornerRounding(0.08));
+  }
+  function ShapeLibrary() {
+    ShapeLibrary_instance = this;
+    this.LOADER_1 = 'loader';
+    this.BASIC_1 = 'basic';
+    this.COOKIES_1 = 'cookies';
+    this.BURSTS_1 = 'bursts';
+    this.FLOWERS_1 = 'flowers';
+    this.SPECIAL_1 = 'special';
+    this.STARS_1 = 'stars';
+    this.categories_1 = listOf_0(['loader', 'basic', 'cookies', 'bursts', 'flowers', 'stars', 'special']);
+    this.defs_1 = ArrayList_init_$Create$();
+    this.byId_1 = HashMap_init_$Create$();
+    this.morphs_1 = HashMap_init_$Create$();
+    this.noMorph_1 = HashSet_init_$Create$();
+    this.loaderOrder_1 = listOf_0(['soft-burst', 'cookie-9', 'pentagon', 'pill', 'sunny', 'cookie-4', 'oval']);
+    this.add_3p6l0z_k$('circle', 'Circle', ['basic'], ShapeLibrary$lambda);
+    this.add_3p6l0z_k$('square', 'Square', ['basic'], ShapeLibrary$lambda_0);
+    this.add_3p6l0z_k$('slanted', 'Slanted', ['basic'], ShapeLibrary$lambda_1);
+    this.add_3p6l0z_k$('arch', 'Arch', ['basic'], ShapeLibrary$lambda_2);
+    this.add_3p6l0z_k$('fan', 'Fan', ['basic'], ShapeLibrary$lambda_3);
+    this.add_3p6l0z_k$('arrow', 'Arrow', ['basic'], ShapeLibrary$lambda_4);
+    this.add_3p6l0z_k$('semicircle', 'Semicircle', ['basic'], ShapeLibrary$lambda_5);
+    this.add_3p6l0z_k$('oval', 'Oval', ['basic', 'loader'], ShapeLibrary$lambda_6);
+    this.add_3p6l0z_k$('pill', 'Pill', ['basic', 'loader'], ShapeLibrary$lambda_7);
+    this.add_3p6l0z_k$('triangle', 'Triangle', ['basic'], ShapeLibrary$lambda_8);
+    this.add_3p6l0z_k$('diamond', 'Diamond', ['basic'], ShapeLibrary$lambda_9);
+    this.add_3p6l0z_k$('clamshell', 'Clamshell', ['basic'], ShapeLibrary$lambda_10);
+    this.add_3p6l0z_k$('pentagon', 'Pentagon', ['basic', 'loader'], ShapeLibrary$lambda_11);
+    this.add_3p6l0z_k$('gem', 'Gem', ['basic'], ShapeLibrary$lambda_12);
+    this.add_3p6l0z_k$('cookie-4', 'Cookie 4', ['cookies', 'loader'], ShapeLibrary$lambda_13);
+    this.add_3p6l0z_k$('cookie-6', 'Cookie 6', ['cookies'], ShapeLibrary$lambda_14);
+    this.add_3p6l0z_k$('cookie-7', 'Cookie 7', ['cookies'], ShapeLibrary$lambda_15);
+    this.add_3p6l0z_k$('cookie-9', 'Cookie 9', ['cookies', 'loader'], ShapeLibrary$lambda_16);
+    this.add_3p6l0z_k$('cookie-12', 'Cookie 12', ['cookies'], ShapeLibrary$lambda_17);
+    this.add_3p6l0z_k$('sunny', 'Sunny', ['bursts', 'loader'], ShapeLibrary$lambda_18);
+    this.add_3p6l0z_k$('very-sunny', 'Very sunny', ['bursts'], ShapeLibrary$lambda_19);
+    this.add_3p6l0z_k$('burst', 'Burst', ['bursts'], ShapeLibrary$lambda_20);
+    this.add_3p6l0z_k$('soft-burst', 'Soft burst', ['bursts', 'loader'], ShapeLibrary$lambda_21);
+    this.add_3p6l0z_k$('boom', 'Boom', ['bursts'], ShapeLibrary$lambda_22);
+    this.add_3p6l0z_k$('soft-boom', 'Soft boom', ['bursts'], ShapeLibrary$lambda_23);
+    this.add_3p6l0z_k$('clover-4', 'Clover 4', ['flowers'], ShapeLibrary$lambda_24);
+    this.add_3p6l0z_k$('clover-8', 'Clover 8', ['flowers'], ShapeLibrary$lambda_25);
+    this.add_3p6l0z_k$('flower', 'Flower', ['flowers'], ShapeLibrary$lambda_26);
+    this.add_3p6l0z_k$('puffy', 'Puffy', ['flowers'], ShapeLibrary$lambda_27);
+    this.add_3p6l0z_k$('puffy-diamond', 'Puffy diamond', ['flowers'], ShapeLibrary$lambda_28);
+    this.add_3p6l0z_k$('ghostish', 'Ghostish', ['special'], ShapeLibrary$lambda_29);
+    this.add_3p6l0z_k$('bun', 'Bun', ['special'], ShapeLibrary$lambda_30);
+    this.add_3p6l0z_k$('heart', 'Heart', ['special'], ShapeLibrary$lambda_31);
+    this.add_3p6l0z_k$('pixel-circle', 'Pixel circle', ['special'], ShapeLibrary$lambda_32);
+    this.add_3p6l0z_k$('pixel-triangle', 'Pixel triangle', ['special'], ShapeLibrary$lambda_33);
+    this.add_3p6l0z_k$('hexagon', 'Hexagon', ['stars', 'basic'], ShapeLibrary$lambda_34);
+    this.add_3p6l0z_k$('octagon', 'Octagon', ['stars'], ShapeLibrary$lambda_35);
+    this.add_3p6l0z_k$('star-4', 'Star 4', ['stars'], ShapeLibrary$lambda_36);
+    this.add_3p6l0z_k$('star-5', 'Star 5', ['stars'], ShapeLibrary$lambda_37);
+    this.add_3p6l0z_k$('star-6', 'Star 6', ['stars'], ShapeLibrary$lambda_38);
+    this.add_3p6l0z_k$('star-8', 'Star 8', ['stars'], ShapeLibrary$lambda_39);
+    this.add_3p6l0z_k$('star-12', 'Star 12', ['stars'], ShapeLibrary$lambda_40);
+  }
+  protoOf(ShapeLibrary).add_3p6l0z_k$ = function (id, name, categories, source) {
+    var def = new ShapeDef(id, name, toList(categories), source);
+    var tmp0_safe_receiver = this.byId_1.put_4fpzoq_k$(id, def);
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      ShapeLibrary_getInstance().defs_1.remove_cedx0m_k$(tmp0_safe_receiver);
+    }
+    this.defs_1.add_utx5q5_k$(def);
+    this.morphs_1.clear_j9egeb_k$();
+    this.noMorph_1.clear_j9egeb_k$();
+  };
+  protoOf(ShapeLibrary).morph_vnniko_k$ = function (from, to) {
+    var tmp0_elvis_lhs = this.byId_1.get_wei43m_k$(from);
+    var tmp;
+    if (tmp0_elvis_lhs == null) {
+      return null;
+    } else {
+      tmp = tmp0_elvis_lhs;
+    }
+    var a = tmp;
+    var tmp1_elvis_lhs = this.byId_1.get_wei43m_k$(to);
+    var tmp_0;
+    if (tmp1_elvis_lhs == null) {
+      return null;
+    } else {
+      tmp_0 = tmp1_elvis_lhs;
+    }
+    var b = tmp_0;
+    var key = from + '>' + to;
+    if (this.noMorph_1.contains_aljjnj_k$(key))
+      return null;
+    var tmp2_safe_receiver = this.morphs_1.get_wei43m_k$(key);
+    if (tmp2_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      return tmp2_safe_receiver;
+    }
+    var tmp_1;
+    try {
+      tmp_1 = new Morph(a.get_unit_wovp3h_k$(), b.get_unit_wovp3h_k$());
+    } catch ($p) {
+      var tmp_2;
+      if ($p instanceof Exception) {
+        var e = $p;
+        // Inline function 'kotlin.collections.plusAssign' call
+        this.noMorph_1.add_utx5q5_k$(key);
+        return null;
+      } else {
+        throw $p;
+      }
+    }
+    var m = tmp_1;
+    // Inline function 'kotlin.collections.set' call
+    this.morphs_1.put_4fpzoq_k$(key, m);
+    return m;
+  };
+  var ShapeLibrary_instance;
+  function ShapeLibrary_getInstance() {
+    if (ShapeLibrary_instance == null)
+      new ShapeLibrary();
+    return ShapeLibrary_instance;
+  }
+  function r($this, radius, smoothing) {
+    return new CornerRounding(radius, smoothing);
+  }
+  function r$default($this, radius, smoothing, $super) {
+    smoothing = smoothing === VOID ? 0.0 : smoothing;
+    return r($this, radius, smoothing);
+  }
+  function poly($this, pts, rounding, per, rotateDeg) {
+    var v = rotateDeg === 0.0 ? pts : rotated($this, pts, rotateDeg);
+    return RoundedPolygon_1(v, rounding, per);
+  }
+  function poly$default($this, pts, rounding, per, rotateDeg, $super) {
+    rounding = rounding === VOID ? Companion_getInstance_11().Unrounded_1 : rounding;
+    per = per === VOID ? null : per;
+    rotateDeg = rotateDeg === VOID ? 0.0 : rotateDeg;
+    return poly($this, pts, rounding, per, rotateDeg);
+  }
+  function rotated($this, pts, deg) {
+    var cx = 0.0;
+    var cy = 0.0;
+    var n = pts.length / 2 | 0;
+    var inductionVariable = 0;
+    if (inductionVariable < n)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        cx = cx + pts[imul(2, i)];
+        cy = cy + pts[imul(2, i) + 1 | 0];
+      }
+       while (inductionVariable < n);
+    cx = cx / n;
+    cy = cy / n;
+    var a = deg * 3.141592653589793 / 180.0;
+    // Inline function 'kotlin.math.cos' call
+    var c = Math.cos(a);
+    // Inline function 'kotlin.math.sin' call
+    var s = Math.sin(a);
+    // Inline function 'kotlin.also' call
+    var this_0 = new Float32Array(pts.length);
+    var inductionVariable_0 = 0;
+    if (inductionVariable_0 < n)
+      do {
+        var i_0 = inductionVariable_0;
+        inductionVariable_0 = inductionVariable_0 + 1 | 0;
+        var dx = pts[imul(2, i_0)] - cx;
+        var dy = pts[imul(2, i_0) + 1 | 0] - cy;
+        this_0[imul(2, i_0)] = cx + dx * c - dy * s;
+        this_0[imul(2, i_0) + 1 | 0] = cy + dx * s + dy * c;
+      }
+       while (inductionVariable_0 < n);
+    return this_0;
+  }
+  function regular($this, n, rounding) {
+    var pts = new Float32Array(imul(n, 2));
+    var inductionVariable = 0;
+    if (inductionVariable < n)
+      do {
+        var i = inductionVariable;
+        inductionVariable = inductionVariable + 1 | 0;
+        var a = -3.141592653589793 / 2 + 2 * 3.141592653589793 * i / n;
+        var tmp = imul(2, i);
+        // Inline function 'kotlin.math.cos' call
+        pts[tmp] = Math.cos(a);
+        var tmp_0 = imul(2, i) + 1 | 0;
+        // Inline function 'kotlin.math.sin' call
+        pts[tmp_0] = Math.sin(a);
+      }
+       while (inductionVariable < n);
+    return RoundedPolygon_1(pts, rounding);
+  }
+  function rect_0($this, w, h, tl, tr, br, bl, rotateDeg) {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.0, 0.0, w, 0.0, w, h, 0.0, h]);
+    return poly$default($this, tmp$ret$0, VOID, listOf_0([r$default($this, tl), r$default($this, tr), r$default($this, br), r$default($this, bl)]), rotateDeg);
+  }
+  function rect$default_0($this, w, h, tl, tr, br, bl, rotateDeg, $super) {
+    rotateDeg = rotateDeg === VOID ? 0.0 : rotateDeg;
+    return rect_0($this, w, h, tl, tr, br, bl, rotateDeg);
+  }
+  function pixels($this, xy) {
+    var tmp = 0;
+    var tmp_0 = xy.length;
+    var tmp_1 = new Float32Array(tmp_0);
+    while (tmp < tmp_0) {
+      var tmp_2 = tmp;
+      tmp_1[tmp_2] = xy[tmp_2] / 8.0;
+      tmp = tmp + 1 | 0;
+    }
+    return RoundedPolygon_1(tmp_1);
+  }
+  function Mat() {
+  }
+  protoOf(Mat).get_Circle_38hx53_k$ = function () {
+    return circle(Companion_instance_16, 10);
+  };
+  protoOf(Mat).get_Square_4go9ja_k$ = function () {
+    return rect$default_0(this, 1.0, 1.0, 0.3, 0.3, 0.3, 0.3);
+  };
+  protoOf(Mat).get_Slanted_6dbjss_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.25, 0.0, 1.0, 0.0, 0.75, 1.0, 0.0, 1.0]);
+    return poly$default(this, tmp$ret$0, r(this, 0.2, 0.5));
+  };
+  protoOf(Mat).get_Arch_wnyklb_k$ = function () {
+    return rect$default_0(this, 1.0, 1.1, 0.5, 0.5, 0.1, 0.1);
+  };
+  protoOf(Mat).get_Fan_18jtrq_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.0, 1.0, 1.0, 1.0, 0.0, 0.0]);
+    return poly$default(this, tmp$ret$0, VOID, listOf_0([r$default(this, 0.06), r$default(this, 0.3), r$default(this, 0.45)]));
+  };
+  protoOf(Mat).get_Arrow_i77a2o_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.5, 0.0, 1.0, 1.0, 0.5, 0.72, 0.0, 1.0]);
+    return poly$default(this, tmp$ret$0, r$default(this, 0.1));
+  };
+  protoOf(Mat).get_SemiCircle_de654p_k$ = function () {
+    return rect$default_0(this, 1.0, 0.55, 0.04, 0.04, 0.5, 0.5);
+  };
+  protoOf(Mat).get_Oval_wo7lbv_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.0, 0.0, 1.0, 0.0, 1.0, 0.62, 0.0, 0.62]);
+    return poly$default(this, tmp$ret$0, r(this, 0.31, 1.0), VOID, -45.0);
+  };
+  protoOf(Mat).get_Pill_wo7yxu_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.0, 0.0, 1.7, 0.0, 1.7, 0.7, 0.0, 0.7]);
+    return poly$default(this, tmp$ret$0, r$default(this, 0.35), VOID, -45.0);
+  };
+  protoOf(Mat).get_Triangle_5ypy4v_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.5, 0.0, 1.0, 0.87, 0.0, 0.87]);
+    return poly$default(this, tmp$ret$0, r(this, 0.12, 0.3));
+  };
+  protoOf(Mat).get_Diamond_ev38vp_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.5, 0.0, 1.0, 0.7, 0.5, 1.4, 0.0, 0.7]);
+    return poly$default(this, tmp$ret$0, r(this, 0.08, 0.5));
+  };
+  protoOf(Mat).get_ClamShell_wuro4u_k$ = function () {
+    return rect$default_0(this, 1.25, 1.0, 0.45, 0.45, 0.2, 0.2);
+  };
+  protoOf(Mat).get_Pentagon_pahevr_k$ = function () {
+    return regular(this, 5, r(this, 0.12, 0.3));
+  };
+  protoOf(Mat).get_Gem_18jsxm_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.25, 0.0, 0.75, 0.0, 1.0, 0.4, 0.5, 1.0, 0.0, 0.4]);
+    return poly$default(this, tmp$ret$0, r(this, 0.07, 0.3));
+  };
+  protoOf(Mat).get_Cookie4Sided_qek7ae_k$ = function () {
+    return star(Companion_instance_16, 4, VOID, 0.7, r$default(this, 0.4));
+  };
+  protoOf(Mat).get_Cookie6Sided_rcng2s_k$ = function () {
+    return star(Companion_instance_16, 6, VOID, 0.8, r$default(this, 0.5));
+  };
+  protoOf(Mat).get_Cookie7Sided_rtp2gz_k$ = function () {
+    return star(Companion_instance_16, 7, VOID, 0.8, r$default(this, 0.5));
+  };
+  protoOf(Mat).get_Cookie9Sided_srsb9d_k$ = function () {
+    return star(Companion_instance_16, 9, VOID, 0.8, r$default(this, 0.5));
+  };
+  protoOf(Mat).get_Cookie12Sided_msj081_k$ = function () {
+    return star(Companion_instance_16, 12, VOID, 0.8, r$default(this, 0.5));
+  };
+  protoOf(Mat).get_Sunny_ih5eq6_k$ = function () {
+    return star(Companion_instance_16, 8, VOID, 0.8, r$default(this, 0.15));
+  };
+  protoOf(Mat).get_VerySunny_kw5tbs_k$ = function () {
+    return star(Companion_instance_16, 8, VOID, 0.65, r$default(this, 0.15));
+  };
+  protoOf(Mat).get_Burst_i7szpz_k$ = function () {
+    return star(Companion_instance_16, 12, VOID, 0.7, r$default(this, 0.1));
+  };
+  protoOf(Mat).get_SoftBurst_6y2iq5_k$ = function () {
+    return star(Companion_instance_16, 10, VOID, 0.65, r$default(this, 0.2), r$default(this, 0.2));
+  };
+  protoOf(Mat).get_Boom_wnz5n8_k$ = function () {
+    return star(Companion_instance_16, 15, VOID, 0.55, r$default(this, 0.05));
+  };
+  protoOf(Mat).get_SoftBoom_8xvx7m_k$ = function () {
+    return star(Companion_instance_16, 16, VOID, 0.7, r$default(this, 0.25), r$default(this, 0.1));
+  };
+  protoOf(Mat).get_Clover4Leaf_2fdx1o_k$ = function () {
+    return star(Companion_instance_16, 4, VOID, 0.2, r$default(this, 0.4), r$default(this, 0.05));
+  };
+  protoOf(Mat).get_Clover8Leaf_2hl3f4_k$ = function () {
+    return star(Companion_instance_16, 8, VOID, 0.5, r$default(this, 0.4), r$default(this, 0.05));
+  };
+  protoOf(Mat).get_Flower_1rr6gs_k$ = function () {
+    return star(Companion_instance_16, 8, VOID, 0.6, r$default(this, 0.5), r$default(this, 0.1));
+  };
+  protoOf(Mat).get_Puffy_ifhutn_k$ = function () {
+    return star(Companion_instance_16, 8, VOID, 0.72, r$default(this, 0.5));
+  };
+  protoOf(Mat).get_PuffyDiamond_ed0eif_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.5, 0.0, 1.0, 0.5, 0.5, 1.0, 0.0, 0.5]);
+    return poly$default(this, tmp$ret$0, r(this, 0.4, 1.0));
+  };
+  protoOf(Mat).get_Ghostish_r3qnpk_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.75, 0.8, 0.5, 1.0, 0.25, 0.8, 0.0, 1.0]);
+    return poly$default(this, tmp$ret$0, VOID, listOf_0([r$default(this, 0.5), r$default(this, 0.5), r$default(this, 0.05), r$default(this, 0.05), r$default(this, 0.05), r$default(this, 0.05), r$default(this, 0.05)]));
+  };
+  protoOf(Mat).get_Bun_18jw9a_k$ = function () {
+    return rect$default_0(this, 1.3, 1.0, 0.45, 0.45, 0.3, 0.3);
+  };
+  protoOf(Mat).get_Heart_iat6v1_k$ = function () {
+    // Inline function 'kotlin.floatArrayOf' call
+    var tmp$ret$0 = new Float32Array([0.5, 1.0, 0.0, 0.38, 0.25, 0.0, 0.5, 0.22, 0.75, 0.0, 1.0, 0.38]);
+    return poly$default(this, tmp$ret$0, VOID, listOf_0([r$default(this, 0.04), r$default(this, 0.35), r$default(this, 0.3), r$default(this, 0.05), r$default(this, 0.3), r$default(this, 0.35)]));
+  };
+  protoOf(Mat).get_PixelCircle_dlrpm5_k$ = function () {
+    return pixels(this, new Int32Array([2, 0, 6, 0, 6, 1, 7, 1, 7, 2, 8, 2, 8, 6, 7, 6, 7, 7, 6, 7, 6, 8, 2, 8, 2, 7, 1, 7, 1, 6, 0, 6, 0, 2, 1, 2, 1, 1, 2, 1]));
+  };
+  protoOf(Mat).get_PixelTriangle_h19ztn_k$ = function () {
+    return pixels(this, new Int32Array([3, 0, 5, 0, 5, 2, 6, 2, 6, 4, 7, 4, 7, 6, 8, 6, 8, 8, 0, 8, 0, 6, 1, 6, 1, 4, 2, 4, 2, 2, 3, 2]));
+  };
+  var Mat_instance;
+  function Mat_getInstance() {
+    return Mat_instance;
+  }
+  function unit$factory() {
+    return getPropertyCallableRef('unit', 1, KProperty1, function (receiver) {
+      return receiver.get_unit_wovp3h_k$();
+    }, null);
   }
   function IconLibrary() {
     IconLibrary_instance = this;
@@ -12596,13 +16085,40 @@ var qwelcore = function (_) {
       set_words(JSON.parse(request.getString_gb1pt9_k$('strings')));
       return '{}';
     }
+    if (request.optString$default_a8gqg6_k$('op') === 'morph') {
+      var m = ShapeLibrary_getInstance().morph_vnniko_k$(request.getString_gb1pt9_k$('from'), request.getString_gb1pt9_k$('to'));
+      var result = new JSONObject();
+      if (!(m == null)) {
+        var _iterator__ex2g4s = listOf_0([to('start', 0.0), to('end', 1.0)]).iterator_jk1svi_k$();
+        while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+          var _destruct__k2r9zo = _iterator__ex2g4s.next_20eer_k$();
+          var key = _destruct__k2r9zo.component1_7eebsc_k$();
+          var t = _destruct__k2r9zo.component2_7eebsb_k$();
+          // Inline function 'kotlin.also' call
+          var this_0 = new JSONArray();
+          // Inline function 'kotlin.collections.forEach' call
+          var _iterator__ex2g4s_0 = m.asCubics_usch25_k$(t).iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+            var element = _iterator__ex2g4s_0.next_20eer_k$();
+            // Inline function 'kotlin.collections.forEach' call
+            var _iterator__ex2g4s_1 = listOf_0([element.get_anchor0X_n5yicm_k$(), element.get_anchor0Y_n5yicn_k$(), element.get_control0X_1zau8s_k$(), element.get_control0Y_1zau8t_k$(), element.get_control1X_1zau9n_k$(), element.get_control1Y_1zau9o_k$(), element.get_anchor1X_n5yidh_k$(), element.get_anchor1Y_n5yidi_k$()]).iterator_jk1svi_k$();
+            while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+              var element_0 = _iterator__ex2g4s_1.next_20eer_k$();
+              this_0.put_58ltao_k$(element_0);
+            }
+          }
+          result.put_9oxj04_k$(key, this_0);
+        }
+      }
+      return result.toString();
+    }
     var supplied = request.optJSONObject_yq7aww_k$('project');
     var tmp;
     if (!(supplied == null)) {
       // Inline function 'kotlin.also' call
-      var this_0 = ProjectStore_instance.decode_rg9bht_k$(supplied);
-      cached = this_0;
-      tmp = this_0;
+      var this_1 = ProjectStore_instance.decode_rg9bht_k$(supplied);
+      cached = this_1;
+      tmp = this_1;
     } else {
       var tmp0_elvis_lhs = cached;
       var tmp_0;
@@ -12619,16 +16135,16 @@ var qwelcore = function (_) {
     var tmp1_elvis_lhs = request.optJSONObject_yq7aww_k$('shown');
     var shown = tmp1_elvis_lhs == null ? new JSONObject() : tmp1_elvis_lhs;
     // Inline function 'kotlin.collections.associateWith' call
-    var this_1 = shown.keys_1yhh0_k$();
-    var result = LinkedHashMap_init_$Create$_0(coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(this_1, 10)), 16));
+    var this_2 = shown.keys_1yhh0_k$();
+    var result_0 = LinkedHashMap_init_$Create$_0(coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16));
     // Inline function 'kotlin.collections.associateWithTo' call
-    var _iterator__ex2g4s = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = shown.optDouble$default_xipa5i_k$(element);
-      result.put_4fpzoq_k$(element, tmp$ret$2);
+    var _iterator__ex2g4s_2 = this_2.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_1 = _iterator__ex2g4s_2.next_20eer_k$();
+      var tmp$ret$8 = shown.optDouble$default_xipa5i_k$(element_1);
+      result_0.put_4fpzoq_k$(element_1, tmp$ret$8);
     }
-    var values = toMutableMap(result);
+    var values = toMutableMap(result_0);
     var tmp_1;
     switch (op) {
       case 'set':
@@ -12636,16 +16152,16 @@ var qwelcore = function (_) {
         var tmp_2 = new JSONObject();
         // Inline function 'kotlin.also' call
 
-        var this_2 = new JSONArray();
+        var this_3 = new JSONArray();
         // Inline function 'kotlin.collections.forEach' call
 
-        var _iterator__ex2g4s_0 = pm.widgets_hajxma_k$(p.nodes_1).iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-          var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
-          this_2.put_58ltao_k$(qwelCore$widgetObject(pm, element_0));
+        var _iterator__ex2g4s_3 = pm.widgets_hajxma_k$(p.nodes_1).iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+          var element_2 = _iterator__ex2g4s_3.next_20eer_k$();
+          this_3.put_58ltao_k$(qwelCore$widgetObject(pm, element_2));
         }
 
-        tmp_1 = tmp_2.put_9oxj04_k$('widgets', this_2).toString();
+        tmp_1 = tmp_2.put_9oxj04_k$('widgets', this_3).toString();
         break;
       case 'hit':
         var x = request.optDouble$default_xipa5i_k$('x');
@@ -12655,29 +16171,29 @@ var qwelcore = function (_) {
         break;
       case 'tap':
       case 'swipe':
-        var tmp6 = pm.widgets_hajxma_k$(p.nodes_1);
-        var tmp$ret$10;
+        var tmp8 = pm.widgets_hajxma_k$(p.nodes_1);
+        var tmp$ret$16;
         $l$block: {
           // Inline function 'kotlin.collections.firstOrNull' call
-          var _iterator__ex2g4s_1 = tmp6.iterator_jk1svi_k$();
-          while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-            var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
-            if (element_1.group_1 === request.getString_gb1pt9_k$('group')) {
-              tmp$ret$10 = element_1;
+          var _iterator__ex2g4s_4 = tmp8.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+            var element_3 = _iterator__ex2g4s_4.next_20eer_k$();
+            if (element_3.group_1 === request.getString_gb1pt9_k$('group')) {
+              tmp$ret$16 = element_3;
               break $l$block;
             }
           }
-          tmp$ret$10 = null;
+          tmp$ret$16 = null;
         }
 
-        var w_0 = tmp$ret$10;
+        var w_0 = tmp$ret$16;
         if (!(w_0 == null)) {
           if (op === 'swipe' && w_0.kind_1 === 'pick') {
-            var tmp9 = w_0.group_1;
+            var tmp11 = w_0.group_1;
             var tmp3_elvis_lhs = values.get_wei43m_k$(w_0.group_1);
             // Inline function 'kotlin.collections.set' call
-            var value = coerceIn_0(numberToInt(tmp3_elvis_lhs == null ? 0.0 : tmp3_elvis_lhs) + request.optInt$default_5j5ewg_k$('direction') | 0, 0, coerceAtLeast_0(pm.pickCount_5xun7y_k$(w_0) - 1 | 0, 0));
-            values.put_4fpzoq_k$(tmp9, value);
+            var value = coerceIn(numberToInt(tmp3_elvis_lhs == null ? 0.0 : tmp3_elvis_lhs) + request.optInt$default_5j5ewg_k$('direction') | 0, 0, coerceAtLeast_0(pm.pickCount_5xun7y_k$(w_0) - 1 | 0, 0));
+            values.put_4fpzoq_k$(tmp11, value);
           } else {
             (new TapState(p.nodes_1, values)).playTap_eyfrwd_k$(w_0, request.optDouble$default_xipa5i_k$('x'), request.optDouble$default_xipa5i_k$('y'));
           }
@@ -12685,22 +16201,22 @@ var qwelcore = function (_) {
 
         // Inline function 'kotlin.also' call
 
-        var this_3 = new JSONObject();
+        var this_4 = new JSONObject();
         // Inline function 'kotlin.collections.forEach' call
 
         // Inline function 'kotlin.collections.iterator' call
 
-        var _iterator__ex2g4s_2 = values.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-          var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
+        var _iterator__ex2g4s_5 = values.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
+          var element_4 = _iterator__ex2g4s_5.next_20eer_k$();
           // Inline function 'kotlin.collections.component1' call
-          var k = element_2.get_key_18j28a_k$();
+          var k = element_4.get_key_18j28a_k$();
           // Inline function 'kotlin.collections.component2' call
-          var v = element_2.get_value_j01efc_k$();
-          this_3.put_9oxj04_k$(k, v);
+          var v = element_4.get_value_j01efc_k$();
+          this_4.put_9oxj04_k$(k, v);
         }
 
-        tmp_1 = this_3.toString();
+        tmp_1 = this_4.toString();
         break;
       case 'apply':
         tmp_1 = qwelCore$output(p, pm.apply_5lvb2b_k$(p.nodes_1, values, p.tone_1, request.optDouble$default_xipa5i_k$('time')));
@@ -12708,16 +16224,16 @@ var qwelcore = function (_) {
       case 'stop':
         // Inline function 'kotlin.collections.associateBy' call
 
-        var this_4 = pm.widgets_hajxma_k$(p.nodes_1);
-        var capacity = coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(this_4, 10)), 16);
+        var this_5 = pm.widgets_hajxma_k$(p.nodes_1);
+        var capacity = coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(this_5, 10)), 16);
         // Inline function 'kotlin.collections.associateByTo' call
 
         var destination = LinkedHashMap_init_$Create$_0(capacity);
-        var _iterator__ex2g4s_3 = this_4.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-          var element_3 = _iterator__ex2g4s_3.next_20eer_k$();
-          var tmp$ret$19 = element_3.group_1;
-          destination.put_4fpzoq_k$(tmp$ret$19, element_3);
+        var _iterator__ex2g4s_6 = this_5.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
+          var element_5 = _iterator__ex2g4s_6.next_20eer_k$();
+          var tmp$ret$25 = element_5.group_1;
+          destination.put_4fpzoq_k$(tmp$ret$25, element_5);
         }
 
         var ws = destination;
@@ -12728,13 +16244,13 @@ var qwelcore = function (_) {
         var destination_0 = LinkedHashMap_init_$Create$();
         // Inline function 'kotlin.collections.iterator' call
 
-        var _iterator__ex2g4s_4 = values.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-          var element_4 = _iterator__ex2g4s_4.next_20eer_k$();
+        var _iterator__ex2g4s_7 = values.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
+          var element_6 = _iterator__ex2g4s_7.next_20eer_k$();
           // Inline function 'kotlin.collections.component1' call
-          var g = element_4.get_key_18j28a_k$();
+          var g = element_6.get_key_18j28a_k$();
           // Inline function 'kotlin.collections.component2' call
-          var v_0 = element_4.get_value_j01efc_k$();
+          var v_0 = element_6.get_value_j01efc_k$();
           var tmp0_safe_receiver = ws.get_wei43m_k$(g);
           var tmp_3;
           if (tmp0_safe_receiver == null) {
@@ -12752,7 +16268,7 @@ var qwelcore = function (_) {
             tmp_3 = tmp_4;
           }
           if (tmp_3 === true) {
-            destination_0.put_4fpzoq_k$(element_4.get_key_18j28a_k$(), element_4.get_value_j01efc_k$());
+            destination_0.put_4fpzoq_k$(element_6.get_key_18j28a_k$(), element_6.get_value_j01efc_k$());
           }
         }
 
@@ -12760,30 +16276,152 @@ var qwelcore = function (_) {
         tmp_1 = qwelCore$output(p, pm.apply$default_voeuy2_k$(p.nodes_1, touched, p.tone_1));
         break;
       case 'echo':
-        var tmp17 = p.nodes_1;
-        var tmp$ret$32;
+        var tmp19 = p.nodes_1;
+        var tmp$ret$38;
         $l$block_0: {
           // Inline function 'kotlin.collections.first' call
-          var _iterator__ex2g4s_5 = tmp17.iterator_jk1svi_k$();
-          while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-            var element_5 = _iterator__ex2g4s_5.next_20eer_k$();
-            if (element_5.id_1 === request.getString_gb1pt9_k$('id')) {
-              tmp$ret$32 = element_5;
+          var _iterator__ex2g4s_8 = tmp19.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
+            var element_7 = _iterator__ex2g4s_8.next_20eer_k$();
+            if (element_7.id_1 === request.getString_gb1pt9_k$('id')) {
+              tmp$ret$38 = element_7;
               break $l$block_0;
             }
           }
           throw NoSuchElementException_init_$Create$_0('Collection contains no element matching the predicate.');
         }
 
-        var source = tmp$ret$32;
+        var source = tmp$ret$38;
         var params = new EchoParams(request.optInt_piuztm_k$('count', 4), request.optDouble_pwajio_k$('scale', 5.0), request.optDouble_pwajio_k$('rotation', 3.0), request.optDouble_pwajio_k$('fade', 0.85), request.optBoolean_n0bbhc_k$('contour', true), request.optDouble$default_xipa5i_k$('spread'), request.optDouble_pwajio_k$('jitter', 0.2), request.optInt_piuztm_k$('seed', 7));
         tmp_1 = qwelCore$output(p, Echo_instance.copies_ne07ek_k$(source, params));
+        break;
+      case 'projectExport':
+        var kind = request.optString$default_a8gqg6_k$('kind');
+        var pkg = request.optString_gse350_k$('package', 'com.example.myapp.vexel');
+        var tmp4_elvis_lhs = request.optJSONObject_yq7aww_k$('faces');
+        var faces = tmp4_elvis_lhs == null ? new JSONObject() : tmp4_elvis_lhs;
+        var provider = qwelCore$lambda(faces);
+        var result_1 = kind === 'codeassist' ? ProjectExport_getInstance().buildCodeAssist_dkb7yf_k$(p, pkg, provider) : ProjectExport_getInstance().build_zel6qf_k$(p, pkg, pkg, provider);
+        var tmp_5 = new JSONObject();
+        // Inline function 'kotlin.also' call
+
+        var this_6 = new JSONObject();
+        // Inline function 'kotlin.collections.forEach' call
+
+        // Inline function 'kotlin.collections.iterator' call
+
+        var _iterator__ex2g4s_9 = result_1.files_1.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_9.hasNext_bitz1p_k$()) {
+          var element_8 = _iterator__ex2g4s_9.next_20eer_k$();
+          // Inline function 'kotlin.collections.component1' call
+          var k_0 = element_8.get_key_18j28a_k$();
+          // Inline function 'kotlin.collections.component2' call
+          var v_1 = element_8.get_value_j01efc_k$();
+          this_6.put_9oxj04_k$(k_0, v_1);
+        }
+
+        var tmp_6 = tmp_5.put_9oxj04_k$('files', this_6);
+        // Inline function 'kotlin.also' call
+
+        var this_7 = new JSONObject();
+        // Inline function 'kotlin.collections.forEach' call
+
+        // Inline function 'kotlin.collections.iterator' call
+
+        var _iterator__ex2g4s_10 = result_1.images_1.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_10.hasNext_bitz1p_k$()) {
+          var element_9 = _iterator__ex2g4s_10.next_20eer_k$();
+          // Inline function 'kotlin.collections.component1' call
+          var k_1 = element_9.get_key_18j28a_k$();
+          // Inline function 'kotlin.collections.component2' call
+          var v_2 = element_9.get_value_j01efc_k$();
+          this_7.put_9oxj04_k$(k_1, v_2);
+        }
+
+        var tmp_7 = tmp_6.put_9oxj04_k$('images', this_7);
+        // Inline function 'kotlin.also' call
+
+        var this_8 = new JSONObject();
+        // Inline function 'kotlin.collections.forEach' call
+
+        // Inline function 'kotlin.collections.iterator' call
+
+        var _iterator__ex2g4s_11 = result_1.fonts_1.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_11.hasNext_bitz1p_k$()) {
+          var element_10 = _iterator__ex2g4s_11.next_20eer_k$();
+          // Inline function 'kotlin.collections.component1' call
+          var k_2 = element_10.get_key_18j28a_k$();
+          // Inline function 'kotlin.collections.component2' call
+          var v_3 = element_10.get_value_j01efc_k$();
+          this_8.put_9oxj04_k$(k_2, (new JSONObject()).put_9oxj04_k$('name', v_3.first_1).put_9oxj04_k$('weight', v_3.second_1));
+        }
+
+        tmp_1 = tmp_7.put_9oxj04_k$('fonts', this_8).toString();
+        break;
+      case 'blend':
+        var tmp5_elvis_lhs = request.optJSONObject_yq7aww_k$('samples');
+        var samples = tmp5_elvis_lhs == null ? new JSONObject() : tmp5_elvis_lhs;
+        // Inline function 'kotlin.collections.associateWith' call
+
+        var this_9 = samples.keys_1yhh0_k$();
+        var result_2 = LinkedHashMap_init_$Create$_0(coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(this_9, 10)), 16));
+        // Inline function 'kotlin.collections.associateWithTo' call
+
+        var _iterator__ex2g4s_12 = this_9.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_12.hasNext_bitz1p_k$()) {
+          var element_11 = _iterator__ex2g4s_12.next_20eer_k$();
+          var a = samples.getJSONArray_be86jl_k$(element_11);
+          var tmp_8 = 0;
+          var tmp_9 = a.length_iap7oa_k$();
+          var tmp_10 = new Float32Array(tmp_9);
+          while (tmp_8 < tmp_9) {
+            var tmp_11 = tmp_8;
+            tmp_10[tmp_11] = a.getDouble_5me5vz_k$(tmp_11);
+            tmp_8 = tmp_8 + 1 | 0;
+          }
+          result_2.put_4fpzoq_k$(element_11, tmp_10);
+        }
+
+        set_blendSamples(result_2);
+        var tmp29 = p.nodes_1;
+        var tmp$ret$65;
+        $l$block_1: {
+          // Inline function 'kotlin.collections.first' call
+          var _iterator__ex2g4s_13 = tmp29.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_13.hasNext_bitz1p_k$()) {
+            var element_12 = _iterator__ex2g4s_13.next_20eer_k$();
+            if (element_12.id_1 === request.getString_gb1pt9_k$('a')) {
+              tmp$ret$65 = element_12;
+              break $l$block_1;
+            }
+          }
+          throw NoSuchElementException_init_$Create$_0('Collection contains no element matching the predicate.');
+        }
+
+        var tmp_12 = tmp$ret$65;
+        var tmp31 = p.nodes_1;
+        var tmp$ret$67;
+        $l$block_2: {
+          // Inline function 'kotlin.collections.first' call
+          var _iterator__ex2g4s_14 = tmp31.iterator_jk1svi_k$();
+          while (_iterator__ex2g4s_14.hasNext_bitz1p_k$()) {
+            var element_13 = _iterator__ex2g4s_14.next_20eer_k$();
+            if (element_13.id_1 === request.getString_gb1pt9_k$('b')) {
+              tmp$ret$67 = element_13;
+              break $l$block_2;
+            }
+          }
+          throw NoSuchElementException_init_$Create$_0('Collection contains no element matching the predicate.');
+        }
+
+        var tmp6_elvis_lhs = blendNodes(tmp_12, tmp$ret$67, request.optInt_piuztm_k$('steps', 5));
+        tmp_1 = qwelCore$output(p, tmp6_elvis_lhs == null ? emptyList() : tmp6_elvis_lhs);
         break;
       case 'compose':
         tmp_1 = (new JSONObject()).put_9oxj04_k$('code', ComposeCode_getInstance().generate$default_i4fm48_k$(p)).toString();
         break;
       case 'tone':
-        tmp_1 = qwelCore$output(p, withTone(p.nodes_1, Companion_getInstance_11().fromSeed_gjco7c_k$(request.optInt$default_5j5ewg_k$('seed'), request.optBoolean$default_dxma8m_k$('dark'))));
+        tmp_1 = qwelCore$output(p, withTone(p.nodes_1, Companion_getInstance_17().fromSeed_gjco7c_k$(request.optInt$default_5j5ewg_k$('seed'), request.optBoolean$default_dxma8m_k$('dark'))));
         break;
       default:
         throw IllegalArgumentException_init_$Create$_0('Unknown operation');
@@ -12805,6 +16443,64 @@ var qwelcore = function (_) {
     }
     return this_0;
   }
+  function qwelCore$lambda($faces) {
+    return function (font) {
+      var a = $faces.optJSONArray_9s960s_k$(font);
+      var tmp;
+      if (a == null) {
+        tmp = emptyList();
+      } else {
+        // Inline function 'kotlin.collections.map' call
+        var this_0 = until(0, a.length_iap7oa_k$());
+        // Inline function 'kotlin.collections.mapTo' call
+        var destination = ArrayList_init_$Create$_0(collectionSizeOrDefault(this_0, 10));
+        var inductionVariable = this_0.first_1;
+        var last = this_0.last_1;
+        if (inductionVariable <= last)
+          do {
+            var item = inductionVariable;
+            inductionVariable = inductionVariable + 1 | 0;
+            var i = item;
+            var o = a.getJSONObject_j6v1id_k$(i);
+            var tmp$ret$0 = to(o.optInt_piuztm_k$('weight', 400), o.optString_gse350_k$('ext', 'ttf'));
+            destination.add_utx5q5_k$(tmp$ret$0);
+          }
+           while (!(item === last));
+        tmp = destination;
+      }
+      return tmp;
+    };
+  }
+  function FloatFloatPair(first, second) {
+    this.first_1 = first;
+    this.second_1 = second;
+  }
+  protoOf(FloatFloatPair).component1_7eebsc_k$ = function () {
+    return this.first_1;
+  };
+  protoOf(FloatFloatPair).component2_7eebsb_k$ = function () {
+    return this.second_1;
+  };
+  protoOf(FloatFloatPair).toString = function () {
+    return 'FloatFloatPair(first=' + this.first_1 + ', second=' + this.second_1 + ')';
+  };
+  protoOf(FloatFloatPair).hashCode = function () {
+    var result = getNumberHashCode(this.first_1);
+    result = imul(result, 31) + getNumberHashCode(this.second_1) | 0;
+    return result;
+  };
+  protoOf(FloatFloatPair).equals = function (other) {
+    if (this === other)
+      return true;
+    if (!(other instanceof FloatFloatPair))
+      return false;
+    var tmp0_other_with_cast = other instanceof FloatFloatPair ? other : THROW_CCE();
+    if (!equals(this.first_1, tmp0_other_with_cast.first_1))
+      return false;
+    if (!equals(this.second_1, tmp0_other_with_cast.second_1))
+      return false;
+    return true;
+  };
   function Math_0() {
   }
   protoOf(Math_0).toRadians_sjqwz3_k$ = function (x) {
@@ -12856,7 +16552,7 @@ var qwelcore = function (_) {
     var this_0 = _this__u8e3s4.get_entries_p20ztl_k$();
     // Inline function 'kotlin.comparisons.compareBy' call
     var tmp = toSortedMap$lambda;
-    var tmp$ret$0 = new sam$kotlin_Comparator$0_0(tmp);
+    var tmp$ret$0 = new sam$kotlin_Comparator$0_1(tmp);
     // Inline function 'kotlin.collections.associate' call
     var this_1 = sortedWith(this_0, tmp$ret$0);
     var capacity = coerceAtLeast_0(mapCapacity(collectionSizeOrDefault(this_1, 10)), 16);
@@ -12875,19 +16571,19 @@ var qwelcore = function (_) {
     // Inline function 'kotlin.collections.linkedSetOf' call
     return LinkedHashSet_init_$Create$();
   }
-  function sam$kotlin_Comparator$0_0(function_0) {
+  function sam$kotlin_Comparator$0_1(function_0) {
     this.function_1 = function_0;
   }
-  protoOf(sam$kotlin_Comparator$0_0).compare_bczr_k$ = function (a, b) {
+  protoOf(sam$kotlin_Comparator$0_1).compare_bczr_k$ = function (a, b) {
     return this.function_1(a, b);
   };
-  protoOf(sam$kotlin_Comparator$0_0).compare = function (a, b) {
+  protoOf(sam$kotlin_Comparator$0_1).compare = function (a, b) {
     return this.compare_bczr_k$(a, b);
   };
-  protoOf(sam$kotlin_Comparator$0_0).getFunctionDelegate_jtodtf_k$ = function () {
+  protoOf(sam$kotlin_Comparator$0_1).getFunctionDelegate_jtodtf_k$ = function () {
     return this.function_1;
   };
-  protoOf(sam$kotlin_Comparator$0_0).equals = function (other) {
+  protoOf(sam$kotlin_Comparator$0_1).equals = function (other) {
     var tmp;
     if (!(other == null) ? isInterface(other, Comparator) : false) {
       var tmp_0;
@@ -12902,7 +16598,7 @@ var qwelcore = function (_) {
     }
     return tmp;
   };
-  protoOf(sam$kotlin_Comparator$0_0).hashCode = function () {
+  protoOf(sam$kotlin_Comparator$0_1).hashCode = function () {
     return hashCode(this.getFunctionDelegate_jtodtf_k$());
   };
   function formatNumber$lambda($values, $i) {
@@ -13118,6 +16814,10 @@ var qwelcore = function (_) {
   protoOf(JSONArray).getJSONObject_j6v1id_k$ = function (i) {
     return new JSONObject(this.obj_1[i], true);
   };
+  protoOf(JSONArray).getDouble_5me5vz_k$ = function (i) {
+    var tmp = this.obj_1[i];
+    return numberToDouble(isNumber(tmp) ? tmp : THROW_CCE());
+  };
   protoOf(JSONArray).getInt_s8uc8x_k$ = function (i) {
     var tmp = this.obj_1[i];
     return numberToInt(isNumber(tmp) ? tmp : THROW_CCE());
@@ -13160,7 +16860,7 @@ var qwelcore = function (_) {
         var d = x < b.get_cx_knto1u_k$() - b.get_w_1mhr66_k$() * 0.2 ? -1 : x > b.get_cx_knto1u_k$() + b.get_w_1mhr66_k$() * 0.2 ? 1 : 0;
         if (!(d === 0)) {
           var tmp3_elvis_lhs = this.playTarget_1.get_wei43m_k$(g);
-          this.playSlide_4hpddh_k$(g, coerceIn((tmp3_elvis_lhs == null ? 0.0 : tmp3_elvis_lhs) + d, 0.0, 99.0));
+          this.playSlide_4hpddh_k$(g, coerceIn_0((tmp3_elvis_lhs == null ? 0.0 : tmp3_elvis_lhs) + d, 0.0, 99.0));
         }
 
         break;
@@ -13266,9 +16966,17 @@ var qwelcore = function (_) {
   Companion_instance_9 = new Companion_9();
   Companion_instance_10 = new Companion_10();
   Echo_instance = new Echo();
+  Companion_instance_12 = new Companion_12();
+  LOG_TAG = 'FeatureMapping';
+  LOG_TAG_0 = 'Morph';
+  Companion_instance_14 = new Companion_14();
+  LOG_TAG_1 = 'PolygonMeasure';
+  Companion_instance_15 = new Companion_15();
+  Companion_instance_16 = new Companion_16();
   IconNodes_instance = new IconNodes();
   ProjectStore_instance = new ProjectStore();
   ToneGen_instance = new ToneGen();
+  Mat_instance = new Mat();
   SvgImport_instance = new SvgImport();
   cached = null;
   Math_instance = new Math_0();

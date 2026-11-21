@@ -18,6 +18,7 @@ struct SelectionPill:View {
                 if editor.selected.count>1 {QIconButton(icon:"Group",label:"Группа"){editor.group()}}
                 else if editor.selected.first?.group.isEmpty==false {QIconButton(icon:"Ungroup",label:"Разгруппировать"){editor.ungroup()}}
                 if editor.selected.count==1 {QIconButton(icon:"Layers",label:"Эхо",action:echo)}
+                else if editor.selected.count==2 {QIconButton(icon:"Shapes",label:"Переход",action:echo)}
                 QIconButton(icon:"Delete",label:"Удалить"){editor.remove()}
             }.padding(4).qSurface(40,"surfaceContainerHigh",glass:true) }
         }

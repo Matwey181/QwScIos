@@ -78,6 +78,20 @@ final class EditorTests:XCTestCase {
         XCTAssertEqual(off.nodes.count,on.nodes.count)
         XCTAssertNotEqual(off.nodes.first{$0.widget=="switch:thumb"}?.x,on.nodes.first{$0.widget=="switch:thumb"}?.x)
     }
+    @MainActor func testOriginalMorphAndSourceProjectArchive() throws {
+        let result=try OriginalCore.shared.request(["op":"morph","from":"cookie-9","to":"soft-burst"])
+        let start=try XCTUnwrap(result["start"] as? [NSNumber]),end=try XCTUnwrap(result["end"] as? [NSNumber])
+        XCTAssertEqual(start.count,end.count);XCTAssertGreaterThan(start.count,8)
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root)
+        XCTAssertNotNil(UIFont(name:"InterSA-Regular",size:16))
+        let p=try XCTUnwrap(Catalog.shared.templates.first).project
+        let url=try OriginalCore.shared.sourceArchive(p,root:store.root,kind:"codeassist")
+        let archive=try Archive(url:url,accessMode:.read)
+        XCTAssertNotNil(archive["app/module.toml"])
+        XCTAssertNotNil(archive["app/src/main/AndroidManifest.xml"])
+    }
     func testSVGPathsAndImport() throws {
         let path=VectorPath.parse("M10 10h20v20h-20z M50 50a20 10 30 1 1 30 0")
         XCTAssertGreaterThan(path.boundingBoxOfPath.width,20)

@@ -33,6 +33,7 @@ struct EditorScreen:View {
                 Color.black.opacity(0.4).ignoresSafeArea().onTapGesture{self.dialog=nil}
                 Group {
                     if dialog=="echo" { EchoPanel(editor:editor){self.dialog=nil} }
+                    else if dialog=="blend" { BlendPanel(editor:editor){self.dialog=nil} }
                     else if dialog=="screens" { ScreensPanel(editor:editor){self.dialog=nil} }
                     else { ExportPanel(editor:editor,export:export){self.dialog=nil} }
                 }.padding(.horizontal,28)
@@ -67,7 +68,7 @@ struct EditorScreen:View {
                 if editor.project.pages.count<2 && !editor.playing { QIconButton(icon:"Screens",label:"Экраны",size:36){dialog="screens"}.qSurface(20,"surfaceContainerHigh") }
                 Spacer()
             }
-            if !editor.selection.isEmpty && !editor.playing { SelectionPill(editor:editor,expanded:$dockOpen,openPanel:{panel=$0;dockOpen=false},echo:{dialog="echo"}) }
+            if !editor.selection.isEmpty && !editor.playing { SelectionPill(editor:editor,expanded:$dockOpen,openPanel:{panel=$0;dockOpen=false},echo:{dialog=editor.selected.count==2 ? "blend":"echo"}) }
             if let panel,!editor.playing { floatingPanel(panel).transition(.move(edge:.bottom).combined(with:.opacity)) }
             if editor.playing {
                 Button { editor.togglePlay() } label:{Text("Режим игры: тяните слайдеры, нажимайте переключатели. Всё, что выставили, останется. Нажмите, чтобы выйти").font(qfont(14,.semibold)).multilineTextAlignment(.center).padding(.horizontal,20).padding(.vertical,14).background(q.color("primaryContainer"),in:Capsule()).foregroundStyle(q.color("onPrimaryContainer"))}.buttonStyle(.plain)
@@ -84,7 +85,7 @@ struct EditorScreen:View {
         HStack {
             tool("Layers","Слои","layers")
             tool("Style","Стиль","style")
-            Button { togglePanel("add") } label:{ZStack{if let shape=Catalog.shared.shapes.first(where:{$0.id==(panel=="add" ? "soft-burst":"cookie-9")}){ShapePreview(shape:shape).fill(q.color("primary"))};QIcon(id:"Add",size:28,tint:q.color("onPrimary")).rotationEffect(.degrees(panel=="add" ? 45:0))}.frame(width:60,height:60)}.buttonStyle(QPressStyle()).accessibilityLabel("Добавить").accessibilityIdentifier("panel-add")
+            Button { togglePanel("add") } label:{ZStack{OriginalAddShape(open:panel=="add");QIcon(id:"Add",size:28,tint:q.color("onPrimary")).rotationEffect(.degrees(panel=="add" ? 45:0))}.frame(width:60,height:60)}.buttonStyle(QPressStyle()).accessibilityLabel("Добавить").accessibilityIdentifier("panel-add")
             tool("Align","Выровнять","align")
             VStack(spacing:0){QIconButton(icon:"Multi",label:"Выбор",selected:editor.multiSelect){editor.multiSelect.toggle()};Text("Выбор").font(qfont(11,.medium)).foregroundStyle(q.color("onSurfaceVariant"))}
         }.frame(maxWidth:.infinity).padding(.horizontal,8).padding(.vertical,6).qSurface(50,"surfaceContainerHigh",glass:true)
@@ -119,6 +120,8 @@ struct EditorScreen:View {
             menuItem("Style","Тон проекта…"){panel="document"}
             menuItem("Import","Импорт SVG"){importer=true}
             menuItem("Code","Код Compose"){export("kt")}
+            menuItem("Code","Проект Compose"){export("module")}
+            menuItem("Code","Проект CodeAssist"){export("codeassist")}
             menuItem("Export","Экспорт"){dialog="export"}
             menuItem("Export","Сохранить .qwel"){export("qwel")}
         }.padding(.vertical,8).qSurface(12,"surfaceContainerHigh").shadow(color:.black.opacity(0.2),radius:6,y:3)
@@ -126,6 +129,7 @@ struct EditorScreen:View {
     private func menuItem(_ icon:String,_ title:String,_ action:@escaping()->Void)->some View { Button {menu=false;action()}label:{HStack(spacing:12){QIcon(id:icon);Text(title).font(qfont(14));Spacer()}.padding(.horizontal,12).frame(height:48)}.buttonStyle(.plain) }
     private func export(_ kind:String) {
         do {
+            if ["module","codeassist"].contains(kind){shared=SharedFile(url:try OriginalCore.shared.sourceArchive(editor.project,root:editor.store.root,kind:kind));return}
             if kind=="qwel" { shared=SharedFile(url:try editor.store.archive(editor.project));return }
             let folder=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)

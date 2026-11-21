@@ -13,3 +13,5 @@ The Kotlin sources under app/ are preserved from the provided archive. tools/ios
 ## 0.2 interface and shared logic
 
 The original UI palette, InterSA font, 70 procedural icons and three logo contours are now transferred from the Android sources. Floating editor chrome and inline panels follow the original dp dimensions. The original PlayMode, component tap handling, Echo and ComposeCode are compiled from Kotlin to a bundled script and run locally with JavaScriptCore; no network is needed. The platform adapters replace only JVM UUID, formatting and JSON APIs. tools/build_shared_core.py rebuilds this shared logic, and tools/extract_ui_assets.py extracts the original artwork.
+
+The original AndroidX graphics-shapes 1.0.1 common sources are also compiled into the shared core, enabling the original morph calculations. The original ProjectExport produces Compose/CodeAssist archive contents, and Blend.kt handles contour interpolation with native length sampling. AndroidX source and license notices are preserved.
