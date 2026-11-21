@@ -147,14 +147,14 @@ enum SwiftExport {
                         let maxX=grouped.map{$0.x+$0.w}.max() ?? n.x+n.w
                         fractions[source]="Double(min(1,max(0,(gesture.location.x + \(n.x) - \(minX))/\(max(1,maxX-minX)))))"
                     }
-                    func calls(_ event:String)->String {
-                        Array(Set(dragRules.filter{$0.event==event}.map(\.sourceID))).sorted().map { source in
-                            "graph.emit(\(literal(event)), source: \(literal(source)), fraction: \(fractions[source] ?? "0"))"
-                        }.joined(separator:"; ")
-                    }
-                    let begin=calls("dragStart"),change=calls("drag"),end=calls("dragEnd")
-                    let onChange=[begin,change].filter{!$0.isEmpty}.joined(separator:"; ")
-                    view += ".simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { gesture in \(onChange) }.onEnded { gesture in \(end) })"
+                    let sources=Array(Set(dragRules.map(\.sourceID))).sorted()
+                    let change=sources.map { source in
+                        "graph.dragChanged(source: \(literal(source)), fraction: \(fractions[source] ?? "0"))"
+                    }.joined(separator:"; ")
+                    let end=sources.map { source in
+                        "graph.dragEnded(source: \(literal(source)), fraction: \(fractions[source] ?? "0"))"
+                    }.joined(separator:"; ")
+                    view += ".simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { gesture in \(change) }.onEnded { gesture in \(end) })"
                 }
                 view += ".position(x: CGFloat(graph.value(\(identifier), \"x\", base: \(n.x))) + \(n.w/2), y: CGFloat(graph.value(\(identifier), \"y\", base: \(n.y))) + \(n.h/2))"
 
