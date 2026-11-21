@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <unistd.h>
+#include <chrono>
 
 static void check(bool ok, const std::string& message) {
     if (!ok) throw std::runtime_error(message);
@@ -28,7 +29,7 @@ static std::string success(const char* name, const std::vector<std::string>& arg
 }
 int main() {
     namespace fs = std::filesystem;
-    fs::path dir = fs::temp_directory_path() / ("qwsc-tests-" + std::to_string(getpid()));
+    fs::path dir = fs::temp_directory_path() / ("qwsc-tests-" + std::to_string(getpid()) + "-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     try {
         fs::create_directories(dir / "decoded");
         const std::string out = dir.string(), decoded = (dir / "decoded").string();
@@ -62,11 +63,14 @@ int main() {
         auto atlas = success("nativeGetScInfo", {sc, out});
         check(fs::exists(dir / "fixture_atlas.raw"), "Editor atlas missing");
         check(atlas.find("|") != std::string::npos, "Editor sprite metadata missing: " + atlas);
+        success("nativeJoinSc", {sc, (dir / "fixture_tex.sc").string(), out});
+        success("nativePng2Sc", {png, (dir / "fixture_combined.sc").string(), "0", "0", decoded});
+        check(fs::exists(dir / "decoded/fixture_combined_tex.sc"), "SC sprite replacement output missing");
         std::ofstream(dir / "ops.txt") << "R\t0\trenamed\n";
         success("nativeEditExports", {(dir / "ops.txt").string(), sc, decoded});
         bool found = false;
         for (auto& f : fs::directory_iterator(dir / "decoded")) {
-            if (f.path().extension() == ".sc") {
+            if (f.path().filename() == "fixture_exp.sc") {
                 auto edited = success("nativeGetExports", {f.path().string()});
                 check(edited.find("renamed") != std::string::npos, "Export edit did not persist");
                 found = true;

@@ -68,6 +68,26 @@ struct FileItem: Identifiable {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
+    func preserveCompanions(for source: URL, in folder: URL) throws {
+        let stem = source.deletingPathExtension().lastPathComponent
+        let siblings = try FileManager.default.contentsOfDirectory(at: source.deletingLastPathComponent(), includingPropertiesForKeys: [.isRegularFileKey])
+        let companions = siblings.filter {
+            $0 != source && ($0.lastPathComponent.hasPrefix(stem + "_tex") || ["sctx", "ktx"].contains($0.pathExtension.lowercased())) &&
+            (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+        }
+        let outputs = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).filter { $0.pathExtension == "sc" }
+        for companion in companions {
+            let destination = folder.appendingPathComponent(companion.lastPathComponent)
+            if !FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.copyItem(at: companion, to: destination) }
+            if companion.lastPathComponent.hasPrefix(stem + "_tex") {
+                let suffix = String(companion.lastPathComponent.dropFirst(stem.count))
+                for output in outputs where !output.deletingPathExtension().lastPathComponent.hasSuffix("_tex") {
+                    let alias = folder.appendingPathComponent(output.deletingPathExtension().lastPathComponent + suffix)
+                    if !FileManager.default.fileExists(atPath: alias.path) { try FileManager.default.copyItem(at: companion, to: alias) }
+                }
+            }
+        }
+    }
 }
 
 func nativeFailed(_ text: String) -> Bool {

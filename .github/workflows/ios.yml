@@ -27,12 +27,15 @@ jobs:
           ctest --test-dir build/host --output-on-failure
       - name: Build arm64 iPhone IPA
         run: bash ios/build.sh
+      - name: Build, install and launch in iOS Simulator
+        run: bash ios/smoke_simulator.sh
       - uses: actions/upload-artifact@v4
         with:
           name: QwScIos-IPA
           path: |
             build/QwScIos.ipa
             build/QwScIos.ipa.sha256
+            build/iOS-launch.png
           if-no-files-found: error
       - name: Publish downloadable IPA
         if: github.event_name != 'pull_request'

@@ -23,7 +23,7 @@ struct Sprite: Identifiable {
     }
     func image(from atlas: UIImage) -> UIImage? {
         guard let cg = atlas.cgImage else { return nil }
-        let cropRect = rect.integral.intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        let cropRect = rect.integral.intersection(CGRect(x: 0, y: 0, width: CGFloat(cg.width), height: CGFloat(cg.height)))
         guard !cropRect.isNull, cropRect.width > 0, cropRect.height > 0, let cropped = cg.cropping(to: cropRect) else { return nil }
         let image = UIImage(cgImage: cropped)
         guard !polygons.isEmpty else { return image }
@@ -283,6 +283,7 @@ struct ExportsEditor: View {
             store.busy = true; defer { store.busy = false; store.reload() }
             message = await Core.run("nativeEditExports", [ops.path, source.path, folder.path])
             if !nativeFailed(message) {
+                try store.preserveCompanions(for: source, in: folder)
                 let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).filter { $0.pathExtension == "sc" }
                 if !files.isEmpty { share = SharePayload(urls: files) }
             }

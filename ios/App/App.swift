@@ -138,12 +138,31 @@ struct ToolView: View {
                     if field.id == "fps" && n > 120 { result = "Error: FPS должен быть от 1 до 120"; return }
                     if ["side", "screen"].contains(field.id) && n > 4096 { result = "Error: максимум 4096 px"; return }
                 }
+                if ["name", "names"].contains(field.id) && (value.contains("/") || value.contains("\\") || value.contains("\n") || value.contains("\t") || value == "." || value == "..") {
+                    result = "Error: экспортнейм не должен содержать путь или перенос строки"; return
+                }
             }
             let folder = try store.resultFolder()
-            let args = tool.fields.map { $0.kind == .output ? folder.path : (values[$0.id] ?? $0.initial) }
+            var args = tool.fields.map { $0.kind == .output ? folder.path : (values[$0.id] ?? $0.initial) }
             store.busy = true; running = true; outputs = []; result = ""
             defer { store.busy = false; running = false; store.reload() }
+            if ["Png2Sc", "Png2ScBatch"].contains(tool.id), args.count > 1 {
+                let source = URL(fileURLWithPath: args[1])
+                let stem = source.deletingPathExtension().lastPathComponent
+                let texture = source.deletingLastPathComponent().appendingPathComponent(stem + "_tex.sc")
+                let handle = try FileHandle(forReadingFrom: source)
+                let header = try handle.read(upToCount: 3) ?? Data()
+                try handle.close()
+                if header.count == 3, header[2] < 5, FileManager.default.fileExists(atPath: texture.path) {
+                    let work = folder.appendingPathComponent(".work")
+                    try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+                    let joined = await Core.run("nativeJoinSc", [source.path, texture.path, work.path])
+                    if nativeFailed(joined) { result = joined; return }
+                    args[1] = work.appendingPathComponent(stem + "_combined.sc").path
+                }
+            }
             result = await Core.run(tool.operation, args)
+            if tool.id == "EditExports", !nativeFailed(result) { try store.preserveCompanions(for: URL(fileURLWithPath: args[1]), in: folder) }
             outputs = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey]))?
                 .filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true && $0.pathExtension != "raw" }
                 .map { FileItem(url: $0) }.sorted { $0.title < $1.title } ?? []
@@ -275,8 +294,12 @@ struct AboutView: View {
     }
 }
 struct LicenseView: View {
+    private var text: String {
+        guard let url = Bundle.main.url(forResource: "Licenses", withExtension: "txt"), let value = try? String(contentsOf: url) else { return "Лицензии доступны в репозитории исходников." }
+        return value
+    }
     var body: some View {
-        ScrollView { Text((try? String(contentsOf: Bundle.main.url(forResource: "Licenses", withExtension: "txt")!)) ?? "Лицензии доступны в репозитории исходников.").font(.caption.monospaced()).textSelection(.enabled).padding() }
+        ScrollView { Text(text).font(.caption.monospaced()).textSelection(.enabled).padding() }
             .navigationTitle("Лицензии")
     }
 }
