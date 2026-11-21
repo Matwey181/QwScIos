@@ -8,6 +8,7 @@ import SwiftUI
     @Published var snap=true
     @Published var fitVersion=0
     @Published var requestPanel:String?
+    @Published var requestTextEdit:String?
     @Published var eyedropTarget:WritableKeyPath<Node,Int64>?
     @Published var showGrid=true
     @Published var canvasScale:CGFloat=1
@@ -31,7 +32,20 @@ import SwiftUI
     func pendingSaveForTestingCleanup() { pendingSave?.cancel() }
     func saveNow() { do { try store.save(project) } catch { self.error=error.localizedDescription } }
     func edit(_ block:(inout Project)->Void) { checkpoint();block(&project);saveSoon() }
-    func change(_ block:(inout Node)->Void) { edit { p in for i in p.nodes.indices where selection.contains(p.nodes[i].id) { block(&p.nodes[i]) } } }
+    func reflowText(_ node:inout Node) {
+        guard node.kind=="TEXT" else{return}
+        node.h=TextLayout(node,font:renderer.font(node)).height
+    }
+    func commitText(_ id:String,text:String) {
+        guard let index=project.nodes.firstIndex(where:{$0.id==id && $0.kind=="TEXT"}),project.nodes[index].text != text else{return}
+        edit { p in p.nodes[index].text=text;reflowText(&p.nodes[index]) }
+    }
+    func change(_ block:(inout Node)->Void) {
+        edit { p in for i in p.nodes.indices where selection.contains(p.nodes[i].id) {
+            let old=p.nodes[i];block(&p.nodes[i]);let n=p.nodes[i]
+            if n.kind=="TEXT" && (old.text != n.text || old.w != n.w || old.fontSize != n.fontSize || old.font != n.font || old.weight != n.weight) {reflowText(&p.nodes[i])}
+        } }
+    }
     func undo() { guard let old=undoStack.popLast() else { return };redoStack.append(project);project=old;selection.formIntersection(Set(project.nodes.map(\.id)));saveSoon() }
     func redo() { guard let next=redoStack.popLast() else { return };undoStack.append(project);project=next;saveSoon() }
     func choose(_ node:Node?) {
@@ -42,10 +56,13 @@ import SwiftUI
     }
     func add(_ kind:String,shape:ShapeItem?=nil) {
         var n=Node();n.kind=kind;n.name=shape?.name ?? ["RECT":"Прямоугольник","ELLIPSE":"Эллипс","TEXT":"Текст"][kind] ?? "Фигура"
-        n.x=project.w/2-60;n.y=project.h/2-45;n.w=120;n.h=90;n.corner=kind=="RECT" ? 16:0
+        n.w=kind=="RECT" ? 160:128;n.h=kind=="RECT" ? 96:128;n.corner=kind=="RECT" ? 16:0
         n.fill=project.tone.colors.first ?? -16749974;n.shapeId=shape?.id ?? ""
         if kind=="TEXT" { n.text="Новый текст";n.fontSize=28;n.w=180;n.h=40;n.fill = -14869216 }
+        if kind=="TEXT" { n.ratioLock=false;reflowText(&n) }
+        n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2
         edit { $0.nodes.append(n) };selection=[n.id]
+        if kind=="TEXT" { requestTextEdit=n.id }
     }
     func addComponent(_ item:CatalogItem) {
         let g=UUID().uuidString+"~"+item.id,ox=(project.w-item.project.w)/2,oy=(project.h-item.project.h)/2
@@ -62,7 +79,10 @@ import SwiftUI
         var n=Node();n.kind="IMAGE";n.name=name;n.asset=file
         let s=min(project.w*0.8/image.size.width,project.h*0.8/image.size.height,1)
         n.w=image.size.width*s;n.h=image.size.height*s;n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2;n.ratioLock=true
+        if kind=="TEXT" { n.ratioLock=false;reflowText(&n) }
+        n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2
         edit { $0.nodes.append(n) };selection=[n.id]
+        if kind=="TEXT" { requestTextEdit=n.id }
     }
     func duplicate() {
         var groups:[String:String]=[:]

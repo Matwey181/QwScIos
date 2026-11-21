@@ -64,7 +64,7 @@ struct EditorCanvas:UIViewRepresentable {
     @objc func twoTap(){if gestureOn("UNDO_TAP"){editor.undo()}}
     @objc func threeTap(){if gestureOn("REDO_TAP"){editor.redo()}}
     @objc func longPress(_ g:UILongPressGestureRecognizer){guard g.state == .began,!editor.playing else{return};let point=document(g.location(in:self));let hit=editor.project.nodes.reversed().first{$0.visible && !$0.locked && $0.contains(point)};if let hit,gestureOn("LONG_LAYER"){editor.choose(hit);editor.requestPanel="style"}else if hit==nil,gestureOn("LONG_EMPTY"){editor.requestPanel="add"}}
-    @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.project.nodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];editor.requestPanel="style"}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
+    @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.project.nodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
         if let key=editor.eyedropTarget {
@@ -108,11 +108,14 @@ struct EditorCanvas:UIViewRepresentable {
                     if [0,3,7].contains(handle) { target.origin.x += dx;target.size.width -= dx } else if [1,2,5].contains(handle) { target.size.width += dx }
                     if [0,1,4].contains(handle) { target.origin.y += dy;target.size.height -= dy } else if [2,3,6].contains(handle) { target.size.height += dy }
                     target.size.width=max(4,target.width);target.size.height=max(4,target.height)
-                    if out[i].ratioLock { target.size.height=target.width*box.height/max(1,box.width) }
+                    if out[i].ratioLock && !(out[i].kind=="TEXT" && startNodes.count==1) { target.size.height=target.width*box.height/max(1,box.width) }
                     let sx=target.width/max(1,box.width),sy=target.height/max(1,box.height)
                     out[i].x=target.minX+(startNodes[i].x-box.minX)*sx;out[i].y=target.minY+(startNodes[i].y-box.minY)*sy
                     out[i].w=max(1,startNodes[i].w*sx);out[i].h=max(1,startNodes[i].h*sy)
-                    if out[i].kind=="TEXT" { out[i].fontSize=startNodes[i].fontSize*min(sx,sy) }
+                    if out[i].kind=="TEXT" {
+                        if startNodes.count>1 {out[i].fontSize=startNodes[i].fontSize*min(sx,sy)}
+                        editor.reflowText(&out[i])
+                    }
                 case "rotate":
                     let center=CGPoint(x:box.midX,y:box.midY)
                     let delta=(atan2(p.y-center.y,p.x-center.x)-atan2(startPoint.y-center.y,startPoint.x-center.x))*180 / .pi

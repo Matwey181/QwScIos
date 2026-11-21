@@ -1,5 +1,23 @@
 import XCTest
 final class EditorUITests:XCTestCase {
+    func testTextEditorOpensOnCreationAndDoubleTap() {
+        continueAfterFailure=false
+        let app=XCUIApplication();app.launch()
+        app.buttons["newProject"].tap();app.swipeUp();app.buttons["createProject"].tap()
+        let add=app.buttons["panel-add"]
+        XCTAssertTrue(add.waitForExistence(timeout:10));add.tap()
+        app.buttons["add-TEXT"].tap()
+        let input=app.textViews["textEditorInput"]
+        XCTAssertTrue(input.waitForExistence(timeout:10))
+        input.tap();input.typeText(" edited")
+        app.buttons["textEditorDone"].tap()
+        XCTAssertTrue(input.waitForNonExistence(timeout:5))
+        let canvas=app.otherElements["editorCanvas"]
+        let point=canvas.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).withOffset(CGVector(dx:0,dy:-32))
+        point.doubleTap()
+        XCTAssertTrue(input.waitForExistence(timeout:5))
+        XCTAssertTrue((input.value as? String)?.contains("edited") == true)
+    }
     func testCreateEditReopenProject() {
         continueAfterFailure=false
         let app=XCUIApplication();app.launch()

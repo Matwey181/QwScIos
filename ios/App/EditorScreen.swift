@@ -36,6 +36,7 @@ struct EditorScreen:View {
                     if dialog=="echo" { EchoPanel(editor:editor){self.dialog=nil} }
                     else if dialog=="blend" { BlendPanel(editor:editor){self.dialog=nil} }
                     else if dialog=="screens" { ScreensPanel(editor:editor){self.dialog=nil} }
+                    else if dialog=="text",let id=editor.selected.first?.id { TextEditPanel(editor:editor,nodeID:id){self.dialog=nil} }
                     else { ExportPanel(editor:editor,export:export){self.dialog=nil} }
                 }.padding(.horizontal,28)
             }
@@ -44,6 +45,7 @@ struct EditorScreen:View {
         .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in switch result { case .success(let urls):if let url=urls.first{importFile(url)};case .failure(let e):editor.error=e.localizedDescription } }
         .onChange(of:photos) { _,items in Task { for item in items{do{if let data=try await item.loadTransferable(type:Data.self){try editor.addImage(data,name:"Картинка")}}catch{editor.error=error.localizedDescription}};photos=[] } }
         .onChange(of:editor.requestPanel){_,value in if let value{panel=value;editor.requestPanel=nil}}
+        .onChange(of:editor.requestTextEdit){_,id in if let id{editor.selection=[id];panel=nil;dockOpen=false;dialog="text";editor.requestTextEdit=nil}}
         .onChange(of:phase) { _,phase in if phase != .active { editor.saveNow() } }
         .onDisappear { if editor.playing{editor.originalPlay.stop()};editor.saveNow() }
         .alert("Не удалось выполнить действие",isPresented:Binding(get:{editor.error != nil},set:{if !$0{editor.error=nil}})){Button("OK"){editor.error=nil}}message:{Text(editor.error ?? "")}

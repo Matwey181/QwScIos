@@ -31,7 +31,7 @@ enum SVGExport {
                 if !n.font.isEmpty,let bytes=try? Data(contentsOf:root.appendingPathComponent("fonts").appendingPathComponent(n.font)) {
                     family="q\(key)";definitions += "<style>@font-face{font-family:'\(family)';src:url(data:font/ttf;base64,\(bytes.base64EncodedString()))}</style>"
                 }
-                content="<text font-family=\"\(family)\" font-size=\"\(n.fontSize)\" font-weight=\"\(n.weight)\">"+n.text.components(separatedBy:"\n").enumerated().map { index,line in "<tspan x=\"0\" y=\"\(n.fontSize+CGFloat(index)*n.fontSize*1.25)\">\(xml(line))</tspan>" }.joined()+"</text>"
+                content="<text font-family=\"\(family)\" font-size=\"\(n.fontSize)\" font-weight=\"\(n.weight)\">"+TextLayout(n,font:DocumentRenderer(root:root).font(n)).lines.enumerated().map { index,line in "<tspan x=\"0\" y=\"\(n.fontSize+CGFloat(index)*n.fontSize*1.25)\">\(xml(line))</tspan>" }.joined()+"</text>"
             } else if n.kind=="IMAGE" {
                 if let data=try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset)) {
                     let mime=n.asset.lowercased().hasSuffix("jpg") ? "image/jpeg":"image/png"

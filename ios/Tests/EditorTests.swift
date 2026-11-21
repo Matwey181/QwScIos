@@ -4,6 +4,42 @@ import ZIPFoundation
 @testable import QwelIos
 
 final class EditorTests:XCTestCase {
+    @MainActor func testTextReflowsWithoutShrinkingAndUndoRestoresEdit() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let e=Editor(Project(),store:ProjectStore(root:root))
+        defer{e.pendingSaveForTestingCleanup();try? FileManager.default.removeItem(at:root)}
+        e.add("TEXT")
+        let id=try XCTUnwrap(e.selected.first?.id)
+        XCTAssertEqual(e.requestTextEdit,id)
+        let original=e.selected[0].text
+        e.commitText(id,text:"Первая строка и ещё несколько слов для проверки переноса текста")
+        e.undo();XCTAssertEqual(e.selected[0].text,original)
+        e.redo()
+        e.change{$0.w=260}
+        let wide=e.selected[0]
+        e.change{$0.w=80}
+        let narrow=e.selected[0]
+        XCTAssertEqual(narrow.fontSize,wide.fontSize)
+        XCTAssertGreaterThan(narrow.h,wide.h)
+        let layout=TextLayout(narrow,font:e.renderer.font(narrow))
+        XCTAssertGreaterThan(layout.lines.count,1)
+        XCTAssertEqual(narrow.h,layout.height)
+        let svg=SVGExport.make(e.project,root:root)
+        XCTAssertEqual(svg.components(separatedBy:"<tspan ").count-1,layout.lines.count)
+        XCTAssertNotNil(e.renderer.png(e.project,scale:0.25))
+    }
+    @MainActor func testNewShapesAreCenteredAndNotSquashed() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let e=Editor(Project(),store:ProjectStore(root:root))
+        defer{e.pendingSaveForTestingCleanup();try? FileManager.default.removeItem(at:root)}
+        for kind in ["ELLIPSE","SHAPE"] {
+            e.add(kind)
+            let node=try XCTUnwrap(e.selected.first)
+            XCTAssertEqual(node.w,node.h)
+            XCTAssertEqual(node.center.x,e.project.w/2)
+            XCTAssertEqual(node.center.y,e.project.h/2)
+        }
+    }
     @MainActor func testOriginalCatalogAndRendering() throws {
         let catalog=Catalog.shared
         XCTAssertEqual(catalog.components.count,81);XCTAssertEqual(catalog.templates.count,15);XCTAssertEqual(catalog.shapes.count,42)

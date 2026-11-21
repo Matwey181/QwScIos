@@ -11,6 +11,11 @@ struct InspectorPanel:View {
             if let n=node {
                 if editor.selected.count==1 {
                     QTextField(title:"Имя слоя",text:bind(\.name,""))
+                    if n.kind=="TEXT" {
+                        TextField("Текст",text:bind(\.text,""),axis:.vertical).lineLimit(2...5).font(qfont(16)).padding(16).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
+                        Button("Редактировать текст"){editor.requestTextEdit=n.id}.font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))
+                        QNumber(title:"Ширина текста",value:bind(\.w,180))
+                    }
                     HStack(spacing:8){QNumber(title:"X",value:bind(\.x,0));QNumber(title:"Y",value:bind(\.y,0))}
                     if n.kind != "TEXT"{HStack(spacing:8){QNumber(title:"Ширина",value:bind(\.w,100));QNumber(title:"Высота",value:bind(\.h,100))}}
                     HStack(spacing:8){QNumber(title:"Поворот",value:bind(\.rotation,0));if n.kind != "TEXT"{QSwitch(on:bind(\.ratioLock,false));Text("Пропорции").font(qfont(14,.semibold))}}
@@ -35,7 +40,7 @@ struct InspectorPanel:View {
                 }
                 ActionPanel(editor:editor,node:n)
                 if n.kind=="SHAPE"{title("Фигура");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(Catalog.shared.shapes){shape in Button{editor.change{$0.shapeId=shape.id}}label:{ShapePreview(shape:shape).fill(q.color(n.shapeId==shape.id ? "onPrimaryContainer":"primary")).frame(width:34,height:34).frame(width:56,height:56).qSurface(n.shapeId==shape.id ? 28:16,n.shapeId==shape.id ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}}}}
-                if n.kind=="TEXT"{QTextField(title:"Текст",text:bind(\.text,""));slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
+                if n.kind=="TEXT"{slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
             }
         }
     }

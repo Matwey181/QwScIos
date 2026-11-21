@@ -69,7 +69,7 @@ final class DocumentRenderer {
         }
         let rect=CGRect(x:0,y:0,width:n.w,height:n.h)
         if n.kind=="TEXT" {
-            (n.text as NSString).draw(in:rect,withAttributes:[.font:font(n),.foregroundColor:UIColor(argb:n.fill)])
+            TextLayout(n,font:font(n)).draw()
             return
         }
         if n.kind=="IMAGE" { image(n.asset)?.draw(in:rect);return }
