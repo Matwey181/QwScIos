@@ -19,7 +19,7 @@ struct QColorRow:View {
                 ForEach(Array(colors.enumerated()),id:\.offset){i,value in swatch(value,Int64(i))}
                 ForEach([Int64(-1),Int64(-16777216),0],id:\.self){swatch($0,-1)}
             }}
-            if !recent.colors.isEmpty{ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){Text("Недавние").font(qfont(11)).foregroundStyle(q.color("onSurfaceVariant"));ForEach(recent.colors,id:\.self){swatch($0,-1)}}}
+            if !recent.colors.isEmpty{ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){Text("Недавние").font(qfont(11)).foregroundStyle(q.color("onSurfaceVariant"));ForEach(recent.colors,id:\.self){swatch($0,-1)}}}}
         }.fullScreenCover(isPresented:$picker){ZStack{Color.black.opacity(0.4).ignoresSafeArea().onTapGesture{picker=false};QColorDialog(initial:color,cancel:{picker=false},confirm:{choose($0,-1);picker=false}).padding(.horizontal,28)}.presentationBackground(.clear).modifier(OriginalTheme())}
     }
     private func choose(_ value:Int64,_ index:Int64){if let picked{picked(value,index)}else{color=value};recent.record(value)}

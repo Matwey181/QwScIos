@@ -27,7 +27,7 @@ jobs:
       - name: Build arm64 IPA
         run: |
           set -o pipefail
-          xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/Device CODE_SIGNING_ALLOWED=NO build > build-device.log 2>&1 || { tail -150 build-device.log; exit 1; }
+          xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/Device CODE_SIGNING_ALLOWED=NO build > build-device.log 2>&1 || { python3 -c 'from pathlib import Path; print("\n".join(l for l in Path("build-device.log").read_text().splitlines() if "error:" in l))'; tail -60 build-device.log; exit 1; }
           mkdir -p build/Payload
           cp -R build/Device/Build/Products/Release-iphoneos/QwelIos.app build/Payload/
           cd build
