@@ -5,11 +5,16 @@ struct LinkRulesEditor:View {
     let source:Node
     @Environment(\.q) private var q
     @State private var expandedID:String?
+    @State private var search=""
+    private var visibleRules:[InteractionLink]{editor.project.links.filter{rule in search.isEmpty || (summary(rule)+" "+(InteractionLink.effects.first{$0.0==rule.mode}?.1 ?? "")+" "+(InteractionLink.properties.first{$0.0==rule.property}?.1 ?? "")).localizedCaseInsensitiveContains(search)}}
     var body:some View {
         VStack(alignment:.leading,spacing:18){
             intro
             presets
-            ForEach(editor.project.links){link in ruleCard(link)}
+            QTextField(title:"Найти связку, слой или действие",text:$search)
+            Text("Связки · \(visibleRules.count)").font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))
+            ForEach(visibleRules){link in ruleCard(link)}
+            if visibleRules.isEmpty{Text(search.isEmpty ? "Создайте связку из быстрого старта.":"Ничего не найдено").font(qfont(14))}
             LinkPill(title:"Новая связка",icon:"plus",prominent:true){preset("custom")}
         }
     }
@@ -59,7 +64,7 @@ struct LinkRulesEditor:View {
     private func summary(_ rule:InteractionLink)->String {
         let from=editor.project.nodes.first{$0.id==rule.sourceID}?.name ?? "Источник"
         let to=editor.project.nodes.first{$0.id==rule.targetID}?.name ?? "Цель"
-        return "\(from) → \(to)"
+        return "\(from) → \(to) · \(InteractionLink.effects.first{$0.0==rule.mode}?.1 ?? rule.mode)"
     }
     private func binding(_ id:String)->Binding<InteractionLink>{Binding(get:{editor.project.links.first{$0.id==id} ?? InteractionLink()},set:{next in update(id){$0=next}})}
     private func update(_ id:String,_ change:(inout InteractionLink)->Void){editor.edit{p in if let i=p.links.firstIndex(where:{$0.id==id}){change(&p.links[i])}}}
@@ -132,8 +137,16 @@ private struct LinkRuleForm:View {
             else if link.property != "progress" {number("Значение",value:$link.value)}
             if link.mode=="bind" && link.property=="morph"{boundsControls}
         }
-        if ["animate","set","text","state"].contains(link.mode){QToggle("При повторном нажатии — обратно",isOn:Binding(get:{link.alternate ?? false},set:{link.alternate=$0}))}
+        if ["animate","set","text","state","echo"].contains(link.mode){
+            LinkChoiceField(title:"Повторное нажатие",selection:Binding(get:{link.pauseOnRepeat==true ? "pause":link.alternate==true ? "return":"restart"},set:{link.pauseOnRepeat=$0=="pause";link.alternate=$0=="return"}),items:repeatChoices)
+        }
         if link.mode=="echo"{number("Сила пульсации",value:$link.value)}
+    }
+    private var repeatChoices:[(String,String)] {
+        var choices=[("restart","Начать заново")]
+        if link.mode != "echo"{choices.append(("return","Вернуть обратно"))}
+        if ["animate","echo","state"].contains(link.mode){choices.append(("pause","Пауза и продолжение"))}
+        return choices
     }
     private var boundsControls:some View {HStack(spacing:10){number("От",value:$link.from);number("До",value:$link.to)}}
     @ViewBuilder private var textControls:some View {

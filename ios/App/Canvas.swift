@@ -57,7 +57,14 @@ struct EditorCanvas:UIViewRepresentable {
             for y in (editor.project.studio?.guidesY ?? [])+editor.snapGuidesY{ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))}
             ctx.strokePath();ctx.restoreGState()
         }
-        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.canvasProject,in:ctx,background:false,includeReferences:!editor.playing);ctx.restoreGState()
+        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.canvasProject,in:ctx,background:false,includeReferences:!editor.playing)
+        if !editor.playing {
+            ctx.saveGState();ctx.setStrokeColor(UIColor.systemRed.withAlphaComponent(0.65).cgColor);ctx.setLineWidth(1.25/scale)
+            for x in editor.smartGuidesX{ctx.move(to:CGPoint(x:x,y:0));ctx.addLine(to:CGPoint(x:x,y:editor.project.h))}
+            for y in editor.smartGuidesY{ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))}
+            ctx.strokePath();ctx.restoreGState()
+        }
+        ctx.restoreGState()
         ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).cgColor);ctx.setLineWidth(1/scale);ctx.stroke(page)
         if !editor.playing,let box=editor.bounds {
             ctx.setLineWidth(2/scale);ctx.setStrokeColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.setFillColor(UIColor(argb:palette.argb("surface")).cgColor);ctx.stroke(box)
@@ -171,6 +178,6 @@ struct EditorCanvas:UIViewRepresentable {
             _ = editor.undoStack.popLast()
         }
         if g.state == .ended{editor.finishLayoutGesture(original:startNodes)}
-        if g.state == .ended || g.state == .cancelled { editor.saveSoon();startNodes=[];editor.snapGuidesX=[];editor.snapGuidesY=[] }
+        if g.state == .ended || g.state == .cancelled { editor.saveSoon();startNodes=[];editor.snapGuidesX=[];editor.snapGuidesY=[];editor.smartGuidesX=[];editor.smartGuidesY=[] }
     }
 }

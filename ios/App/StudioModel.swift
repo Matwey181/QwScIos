@@ -45,6 +45,8 @@ struct StudioDocument:Codable,Equatable {
     var gridSnap=false
     var gridSize:CGFloat=8
     var spacingSnap=true
+    var smartPlacement:Bool?
+    var smartGap:CGFloat?
 }
 struct ReusableComponent:Codable,Identifiable,Equatable {
     var id=UUID().uuidString

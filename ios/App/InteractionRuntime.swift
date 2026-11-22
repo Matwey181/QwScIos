@@ -5,6 +5,7 @@ import QuartzCore
 /// Nothing here edits the original design: effects are projected over a copy.
 @MainActor final class InteractionRuntime {
     struct Motion {
+        var owner:String = ""
         var sourceID: String
         var targetID: String
         var property: String
@@ -19,6 +20,7 @@ import QuartzCore
         var colorTo: Int64
     }
     struct EchoPulse {
+        var owner:String = ""
         var nodeID: String
         var started: Double
         var duration: Double
@@ -31,6 +33,7 @@ import QuartzCore
     private(set) var number: [String: [String: Double]] = [:]
     private(set) var text: [String: String] = [:]
     private(set) var visibility: [String: Bool] = [:]
+    private var paused:[String:Double]=[:]
     private var motions: [Motion] = []
     private var toggled:Set<String>=[]
     private var morphs:[String:LinkMorph]=[:]
@@ -51,7 +54,7 @@ import QuartzCore
 
     func start(_ document: Project,widgetValues:[String:Double]=[:]) {
         project = document
-        toggled=[];morphs=[:];valueEvents=[];stateLayers=[:]
+        paused=[:];toggled=[];morphs=[:];valueEvents=[];stateLayers=[:]
         for rule in document.links where rule.enabled && rule.property=="morph" {
             if let node=document.nodes.first(where:{$0.id==rule.targetID}),let target=rule.shapeID {
                 morphs[node.id]=LinkMorph(from:node.shapeId,to:target)
@@ -70,7 +73,7 @@ import QuartzCore
     }
 
     func stop() {
-        playback.stop();stateLayers=[:]
+        playback.stop();stateLayers=[:];paused=[:]
         motions.removeAll()
         echoes.removeAll()
         pending.removeAll()
@@ -95,6 +98,16 @@ import QuartzCore
         guard let node = project.nodes.first(where: { $0.id == link.targetID }) else { return }
         let target = node.id
         let now = CACurrentMediaTime()
+        if link.pauseOnRepeat==true {
+            if let stopped=paused.removeValue(forKey:link.id){
+                let delta=now-stopped
+                for i in motions.indices where motions[i].owner==link.id{motions[i].start+=delta}
+                for i in echoes.indices where echoes[i].owner==link.id{echoes[i].started+=delta}
+                for i in pending.indices where pending[i].link.id==link.id{pending[i].at+=delta}
+                return
+            }
+            if motions.contains(where:{$0.owner==link.id}) || echoes.contains(where:{$0.owner==link.id}) || pending.contains(where:{$0.link.id==link.id}){paused[link.id]=now;return}
+        }
         if link.delay > 0 && !["animate","echo"].contains(link.mode) {
             var delayed=link
             delayed.delay=0
@@ -120,7 +133,7 @@ import QuartzCore
             text[target] = returning ? (link.reverseText ?? node.text):link.text
         case "echo":
             if !(echoes.last(where:{$0.nodeID==target}).map{now-$0.started<0.08} ?? false) {
-                echoes.append(EchoPulse(nodeID: target, started: now + max(0,link.delay),
+                echoes.append(EchoPulse(owner:link.id,nodeID: target, started: now + max(0,link.delay),
                                         duration: max(0.15,link.duration), size: max(0.1,link.value),easing:link.easing,repeats:link.repeats))
                 if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
             }
@@ -137,7 +150,7 @@ import QuartzCore
             let from = link.property == "progress" && link.alternate != true ? 0 : current(node, link.property)
             let to = returning ? baseValue(node,link.property) : colorProperty ? Double(link.color) : ["progress","morph"].contains(link.property) ? 1 : link.value
             motions.removeAll { $0.targetID == target && $0.property == link.property }
-            motions.append(Motion(sourceID: link.sourceID, targetID: target,
+            motions.append(Motion(owner:link.id,sourceID: link.sourceID, targetID: target,
                                   property: link.property, start: now + max(0,link.delay),
                                   duration: max(0.01,link.duration), from: from, initialFrom: from,
                                   to: to, easing: link.easing, repeats: link.repeats,
@@ -155,13 +168,13 @@ import QuartzCore
             for property in properties{
                 let from=current(source,property),to=property=="opacity" && !target.visible ? 0:baseValue(target,property)
                 motions.removeAll{$0.targetID==target.id && $0.property==property}
-                motions.append(Motion(sourceID:rule.sourceID,targetID:target.id,property:property,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:from,initialFrom:from,to:to,easing:rule.easing,repeats:false,colorFrom:Int64(from),colorTo:Int64(to)))
+                motions.append(Motion(owner:rule.id,sourceID:rule.sourceID,targetID:target.id,property:property,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:from,initialFrom:from,to:to,easing:rule.easing,repeats:false,colorFrom:Int64(from),colorTo:Int64(to)))
             }
-            if !target.visible{var hide=rule;hide.id=UUID().uuidString;hide.targetID=target.id;hide.mode="set";hide.property="visible";hide.value=0;hide.alternate=false;hide.delay=0;pending.append(Pending(link:hide,at:now+max(0,rule.delay)+max(0.01,rule.duration),fraction:nil))}
+            if !target.visible{var hide=rule;hide.id=rule.id;hide.pauseOnRepeat=false;hide.targetID=target.id;hide.mode="set";hide.property="visible";hide.value=0;hide.alternate=false;hide.delay=0;pending.append(Pending(link:hide,at:now+max(0,rule.delay)+max(0.01,rule.duration),fraction:nil))}
             if source.kind=="SHAPE" && target.kind=="SHAPE" && source.shapeId != target.shapeId,let morph=LinkMorph(from:source.shapeId,to:target.shapeId){
                 morphs[target.id]=morph;number[target.id,default:[:]]["morph"]=0
                 motions.removeAll{$0.targetID==target.id && $0.property=="morph"}
-                motions.append(Motion(sourceID:rule.sourceID,targetID:target.id,property:"morph",start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:0,initialFrom:0,to:1,easing:rule.easing,repeats:false,colorFrom:0,colorTo:1))
+                motions.append(Motion(owner:rule.id,sourceID:rule.sourceID,targetID:target.id,property:"morph",start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:0,initialFrom:0,to:1,easing:rule.easing,repeats:false,colorFrom:0,colorTo:1))
             }
         }
     }
@@ -216,12 +229,13 @@ import QuartzCore
     @discardableResult func tick(at now: Double = CACurrentMediaTime()) -> Bool {
         let hadMotion = active
         let clockChanged=playback.tick(now)
-        let due=pending.filter{$0.at<=now}
-        pending.removeAll{$0.at<=now}
+        let due=pending.filter{$0.at<=now && paused[$0.link.id]==nil}
+        pending.removeAll{$0.at<=now && paused[$0.link.id]==nil}
         for entry in due {execute(entry.link,fraction:entry.fraction)}
         var finished: [String] = []
         var kept: [Motion] = []
         for var motion in motions {
+            if paused[motion.owner] != nil{kept.append(motion);continue}
             if now < motion.start { kept.append(motion); continue }
             let t = min(1, max(0,(now-motion.start)/motion.duration))
             let eased = InteractionLink.eased(t,motion.easing)
@@ -233,7 +247,7 @@ import QuartzCore
                     let a = Double((from >> shift) & 255), b = Double((to >> shift) & 255)
                     rgba |= UInt32(min(255,max(0,(a+(b-a)*eased).rounded()))) << shift
                 }
-                set(motion.targetID,"fill",Double(Int32(bitPattern:rgba)))
+                set(motion.targetID,motion.property,Double(Int32(bitPattern:rgba)))
             } else {
                 set(motion.targetID,motion.property,motion.from+(motion.to-motion.from)*eased)
             }
@@ -252,7 +266,7 @@ import QuartzCore
         var budget=64
         while !valueEvents.isEmpty && budget>0 {let event=valueEvents.removeFirst();budget-=1;fire("valueChanged",sourceID:event.0,fraction:event.1)}
         valueEvents=[]
-        echoes.removeAll { !$0.repeats && now > $0.started+$0.duration }
+        echoes.removeAll { paused[$0.owner]==nil && !$0.repeats && now > $0.started+$0.duration }
         // Completion can start new animations, but don't recursively call completion.
         for id in Set(finished) { fire("finished",sourceID:id) }
         return clockChanged || hadMotion || !motions.isEmpty
@@ -323,6 +337,7 @@ import QuartzCore
             }
         }
         for pulse in echoes {
+            let now=paused[pulse.owner] ?? now
             guard now>=pulse.started,
                   let original=output.nodes.first(where:{$0.id==pulse.nodeID}) else {continue}
             let elapsed=max(0,now-pulse.started)

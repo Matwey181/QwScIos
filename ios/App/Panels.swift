@@ -4,6 +4,7 @@ struct InspectorPanel:View {
     @ObservedObject var editor:Editor
     var importFont:()->Void
     @State private var showInteractions=false
+    @State private var formatText=false
     @Environment(\.q) var q
     var node:Node?{editor.selected.first}
     func bind<T>(_ key:WritableKeyPath<Node,T>,_ fallback:T)->Binding<T>{Binding(get:{node?[keyPath:key] ?? fallback},set:{v in editor.change{n in if let d=v as? CGFloat,[\Node.w as AnyKeyPath,\Node.h as AnyKeyPath,\Node.fontSize as AnyKeyPath].contains(key){n[keyPath:key]=max(1,d) as! T}else{n[keyPath:key]=v}}})}
@@ -70,7 +71,7 @@ struct InspectorPanel:View {
                     InteractionEditorPanel(editor:editor,sourceID:n.id).modifier(OriginalTheme())
                 }
                 if n.kind=="SHAPE"{title("Фигура");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(Catalog.shared.shapes){shape in Button{editor.change{$0.shapeId=shape.id}}label:{ShapePreview(shape:shape).fill(q.color(n.shapeId==shape.id ? "onPrimaryContainer":"primary")).frame(width:34,height:34).frame(width:56,height:56).qSurface(n.shapeId==shape.id ? 28:16,n.shapeId==shape.id ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}}}}
-                if n.kind=="TEXT"{slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
+                if n.kind=="TEXT"{Button("Оформление текста и выделения"){formatText=true}.font(qfont(14,.semibold)).sheet(isPresented:$formatText){TextEditPanel(editor:editor,nodeID:n.id,formattingOnly:true,close:{formatText=false}).padding(20).modifier(OriginalTheme())};slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
             }
         }
     }

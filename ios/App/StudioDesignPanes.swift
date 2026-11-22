@@ -27,6 +27,8 @@ struct StudioLayout:View {
     var body:some View {VStack(spacing:16){
         StudioCard(title:"Умные привязки"){
             QToggle("Привязки к краям и центрам",isOn:$editor.snap)
+            QToggle("Умная расстановка рядом",isOn:Binding(get:{editor.project.studio?.smartPlacement ?? true},set:{v in editor.studio{$0.smartPlacement=v};editor.smartGuidesX=[];editor.smartGuidesY=[]}))
+            if editor.project.studio?.smartPlacement != false{QNumber(title:"Отступ между соседями",value:Binding(get:{editor.project.studio?.smartGap ?? 16},set:{v in editor.studio{$0.smartGap=max(0,v)}}))}
             QToggle("Равные промежутки",isOn:Binding(get:{editor.project.studio?.spacingSnap ?? true},set:{v in editor.studio{$0.spacingSnap=v}}))
             QToggle("Привязка к сетке",isOn:Binding(get:{editor.project.studio?.gridSnap ?? false},set:{v in editor.studio{$0.gridSnap=v}}))
             QNumber(title:"Шаг сетки",value:Binding(get:{editor.project.studio?.gridSize ?? 8},set:{v in editor.studio{$0.gridSize=max(1,v)}}))

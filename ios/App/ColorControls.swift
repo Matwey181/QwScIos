@@ -50,5 +50,13 @@ struct QNumber:View {
     var title:String
     @Binding var value:CGFloat
     @Environment(\.q) var q
-    var body:some View{VStack(alignment:.leading,spacing:2){Text(title).font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"));TextField("",value:Binding<Double>(get:{Double(value)},set:{if $0.isFinite{value=CGFloat($0)}}),format:.number.precision(.fractionLength(0...2))).font(qfont(16)).keyboardType(.numbersAndPunctuation)}.padding(.horizontal,16).padding(.vertical,10).frame(minHeight:56).frame(maxWidth:.infinity,alignment:.leading).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))}
+    @State private var draft=""
+    @FocusState private var editing:Bool
+    private func refresh(){draft=Double(value).formatted(.number.grouping(.never).precision(.fractionLength(0...2)))}
+    var body:some View{VStack(alignment:.leading,spacing:2){Text(title).font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"));TextField("",text:$draft).font(qfont(16)).keyboardType(.numbersAndPunctuation).focused($editing)
+        .onAppear{refresh()}
+        .onChange(of:draft){_,text in guard editing else{return};let normalized=text.replacingOccurrences(of:",",with:".").replacingOccurrences(of:"−",with:"-");if let number=Double(normalized),number.isFinite{value=CGFloat(number)}}
+        .onChange(of:value){_,_ in if !editing{refresh()}}
+        .onChange(of:editing){_,focused in if !focused{refresh()}}
+        .onSubmit{refresh();editing=false}}.padding(.horizontal,16).padding(.vertical,10).frame(minHeight:56).frame(maxWidth:.infinity,alignment:.leading).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))}
 }

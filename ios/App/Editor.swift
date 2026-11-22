@@ -14,6 +14,8 @@ import SwiftUI
     @Published var overlapIDs:[String]=[]
     @Published var showLayerPicker=false
     @Published var showGrid=true
+    @Published var smartGuidesX:[CGFloat]=[]
+    @Published var smartGuidesY:[CGFloat]=[]
     @Published var snapGuidesX:[CGFloat]=[]
     @Published var snapGuidesY:[CGFloat]=[]
     @Published var canvasScale:CGFloat=1

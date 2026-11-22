@@ -22,6 +22,7 @@ private struct QwelRule {
     var repeats: Bool
     var enabled: Bool
     var id: String = ""
+    var pauseOnRepeat:Bool=false
     var alternate: Bool = false
     var reverseText: String? = nil
     var sourceAliases: [String] = []
@@ -39,6 +40,7 @@ private struct QwelRule {
     var reverseTexts:[String:String]=[:]
 }
 private struct QwelMotion {
+    var owner:String=""
     var source: String
     var target: String
     var property: String
@@ -55,6 +57,7 @@ private struct QwelPending {
     var fraction:Double?
 }
 private struct QwelEcho: Identifiable {
+    var owner:String=""
     var id = UUID()
     var target: String
     var start: Double
@@ -68,6 +71,7 @@ private struct QwelEcho: Identifiable {
     private struct Clock {var rule:QwelRule;var position:Double;var last:Double;var running:Bool;var scrubbing=false}
     private var clocks:[String:Clock]=[:]
     private var rules: [QwelRule] = []
+    private var paused:[String:Double]=[:]
     private var toggled:Set<String>=[]
     private var base: [String:Double] = [:]
     private var current: [String:Double] = [:]
@@ -89,7 +93,7 @@ private struct QwelEcho: Identifiable {
         guard !running else {return}
         running = true
         rules=links
-        toggled=[]
+        paused=[:];toggled=[]
         base=initial
         current=[:]
         textValues=[:]
@@ -121,24 +125,24 @@ private struct QwelEcho: Identifiable {
     @objc private func frame() {
         let now=CACurrentMediaTime()
         let clockChanged=advanceClocks(now)
-        let due=pending.filter{$0.at<=now}
-        pending.removeAll{$0.at<=now}
+        let due=pending.filter{$0.at<=now && paused[$0.rule.id]==nil}
+        pending.removeAll{$0.at<=now && paused[$0.rule.id]==nil}
         for item in due {apply(item.rule,fraction:item.fraction,now:now)}
         emittedThisFrame=0
         let progressEvents=motions.filter{$0.property=="progress"}.map{($0.target,value($0.target,"progress",base:0))}
         for event in progressEvents {emit("valueChanged",source:event.0,fraction:event.1)}
-        let completed=motions.filter { !$0.repeats && now >= $0.start + $0.duration }
+        let completed=motions.filter { paused[$0.owner]==nil && !$0.repeats && now >= $0.start + $0.duration }
         for m in completed {
             current[key(m.target,m.property)]=m.to
         }
-        motions.removeAll { !$0.repeats && now >= $0.start + $0.duration }
-        for i in motions.indices where motions[i].repeats &&
+        motions.removeAll { paused[$0.owner]==nil && !$0.repeats && now >= $0.start + $0.duration }
+        for i in motions.indices where paused[motions[i].owner]==nil && motions[i].repeats &&
                 now >= motions[i].start + motions[i].duration {
             let m=motions[i]
             motions[i].start=now
             current[key(m.target,m.property)]=m.from
         }
-        echoes.removeAll { !$0.repeats && now > $0.start + $0.duration }
+        echoes.removeAll { paused[$0.owner]==nil && !$0.repeats && now > $0.start + $0.duration }
         emittedThisFrame=0
         for id in Set(completed.map(\.target)) {
             emit("finished",source:id)
@@ -169,17 +173,22 @@ private struct QwelEcho: Identifiable {
         let now=CACurrentMediaTime()
         for rule in rules where rule.enabled && (rule.event == event || event=="drag" && rule.event=="valueChanged") &&
                 (rule.source == source || rule.sourceAliases.contains(source) || event == "start") {
-            if rule.delay>0 && !["animate","echo"].contains(rule.mode) {
-                var waiting=rule
-                waiting.delay=0
-                pending.append(QwelPending(rule:waiting,at:now+rule.delay,fraction:fraction))
-            } else {
-                apply(rule,fraction:fraction,now:now)
-            }
+            apply(rule,fraction:fraction,now:now)
         }
         version &+= 1
     }
     private func apply(_ rule:QwelRule,fraction:Double?,now:Double) {
+            if rule.pauseOnRepeat {
+                if let stopped=paused.removeValue(forKey:rule.id){
+                    let delta=now-stopped
+                    for i in motions.indices where motions[i].owner==rule.id{motions[i].start+=delta}
+                    for i in echoes.indices where echoes[i].owner==rule.id{echoes[i].start+=delta}
+                    for i in pending.indices where pending[i].rule.id==rule.id{pending[i].at+=delta}
+                    return
+                }
+                if motions.contains(where:{$0.owner==rule.id}) || echoes.contains(where:{$0.owner==rule.id}) || pending.contains(where:{$0.rule.id==rule.id}){paused[rule.id]=now;return}
+            }
+            if rule.delay>0 && !["animate","echo"].contains(rule.mode){var waiting=rule;waiting.delay=0;pending.append(QwelPending(rule:waiting,at:now+rule.delay,fraction:fraction));return}
             let id=rule.target, property=rule.property
             let idKey=key(id,property)
             let returning=rule.alternate && toggled.contains(rule.id)
@@ -194,7 +203,7 @@ private struct QwelEcho: Identifiable {
                     if property=="visible" {visibility[target]=end>=0.5;continue}
                     let origin=value(target,property,base:base[address] ?? end)
                     motions.removeAll{$0.target==target && $0.property==property}
-                    motions.append(QwelMotion(source:rule.source,target:target,property:property,from:origin,to:end,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),ease:rule.easing,repeats:false))
+                    motions.append(QwelMotion(owner:rule.id,source:rule.source,target:target,property:property,from:origin,to:end,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),ease:rule.easing,repeats:false))
                 }
                 for (target,label) in (returning ? rule.reverseTexts:rule.stateTexts){textValues[target]=label}
             case "playback":
@@ -208,7 +217,7 @@ private struct QwelEcho: Identifiable {
                 textValues[id]=returning ? rule.reverseText:rule.text
             case "echo":
                 if !(echoes.last(where:{$0.target==id}).map{now-$0.start<0.08} ?? false) {
-                    echoes.append(QwelEcho(target:id,start:now+max(0,rule.delay),
+                    echoes.append(QwelEcho(owner:rule.id,target:id,start:now+max(0,rule.delay),
                                            duration:max(0.1,rule.duration),
                                            strength:max(0.01,rule.value),easing:rule.easing,repeats:rule.repeats))
                     if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
@@ -226,7 +235,7 @@ private struct QwelEcho: Identifiable {
                 let dest=returning ? (base[idKey] ?? 0):["progress","morph"].contains(property) ? 1 :
                          isColor ? Double(rule.color) : rule.value
                 motions.removeAll {$0.target==id && $0.property==property}
-                motions.append(QwelMotion(source:rule.source,target:id,property:property,
+                motions.append(QwelMotion(owner:rule.id,source:rule.source,target:id,property:property,
                                           from:origin,to:dest,start:now+max(0,rule.delay),
                                           duration:max(0.01,rule.duration),
                                           ease:rule.easing,repeats:rule.repeats))
@@ -238,7 +247,7 @@ private struct QwelEcho: Identifiable {
         _ = version
         let idKey=key(id,property)
         if let m=motions.last(where:{$0.target==id && $0.property==property}) {
-            let t=min(1,max(0,(CACurrentMediaTime()-m.start)/m.duration))
+            let t=min(1,max(0,((paused[m.owner] ?? CACurrentMediaTime())-m.start)/m.duration))
             let eased=ease(t,m.ease)
             if ["fill","stroke","fill2","shadowColor"].contains(property) {return Double(mixColor(Int64(m.from),Int64(m.to),eased))}
             return m.from + (m.to-m.from)*eased
@@ -282,7 +291,7 @@ private struct QwelEcho: Identifiable {
         _ = version
         let now=CACurrentMediaTime()
         guard let pulse=echoes.last(where:{$0.target==id && now >= $0.start}) else {let strength=value(id,"echo",base:0);return strength>0 ? min(1,strength):nil}
-        let elapsed=max(0,now-pulse.start)
+        let elapsed=max(0,(paused[pulse.owner] ?? now)-pulse.start)
         let raw=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration)/pulse.duration:elapsed/pulse.duration
         return ease(min(1,max(0,raw)),pulse.easing)
     }
@@ -327,14 +336,14 @@ private struct QwelEcho: Identifiable {
         path.closeSubpath();return path
     }
     private func ease(_ raw:Double,_ kind:String)->Double {
-        if kind.hasPrefix("mapped:"){return eased(raw,String(kind.dropFirst(7)))}
+        if kind.hasPrefix("mapped:"){return ease(raw,String(kind.dropFirst(7)))}
         if kind.hasPrefix("curve:"),let divider=kind.firstIndex(of:"|") {
             let options=kind[kind.index(kind.startIndex,offsetBy:6)..<divider].split(separator:",").compactMap{Double($0)}
             let hold=min(0.95,max(0,options.first ?? 0))
             let steps=min(240,max(0,options.count>1 ? options[1]:0))
             var time=min(1,max(0,(raw-hold)/(1-hold)))
             if steps>=2 && time<1 {time=floor(time*steps)/steps}
-            return eased(time,String(kind[kind.index(after:divider)...]))
+            return ease(time,String(kind[kind.index(after:divider)...]))
         }
         let t = min(1, max(0, raw))
         if kind.hasPrefix("bezier:"),case let points=kind.dropFirst(7).split(separator:",").compactMap({Double($0)}),points.count==4,points.allSatisfy(\.isFinite) {

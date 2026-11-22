@@ -3,6 +3,7 @@ import SwiftUI
 struct TextEditPanel:View {
     @ObservedObject var editor:Editor
     let nodeID:String
+    var formattingOnly=false
     var close:()->Void
     @Environment(\.q) private var q
     @State private var draft=""
@@ -12,11 +13,13 @@ struct TextEditPanel:View {
     private var node:Node{editor.project.nodes.first{$0.id==nodeID} ?? Node()}
     var body:some View {
         VStack(alignment:.leading,spacing:12){
-            Text("Редактировать текст").font(qfont(22,.semibold))
+            Text(formattingOnly ? "Стиль текста":"Редактировать текст").font(qfont(22,.semibold))
             RichTextInput(text:$draft,runs:$runs,selection:$selection,node:node,font:editor.renderer.font(node))
                 .frame(height:145).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
-            HStack(spacing:8){QChip(title:"Жирный"){style(weight:700)};QChip(title:"Курсив"){style(italic:true)};QChip(title:"Цвет"){color=true};QChip(title:"Сброс"){style(weight:400,italic:false,reset:true)}}
+            if formattingOnly {
+            VStack(spacing:8){HStack(spacing:8){QChip(title:"Жирный"){style(weight:700)};QChip(title:"Курсив"){style(italic:true)}};HStack(spacing:8){QChip(title:"Цвет"){color=true};QChip(title:"Обычный"){style(weight:400,italic:false,reset:true)}}}
             Text(selection.length>0 ? "Выделено: \(selection.length)":"Без выделения стиль применяется ко всему тексту.").font(qfont(11)).foregroundStyle(q.color("onSurfaceVariant"))
+            }
             HStack{Button("Отмена",action:close);Spacer();Button("Готово"){commit();close()}.accessibilityIdentifier("textEditorDone")}.font(qfont(16,.semibold)).foregroundStyle(q.color("primary")).frame(minHeight:44)
         }.padding(24).qSurface(28,"surfaceContainerHigh")
         .onAppear{draft=node.text;runs=node.extras?.runs ?? []}
