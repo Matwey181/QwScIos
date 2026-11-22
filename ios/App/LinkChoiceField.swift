@@ -35,7 +35,7 @@ private struct LinkChoiceSheet:View {
             if ["x","y","scale","rotation","width","height"].contains(key){return "Положение и размер"}
             if ["fontSize","weight"].contains(key){return "Текст"}
             if key=="progress"{return "Компоненты"}
-            if ["fill","fill2","stroke","gradAngle"].contains(key){return "Цвет"}
+            if ["fill","fill2","stroke","gradAngle","fillOpacity"].contains(key){return "Цвет"}
             return "Форма и эффекты"
         }
         return ""

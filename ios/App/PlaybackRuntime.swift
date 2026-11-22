@@ -37,7 +37,10 @@ import QuartzCore
         }
     }
     func scrub(group:String,_ enabled:Bool) {
-        for id in Array(tracks.keys) where tracks[id]?.group==group {tracks[id]?.scrubbing=enabled;tracks[id]?.last=CACurrentMediaTime()}
+        for id in Array(tracks.keys) where tracks[id]?.group==group {
+            tracks[id]?.scrubbing=enabled;tracks[id]?.last=CACurrentMediaTime()
+            if !enabled,tracks[id]?.rule.resumeAfterSeek != false{tracks[id]?.running=true}
+        }
     }
     @discardableResult func tick(_ now:Double)->Bool {
         var changed=false

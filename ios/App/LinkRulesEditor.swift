@@ -6,7 +6,7 @@ struct LinkRulesEditor:View {
     @Environment(\.q) private var q
     @State private var expandedID:String?
     @State private var search=""
-    private var visibleRules:[InteractionLink]{editor.project.links.filter{rule in search.isEmpty || (summary(rule)+" "+(InteractionLink.effects.first{$0.0==rule.mode}?.1 ?? "")+" "+(InteractionLink.properties.first{$0.0==rule.property}?.1 ?? "")).localizedCaseInsensitiveContains(search)}}
+    private var visibleRules:[InteractionLink]{editor.project.links.filter{rule in (rule.sourceID==source.id || (!source.group.isEmpty && editor.project.nodes.first{$0.id==rule.sourceID}?.group==source.group)) && (search.isEmpty || (summary(rule)+" "+(InteractionLink.effects.first{$0.0==rule.mode}?.1 ?? "")+" "+(InteractionLink.properties.first{$0.0==rule.property}?.1 ?? "")).localizedCaseInsensitiveContains(search))}}
     var body:some View {
         VStack(alignment:.leading,spacing:18){
             intro
@@ -21,7 +21,7 @@ struct LinkRulesEditor:View {
     private var intro:some View {
         HStack(alignment:.top,spacing:14){
             Image(systemName:"point.3.connected.trianglepath.dotted").font(.system(size:28,weight:.medium)).foregroundStyle(q.color("onPrimaryContainer")).frame(width:56,height:56).qSurface(22,"primaryContainer")
-            VStack(alignment:.leading,spacing:6){Text("Один жест. Любая реакция.").font(qfont(19,.semibold));Text("Соедините кнопку, ползунок или слой с нужным свойством. Несколько реакций могут работать одновременно.").font(qfont(13)).foregroundStyle(q.color("onSurfaceVariant"))}
+            VStack(alignment:.leading,spacing:6){Text(source.name.isEmpty ? "Связки объекта":source.name).font(qfont(19,.semibold));Text("Здесь только действия этого объекта. Добавьте реакцию или цепочку шагов.").font(qfont(13)).foregroundStyle(q.color("onSurfaceVariant"))}
         }.padding(20).qSurface(28,"surfaceContainerHigh")
     }
     private var presets:some View {
@@ -73,7 +73,7 @@ struct LinkRulesEditor:View {
         switch kind {
         case "morph":rule.property="morph";rule.shapeID="star-8";rule.alternate=true;rule.duration=0.5
         case "playback":rule.mode="playback";rule.duration=80;rule.easing="linear";rule.autoplay=true;rule.elapsedEnabled=false;rule.remainingEnabled=false
-        case "progress":rule.property="progress";rule.duration=15;rule.easing="linear"
+        case "progress":rule.property="progress";rule.duration=15;rule.easing="linear";rule.pauseOnRepeat=true;rule.resumeAfterSeek=true
         case "text":rule.mode="text";rule.alternate=true
         case "scale":rule.event="valueChanged";rule.mode="bind";rule.property="scale";rule.from=0.7;rule.to=1.5
         case "echo":rule.event="valueChanged";rule.mode="bind";rule.property="echo";rule.from=0;rule.to=1
@@ -81,7 +81,6 @@ struct LinkRulesEditor:View {
         default:break
         }
         if kind=="playback",let slider=editor.project.nodes.first(where:{$0.widget.hasPrefix("slider:") || $0.widget.hasPrefix("progress:")}){rule.targetID=slider.id}
-        if ["echo","scale"].contains(kind),let slider=editor.project.nodes.first(where:{$0.widget.hasPrefix("slider:")}){rule.sourceID=slider.id}
         editor.edit{$0.links.append(rule)};expandedID=rule.id
     }
 }
@@ -95,7 +94,8 @@ struct LinkPill:View {
     var body:some View{Button(action:action){HStack(spacing:9){Image(systemName:icon).font(.system(size:15,weight:.semibold));Text(title).font(qfont(14,.semibold))}.padding(.horizontal,18).padding(.vertical,15).foregroundStyle(q.color(prominent ? "onPrimaryContainer":"primary")).qSurface(28,prominent ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}
 }
 
-private struct LinkRuleForm:View {
+struct LinkRuleForm:View {
+    var isStep=false
     @Binding var link:InteractionLink
     let layers:[Node]
     let states:[VisualState]
@@ -110,10 +110,9 @@ private struct LinkRuleForm:View {
     }
     var body:some View {
         VStack(alignment:.leading,spacing:18){
-            section("01",title:"Источник"){
-                LinkChoiceField(title:"Откуда приходит действие",selection:$link.sourceID,items:nodeChoices)
-                LinkChoiceField(title:"Когда",selection:$link.event,items:InteractionLink.events)
-            }
+            if !isStep{section("01",title:"Когда"){
+                LinkChoiceField(title:"Событие",selection:$link.event,items:InteractionLink.events)
+            }}
             section("02",title:"Реакция"){
                 LinkChoiceField(title:"Что сделать",selection:$link.mode,items:InteractionLink.effects)
                 LinkChoiceField(title:"Какой слой изменить",selection:$link.targetID,items:nodeChoices)
@@ -123,6 +122,7 @@ private struct LinkRuleForm:View {
                 if link.mode=="playback"{PlaybackLinkControls(link:$link,layers:layers)}
             }
             timingControls
+            if !isStep{AnyView(LinkStepsEditor(link:$link,layers:layers,states:states))}
         }.onChange(of:link.property){_,property in if property=="morph" && link.shapeID==nil{link.shapeID="star-8";link.from=0;link.to=1}}
         .onChange(of:link.targetID){_,id in
             if let node=layers.first(where:{$0.id==id}),["slider","progress","switch"].contains(node.widget.components(separatedBy:":").first ?? ""),link.property=="opacity" {link.property="progress"}
@@ -131,13 +131,17 @@ private struct LinkRuleForm:View {
     @ViewBuilder private var propertyControls:some View {
         if ["animate","set","bind"].contains(link.mode){
             LinkChoiceField(title:"Свойство",selection:$link.property,items:InteractionLink.properties)
+            if link.property=="progress" && link.mode=="animate" {
+                QToggle("Продолжать после перемотки",isOn:Binding(get:{link.resumeAfterSeek ?? true},set:{link.resumeAfterSeek=$0}))
+                Text("Длительность — время всей шкалы. После перемотки остаётся только непройденная часть.").font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"))
+            }
             if link.property=="morph"{shapeControls}
             else if colorProperty{QColorRow(title:"Конечный цвет",color:$link.color,colors:[])}
             else if link.mode=="bind"{boundsControls}
             else if link.property != "progress" {number("Значение",value:$link.value)}
             if link.mode=="bind" && link.property=="morph"{boundsControls}
         }
-        if ["animate","set","text","state","echo"].contains(link.mode){
+        if !isStep && ["animate","set","text","state","echo"].contains(link.mode){
             LinkChoiceField(title:"Повторное нажатие",selection:Binding(get:{link.pauseOnRepeat==true ? "pause":link.alternate==true ? "return":"restart"},set:{link.pauseOnRepeat=$0=="pause";link.alternate=$0=="return"}),items:repeatChoices)
         }
         if link.mode=="echo"{number("Сила пульсации",value:$link.value)}

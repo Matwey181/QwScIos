@@ -35,6 +35,9 @@ private struct QwelRule {
     var remainingID:String=""
     var clockFormat:String="clock"
     var targetAliases:[String]=[]
+    var steps:[QwelRule]=[]
+    var stepTiming:String="after"
+    var resumeAfterSeek:Bool=true
     var stateNumbers:[String:Double]=[:]
     var stateTexts:[String:String]=[:]
     var reverseTexts:[String:String]=[:]
@@ -50,6 +53,7 @@ private struct QwelMotion {
     var duration: Double
     var ease: String
     var repeats: Bool
+    var totalDuration:Double?
 }
 private struct QwelPending {
     var rule:QwelRule
@@ -84,6 +88,7 @@ private struct QwelEcho: Identifiable {
     private var running = false
     private var updating = false
     private var emittedThisFrame = 0
+    private var pressingSources:Set<String>=[]
     private var draggingSources: Set<String> = []
 
     private func key(_ node:String,_ property:String)->String {
@@ -127,15 +132,14 @@ private struct QwelEcho: Identifiable {
         let clockChanged=advanceClocks(now)
         let due=pending.filter{$0.at<=now && paused[$0.rule.id]==nil}
         pending.removeAll{$0.at<=now && paused[$0.rule.id]==nil}
-        for item in due {apply(item.rule,fraction:item.fraction,now:now)}
         emittedThisFrame=0
         let progressEvents=motions.filter{$0.property=="progress"}.map{($0.target,value($0.target,"progress",base:0))}
         for event in progressEvents {emit("valueChanged",source:event.0,fraction:event.1)}
-        let completed=motions.filter { paused[$0.owner]==nil && !$0.repeats && now >= $0.start + $0.duration }
+        let completed=motions.filter { paused[$0.owner]==nil && !draggingSources.contains($0.target) && !$0.repeats && now >= $0.start + $0.duration }
         for m in completed {
             current[key(m.target,m.property)]=m.to
         }
-        motions.removeAll { paused[$0.owner]==nil && !$0.repeats && now >= $0.start + $0.duration }
+        motions.removeAll { paused[$0.owner]==nil && !draggingSources.contains($0.target) && !$0.repeats && now >= $0.start + $0.duration }
         for i in motions.indices where paused[motions[i].owner]==nil && motions[i].repeats &&
                 now >= motions[i].start + motions[i].duration {
             let m=motions[i]
@@ -143,6 +147,7 @@ private struct QwelEcho: Identifiable {
             current[key(m.target,m.property)]=m.from
         }
         echoes.removeAll { paused[$0.owner]==nil && !$0.repeats && now > $0.start + $0.duration }
+        for item in due {apply(item.rule,fraction:item.fraction,now:now)}
         emittedThisFrame=0
         for id in Set(completed.map(\.target)) {
             emit("finished",source:id)
@@ -152,7 +157,7 @@ private struct QwelEcho: Identifiable {
         }
     }
     func dragChanged(source:String,fraction:Double) {
-        seekClocks(source,fraction:fraction,scrubbing:true)
+        seekClocks(source,fraction:fraction,scrubbing:true);seekProgress(source,fraction:fraction)
         if draggingSources.insert(source).inserted {
             emit("dragStart",source:source,fraction:fraction)
         }
@@ -160,7 +165,7 @@ private struct QwelEcho: Identifiable {
     }
     func dragEnded(source:String,fraction:Double) {
         emit("dragEnd",source:source,fraction:fraction)
-        seekClocks(source,fraction:fraction,scrubbing:false)
+        seekClocks(source,fraction:fraction,scrubbing:false);seekProgress(source,fraction:fraction)
         draggingSources.remove(source)
     }
     func toggle(target id:String) {
@@ -177,7 +182,8 @@ private struct QwelEcho: Identifiable {
         }
         version &+= 1
     }
-    private func apply(_ rule:QwelRule,fraction:Double?,now:Double) {
+    private func apply(_ input:QwelRule,fraction:Double?,now:Double) {
+            var rule=input
             if rule.pauseOnRepeat {
                 if let stopped=paused.removeValue(forKey:rule.id){
                     let delta=now-stopped
@@ -188,7 +194,18 @@ private struct QwelEcho: Identifiable {
                 }
                 if motions.contains(where:{$0.owner==rule.id}) || echoes.contains(where:{$0.owner==rule.id}) || pending.contains(where:{$0.rule.id==rule.id}){paused[rule.id]=now;return}
             }
-            if rule.delay>0 && !["animate","echo"].contains(rule.mode){var waiting=rule;waiting.delay=0;pending.append(QwelPending(rule:waiting,at:now+rule.delay,fraction:fraction));return}
+            if !rule.steps.isEmpty {
+                pending.removeAll{$0.rule.id==rule.id};motions.removeAll{$0.owner==rule.id};echoes.removeAll{$0.owner==rule.id}
+                var previousStart=max(0,rule.delay),previousEnd=previousStart+actionDuration(rule)
+                for item in rule.steps where item.enabled {
+                    let start=(item.stepTiming=="with" ? previousStart:previousEnd)+max(0,item.delay)
+                    previousStart=start;previousEnd=start+actionDuration(item)
+                    var action=item;action.id=rule.id;action.source=rule.source;action.steps=[];action.delay=0;action.pauseOnRepeat=false;action.alternate=false
+                    pending.append(QwelPending(rule:action,at:now+start,fraction:fraction))
+                }
+            }
+            rule.steps=[]
+            if rule.delay>0 && !["animate","echo"].contains(rule.mode){var waiting=rule;waiting.delay=0;waiting.pauseOnRepeat=false;pending.append(QwelPending(rule:waiting,at:now+rule.delay,fraction:fraction));return}
             let id=rule.target, property=rule.property
             let idKey=key(id,property)
             let returning=rule.alternate && toggled.contains(rule.id)
@@ -231,15 +248,15 @@ private struct QwelEcho: Identifiable {
                 motions.removeAll {$0.target==id && $0.property==property}
                 current[idKey]=returning ? (base[idKey] ?? 0):isColor ? Double(rule.color):property=="morph" ? 1:rule.value
             default:
-                let origin=property=="progress" && !rule.alternate ? 0 : value(id,property,base:base[idKey] ?? 0)
+                let origin=value(id,property,base:base[idKey] ?? 0)
                 let dest=returning ? (base[idKey] ?? 0):["progress","morph"].contains(property) ? 1 :
                          isColor ? Double(rule.color) : rule.value
                 motions.removeAll {$0.target==id && $0.property==property}
                 motions.append(QwelMotion(owner:rule.id,source:rule.source,target:id,property:property,
                                           from:origin,to:dest,start:now+max(0,rule.delay),
-                                          duration:max(0.01,rule.duration),
-                                          ease:rule.easing,repeats:rule.repeats))
-                if property == "progress" && !rule.alternate {current[idKey]=0}
+                                          duration:max(0.01,rule.duration*(property=="progress" ? abs(dest-origin):1)),
+                                          ease:rule.easing,repeats:rule.repeats,totalDuration:property=="progress" ? rule.duration:nil))
+
             }
     }
     func value(_ id:String,_ property:String,base fallback:Double)->Double {
@@ -295,9 +312,24 @@ private struct QwelEcho: Identifiable {
         let raw=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration)/pulse.duration:elapsed/pulse.duration
         return ease(min(1,max(0,raw)),pulse.easing)
     }
+    private func actionDuration(_ rule:QwelRule)->Double{["animate","echo","state","playback"].contains(rule.mode) ? max(0.01,rule.duration):0}
+    func press(source:String,down:Bool){
+        if down{if pressingSources.insert(source).inserted{emit("press",source:source)}}else{if pressingSources.remove(source) != nil{emit("release",source:source)}}
+    }
+    private func seekProgress(_ source:String,fraction:Double){
+        let fraction=min(1,max(0,fraction)),now=CACurrentMediaTime()
+        var targets=Set([source])
+        for rule in rules.flatMap({[$0]+$0.steps}) where rule.targetAliases.contains(source){targets.insert(rule.target)}
+        for id in targets{current[key(id,"progress")]=fraction}
+        for i in motions.indices where targets.contains(motions[i].target) && motions[i].property=="progress"{
+            let total=motions[i].totalDuration ?? motions[i].duration;motions[i].from=fraction;motions[i].start=now;motions[i].duration=max(0.01,total*abs(motions[i].to-fraction))
+            if paused[motions[i].owner] != nil{paused[motions[i].owner]=now}
+        }
+    }
     private func seekClocks(_ source:String,fraction:Double,scrubbing:Bool){
         for id in Array(clocks.keys){
             guard var clock=clocks[id],clock.rule.target==source || clock.rule.targetAliases.contains(source) else{continue}
+            if !scrubbing && clock.rule.resumeAfterSeek{clock.running=true}
             clock.position=min(1,max(0,fraction));clock.last=CACurrentMediaTime();clock.scrubbing=scrubbing;clocks[id]=clock;publishClock(clock)
         }
     }

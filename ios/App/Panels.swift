@@ -14,11 +14,13 @@ struct InspectorPanel:View {
                 if editor.selected.count==1 {
                     QTextField(title:"Имя слоя",text:bind(\.name,""))
                     AppearanceActions(editor:editor)
+                    InlineSection(title:"Общие кнопки и компоненты"){SelectedComponentControls(editor:editor)}
                     InlineSection(title:"Точный сдвиг"){NudgeControls(editor:editor)}
                     if n.kind=="TEXT" {
                         TextField("Текст",text:bind(\.text,""),axis:.vertical).lineLimit(2...5).font(qfont(16)).padding(16).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
                         Button("Редактировать текст"){editor.requestTextEdit=n.id}.font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))
                         QNumber(title:"Ширина текста",value:bind(\.w,180))
+                        Button("Кнопка под размер текста"){editor.fitButtonToText(n.id)}.font(qfont(14,.semibold))
                         InlineSection(title:"Интервалы и автоподбор"){StudioText(editor:editor)}
                         HStack(spacing:8){
                             ForEach(["left","center","right"],id:\.self){alignment in
@@ -32,6 +34,8 @@ struct InspectorPanel:View {
                     HStack(spacing:8){QNumber(title:"Поворот",value:bind(\.rotation,0));if n.kind != "TEXT"{QSwitch(on:bind(\.ratioLock,false));Text("Пропорции").font(qfont(14,.semibold))}}
                 }else{Text("Выбрано слоёв: \(editor.selected.count)").font(qfont(16,.semibold))}
                 if n.kind != "IMAGE"{row(n.kind=="TEXT" ? "Цвет текста":"Заливка",\.fill,token:n.fillToken)}
+                if !["TEXT","IMAGE"].contains(n.kind){slider("Непрозрачность заливки",\.fillOpacity,0...1,percent:true)}
+                InlineSection(title:"Состояния кнопки"){ComponentStateControls(editor:editor,sourceID:n.id)}
                 if !["TEXT","IMAGE"].contains(n.kind){
                     title("Градиент")
                     HStack(spacing:8){ForEach(Array(["Нет","Линейный","Радиальный"].enumerated()),id:\.offset){i,text in QChip(title:text,selected:n.gradKind==Int64(i)){editor.change{$0.gradKind=Int64(i)}}}}
@@ -57,7 +61,7 @@ struct InspectorPanel:View {
                 } label: {
                     HStack(spacing:8) {
                         Image(systemName:"point.3.connected.trianglepath.dotted")
-                        Text("Связки проекта")
+                        Text("Связки объекта")
                         Spacer()
                         Text("\(editor.project.links.count)")
                         Image(systemName:"chevron.right")
@@ -101,6 +105,7 @@ struct AlignPanel:View {
             alignments
             distribution
             QChip(title:"В центр холста",selected:true){editor.alignTo("centerX",canvas:true);editor.alignTo("centerY",canvas:true)}
+            InlineSection(title:"Безопасные отступы iPhone"){SafeAreaControls(editor:editor)}
             InlineSection(title:"Привязки, направляющие и отступы"){StudioLayout(editor:editor)}
             InlineSection(title:"Автоматическая раскладка"){AutoLayoutControls(editor:editor)}
             InlineSection(title:"Привязка к размеру экрана"){ScreenConstraintControls(editor:editor)}

@@ -4,6 +4,9 @@ import CoreGraphics
 /// A declarative connection between two layers, persisted inside the .qwel project.
 /// Events and effects are strings to allow new combinations without a schema migration.
 struct InteractionLink: Codable, Identifiable, Equatable {
+    var steps:[InteractionLink]?
+    var stepTiming:String?
+    var resumeAfterSeek:Bool?
     var pauseOnRepeat:Bool?
     var stateID:String?
     var autoplay:Bool?
@@ -34,7 +37,7 @@ struct InteractionLink: Codable, Identifiable, Equatable {
     var enabled: Bool = true
 
     static let events: [(String, String)] = [
-        ("tap", "Нажатие"), ("valueChanged", "Изменение значения компонента"), ("dragStart", "Начало перетаскивания"),
+        ("tap", "Нажатие"), ("press","Палец на объекте"), ("release","Палец отпущен"), ("valueChanged", "Изменение значения компонента"), ("dragStart", "Начало перетаскивания"),
         ("drag", "Движение пальца"), ("dragEnd", "Отпускание"),
         ("finished", "Завершение анимации"), ("start", "Запуск игры")
     ]
@@ -44,7 +47,7 @@ struct InteractionLink: Codable, Identifiable, Equatable {
         ("text", "Изменить текст"), ("echo", "Эхо / пульсация")
     ]
     static let properties: [(String, String)] = [
-        ("morph", "Форма / число лучей"), ("echo", "Сила контурного эха"), ("weight", "Толщина шрифта"), ("strokeWidth", "Толщина обводки"), ("stroke", "Цвет обводки"), ("fill2", "Второй цвет"), ("gradAngle", "Угол градиента"), ("shadowBlur", "Размытие тени"), ("shadowDx", "Тень по X"), ("shadowDy", "Тень по Y"), ("shadowColor", "Цвет тени"), ("backgroundBlur", "Размытие фона"), ("opacity", "Непрозрачность"), ("x", "Позиция X"), ("y", "Позиция Y"),
+        ("fillOpacity", "Непрозрачность заливки"), ("morph", "Форма / число лучей"), ("echo", "Сила контурного эха"), ("weight", "Толщина шрифта"), ("strokeWidth", "Толщина обводки"), ("stroke", "Цвет обводки"), ("fill2", "Второй цвет"), ("gradAngle", "Угол градиента"), ("shadowBlur", "Размытие тени"), ("shadowDx", "Тень по X"), ("shadowDy", "Тень по Y"), ("shadowColor", "Цвет тени"), ("backgroundBlur", "Размытие фона"), ("opacity", "Непрозрачность"), ("x", "Позиция X"), ("y", "Позиция Y"),
         ("scale", "Масштаб"), ("rotation", "Поворот"),
         ("width", "Ширина"), ("height", "Высота"),
         ("progress", "Значение ползунка / прогресс"), ("fontSize", "Размер текста"),

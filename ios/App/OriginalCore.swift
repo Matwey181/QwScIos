@@ -48,6 +48,7 @@ import UIKit
     weak var editor:Editor?
     var target:[String:Double]=[:]
     let links = InteractionRuntime()
+    private var pressedSourceID:String?
     private var activeSourceID: String?
     var shown:[String:Double]=[:]
     private var kinds:[String:String]=[:]
@@ -81,7 +82,7 @@ import UIKit
     }
     func stop() {
         link?.invalidate();link=nil
-        activeSourceID=nil
+        activeSourceID=nil;pressedSourceID=nil
         links.stop()
         guard let editor else { return }
         do { let final=try OriginalCore.shared.project("stop",values:["shown":target]);if final.nodes != editor.project.nodes { editor.edit { $0.nodes=final.nodes } } } catch { editor.error=error.localizedDescription }
@@ -115,10 +116,17 @@ import UIKit
             return false
         }
     }
+    func press(_ p:CGPoint,down:Bool){
+        if down {
+            guard let node=(rendered?.nodes ?? editor?.project.nodes ?? []).reversed().first(where:{$0.visible && $0.extras?.disabled != true && !$0.mask && $0.contains(p) && linked($0,events:["press","release"])}) else{return}
+            pressedSourceID=node.id;links.fire("press",sourceID:node.id)
+        }else if let id=pressedSourceID{pressedSourceID=nil;links.fire("release",sourceID:id)}
+        refresh()
+    }
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
     func tap(_ p:CGPoint) {
         guard let editor else { return }
-        if let n=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || linked(n,events:["tap"]))}) {
+        if let n=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && n.extras?.disabled != true && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || linked(n,events:["tap"]))}) {
             links.fire("tap",sourceID:n.id)
             refresh()
             if n.action.hasPrefix("goto:"),let i=editor.project.pages.firstIndex(where:{$0.id==String(n.action.dropFirst(5))}) { let previous=editor.project.active;stop();back.append(previous);editor.page(i);start();return }
@@ -128,6 +136,7 @@ import UIKit
         }
         let widget=hit(p)
         guard let group=widget["group"] as? String else { return }
+        if (rendered?.nodes ?? editor.project.nodes).contains(where:{$0.group==group && $0.extras?.disabled==true}){return}
         if ["slider","progress"].contains(widget["kind"] as? String ?? "") {
             let value=(widget["value"] as? NSNumber)?.doubleValue ?? 0
             target[group]=value;shown[group]=value;notifyWidget(group,value:value);refresh();return
@@ -136,7 +145,7 @@ import UIKit
     }
     private func notifyWidget(_ group:String,value:Double) {
         guard let node=editor?.project.nodes.first(where:{$0.group==group}) else{return}
-        links.playback.seek(group:group,value:value)
+        links.seek(group:group,value:value)
         var fraction=value
         if kinds[group]=="pick",let nodes=editor?.project.nodes {
             let indices=Set(nodes.filter{$0.group==group && $0.widget.hasPrefix("pick:i")}.compactMap{Int($0.widget.dropFirst(6).split(separator:"/").first ?? "")})
@@ -163,14 +172,15 @@ import UIKit
     }
     func begin(_ p:CGPoint) {
         activeHit=hit(p);initial=p;lastStep=0
-        if let group=activeHit?["group"] as? String{links.playback.scrub(group:group,true)}
+        if let group=activeHit?["group"] as? String,(rendered?.nodes ?? []).contains(where:{$0.group==group && $0.extras?.disabled==true}){activeHit=nil;activeSourceID=nil;return}
+        if let group=activeHit?["group"] as? String{links.scrub(group:group,true)}
         let events=["dragStart","drag","dragEnd","valueChanged"]
         if let group=activeHit?["group"] as? String {
             activeSourceID=editor?.project.nodes.first(where:{$0.group==group && linked($0,events:events)})?.id
         } else {activeSourceID=nil}
         if activeSourceID==nil {
             activeSourceID=(rendered?.nodes ?? editor?.project.nodes ?? []).reversed().first(where: { n in
-                n.visible && !n.mask && n.contains(p) && linked(n,events:events)
+                n.visible && n.extras?.disabled != true && !n.mask && n.contains(p) && linked(n,events:events)
             })?.id
         }
         if let id=activeSourceID {links.fire("dragStart",sourceID:id,fraction:dragFraction(p,sourceID:id));refresh()}
@@ -186,7 +196,7 @@ import UIKit
             // Keep the captured component even when the finger leaves its bounds.
             let value=widgetFraction(p,widget)
             target[group]=value;shown[group]=value
-            links.playback.seek(group:group,value:value)
+            links.seek(group:group,value:value)
             if activeSourceID==nil {notifyWidget(group,value:value)}
             refresh()
         } else if kind=="pick" {
@@ -195,7 +205,7 @@ import UIKit
         }
     }
     func end(_ p:CGPoint) {
-        if let group=activeHit?["group"] as? String{links.playback.scrub(group:group,false)}
+        if let group=activeHit?["group"] as? String{links.scrub(group:group,false)}
         if let id=activeSourceID {
             links.fire("dragEnd",sourceID:id,fraction:dragFraction(p,sourceID:id))
             refresh()

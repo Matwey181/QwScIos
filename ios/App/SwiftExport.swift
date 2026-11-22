@@ -40,7 +40,7 @@ enum SwiftExport {
     private static func stateNumbers(_ nodes:[Node])->[String:Double]{
         var result:[String:Double]=[:]
         for n in nodes {
-            let values:[String:Double]=["x":Double(n.x),"y":Double(n.y),"width":Double(n.w),"height":Double(n.h),"rotation":Double(n.rotation),"opacity":Double(n.opacity),"fill":Double(n.fill),"stroke":Double(n.stroke),"strokeWidth":Double(n.strokeWidth),"fontSize":Double(n.fontSize),"corner":Double(n.corner),"blur":Double(n.softBlur),"visible":n.visible ? 1:0,"weight":Double(n.weight)]
+            let values:[String:Double]=["x":Double(n.x),"y":Double(n.y),"width":Double(n.w),"height":Double(n.h),"rotation":Double(n.rotation),"opacity":Double(n.opacity),"fillOpacity":Double(n.fillOpacity),"disabled":n.extras?.disabled==true ? 1:0,"fill":Double(n.fill),"stroke":Double(n.stroke),"strokeWidth":Double(n.strokeWidth),"fontSize":Double(n.fontSize),"corner":Double(n.corner),"blur":Double(n.softBlur),"visible":n.visible ? 1:0,"weight":Double(n.weight)]
             for (key,value) in values{result[n.id+"|"+key]=value}
         }
         return result
@@ -48,7 +48,7 @@ enum SwiftExport {
     private static func dictionary(_ values:[String:Double])->String {values.isEmpty ? "[:]":"["+values.keys.sorted().map{literal($0)+": "+String(values[$0]!)}.joined(separator:",")+"]"}
     private static func strings(_ values:[String:String])->String {values.isEmpty ? "[:]":"["+values.keys.sorted().map{literal($0)+": "+literal(values[$0]!)}.joined(separator:",")+"]"}
     @MainActor private static func rules(_ project:Project)->String {
-        project.links.map { link in
+        func encode(_ link:InteractionLink)->String {
             let all=project.pages.flatMap(\.nodes)+project.nodes
             let source=all.first{$0.id==link.sourceID}
             let aliases=source?.group.isEmpty==false ? Array(Set(all.filter{$0.group==source?.group}.map(\.id))):[]
@@ -59,11 +59,12 @@ enum SwiftExport {
             let numbers=stateNumbers(state?.nodes ?? [])
             let stateLabels=Dictionary((state?.nodes ?? []).filter{$0.kind=="TEXT"}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
             let reverseLabels=Dictionary(all.filter{stateLabels[$0.id] != nil}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
-            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), pauseOnRepeat: \(link.pauseOnRepeat ?? false), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))], stateNumbers: \(dictionary(numbers)), stateTexts: \(strings(stateLabels)), reverseTexts: \(strings(reverseLabels)))"
-        }.joined(separator:",\n")
+            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), pauseOnRepeat: \(link.pauseOnRepeat ?? false), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))], steps: [\((link.steps ?? []).map{encode($0)}.joined(separator:","))], stepTiming: \(literal(link.stepTiming ?? "after")), resumeAfterSeek: \(link.resumeAfterSeek ?? true), stateNumbers: \(dictionary(numbers)), stateTexts: \(strings(stateLabels)), reverseTexts: \(strings(reverseLabels)))"
+        }
+        return project.links.map{encode($0)}.joined(separator:",\n")
     }
     private static func bases(_ project:Project,_ pages:[[Node]])->String {
-        let ids=Set(project.links.map(\.targetID) + project.nodes.compactMap {
+        let ids=Set(project.links.flatMap{[$0]+($0.steps ?? [])}.map(\.targetID) + project.nodes.compactMap {
             $0.action.hasPrefix("toggle:") ? String($0.action.dropFirst(7)) : nil
         })
         let stateIDs=Set(project.studio?.states.flatMap(\.nodes).map(\.id) ?? [])
@@ -71,7 +72,7 @@ enum SwiftExport {
         let props: [(String,(Node)->Double)] = [
             ("x",{Double($0.x)}),("y",{Double($0.y)}),
             ("width",{Double($0.w)}),("height",{Double($0.h)}),
-            ("rotation",{Double($0.rotation)}),("opacity",{Double($0.opacity)}),
+            ("rotation",{Double($0.rotation)}),("opacity",{Double($0.opacity)}),("fillOpacity",{Double($0.fillOpacity)}),
             ("scale",{_ in 1}),("progress",{_ in 0}),
             ("fontSize",{Double($0.fontSize)}),("corner",{Double($0.corner)}),
             ("blur",{Double($0.softBlur)}),("fill",{Double($0.fill)}),
@@ -92,6 +93,7 @@ enum SwiftExport {
         if pages.isEmpty {pages=[project.nodes]}
         else if pages.indices.contains(project.active) {pages[project.active]=project.nodes}
         let allNodes=pages.flatMap{$0}
+        let effectiveLinks=project.links.flatMap{[$0]+($0.steps ?? [])}
         var functions:[String]=[],cases:[String]=[]
         let rulesSource=rules(project),baseSource=bases(project,pages)
         let dictionarySource=baseSource.isEmpty ? ":" : baseSource
@@ -129,18 +131,18 @@ enum SwiftExport {
                         view="ZStack(alignment: .topLeading) { Color.clear; embeddedImage(\(literal(bytes.base64EncodedString()))).resizable().frame(width: \(width), height: \(height)).offset(x: \((n.w-width)*extras.cropX), y: \((n.h-height)*extras.cropY)) }.frame(width: \(n.w), height: \(n.h)).clipped()"
                     }
                 } else {
-                    let shape=project.links.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
+                    let shape=effectiveLinks.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
                     var fill=nodeColor
                     if n.gradKind==2 {fill="RadialGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], center: .center, startRadius: 0, endRadius: \(max(n.w,n.h)/2))"}
                     else if n.gradKind==1 {
                         let angle=n.gradAngle * .pi/180,dx=cos(angle)/2,dy=sin(angle)/2
                         fill="LinearGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], startPoint: graph.gradientPoint(\(identifier), base: \(n.gradAngle), end: false), endPoint: graph.gradientPoint(\(identifier), base: \(n.gradAngle), end: true))"
                     }
-                    view="\(shape).fill(\(fill), style: FillStyle(eoFill: \(n.evenOdd)))"
-                    if n.strokeWidth>0 || project.links.contains(where:{$0.targetID==n.id && ["stroke","strokeWidth"].contains($0.property)}) {view += ".overlay { \(shape).stroke(graph.fill(\(identifier), base: \(n.stroke), property: \"stroke\"), lineWidth: CGFloat(graph.value(\(identifier), \"strokeWidth\", base: \(n.strokeWidth)))) }"}
+                    view="\(shape).fill(\(fill), style: FillStyle(eoFill: \(n.evenOdd))).opacity(graph.value(\(identifier), \"fillOpacity\", base: \(n.fillOpacity)))"
+                    if n.strokeWidth>0 || effectiveLinks.contains(where:{$0.targetID==n.id && ["stroke","strokeWidth"].contains($0.property)}) {view += ".overlay { \(shape).stroke(graph.fill(\(identifier), base: \(n.stroke), property: \"stroke\"), lineWidth: CGFloat(graph.value(\(identifier), \"strokeWidth\", base: \(n.strokeWidth)))) }"}
                 }
                 view += ".frame(width: \(n.w), height: \(n.h), alignment: .topLeading)"
-                if n.shadowBlur>0 || project.links.contains(where:{$0.targetID==n.id && $0.property.hasPrefix("shadow")}) {view += ".shadow(color: graph.fill(\(identifier), base: \(n.shadowColor), property: \"shadowColor\"), radius: CGFloat(graph.value(\(identifier), \"shadowBlur\", base: \(n.shadowBlur))), x: CGFloat(graph.value(\(identifier), \"shadowDx\", base: \(n.shadowDx))), y: CGFloat(graph.value(\(identifier), \"shadowDy\", base: \(n.shadowDy))))"}
+                if n.shadowBlur>0 || effectiveLinks.contains(where:{$0.targetID==n.id && $0.property.hasPrefix("shadow")}) {view += ".shadow(color: graph.fill(\(identifier), base: \(n.shadowColor), property: \"shadowColor\"), radius: CGFloat(graph.value(\(identifier), \"shadowBlur\", base: \(n.shadowBlur))), x: CGFloat(graph.value(\(identifier), \"shadowDx\", base: \(n.shadowDx))), y: CGFloat(graph.value(\(identifier), \"shadowDy\", base: \(n.shadowDy))))"}
                 view += ".blur(radius: CGFloat(graph.value(\(identifier), \"blur\", base: \(n.softBlur))))"
                 // Animate all supported geometry directly; never place an invisible
                 // rectangle over the exported artwork to fake its gestures.
@@ -149,10 +151,10 @@ enum SwiftExport {
                 view += ".scaleEffect(x: CGFloat(\(sx)), y: CGFloat(\(sy)))"
                 view += ".rotationEffect(.degrees(graph.value(\(identifier), \"rotation\", base: \(n.rotation))))"
                 view += ".opacity(graph.visible(\(identifier), base: \(n.visible)) ? graph.value(\(identifier), \"opacity\", base: \(n.opacity)) : 0)"
-                view += ".allowsHitTesting(graph.visible(\(identifier), base: \(n.visible)))"
+                view += ".allowsHitTesting(graph.visible(\(identifier), base: \(n.visible)) && graph.value(\(identifier), \"disabled\", base: \(n.extras?.disabled==true ? 1:0)) < 0.5)"
 
                 // Echo is an animated geometric outline around the original layer.
-                if project.links.contains(where:{$0.targetID==n.id && ($0.mode=="echo" || $0.property=="echo")}) {
+                if effectiveLinks.contains(where:{$0.targetID==n.id && ($0.mode=="echo" || $0.property=="echo")}) {
                     view += ".overlay { if let echo=graph.echo(\(identifier)) { RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).stroke(\(nodeColor).opacity(graph.value(\(identifier), \"echo\", base: 0)>0 ? min(1,graph.value(\(identifier), \"echo\", base: 0))*0.3:max(0,1-echo)), lineWidth: 2).scaleEffect(1+echo*0.32) } }"
                 }
 
@@ -164,6 +166,9 @@ enum SwiftExport {
                 }
                 let tapRules=project.links.filter{$0.enabled && $0.event=="tap" && sources.contains($0.sourceID)}
                 let dragRules=project.links.filter{$0.enabled && ["dragStart","drag","dragEnd","valueChanged"].contains($0.event) && sources.contains($0.sourceID)}
+                let interactiveProgress=n.widget.hasPrefix("slider:") || n.widget.hasPrefix("progress:")
+                let holds=project.links.contains{$0.enabled && ["press","release"].contains($0.event) && sources.contains($0.sourceID)}
+                if holds {view += ".onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { down in graph.press(source: \(identifier), down: down) }, perform: {})"}
                 var tapCalls=Array(Set(tapRules.map(\.sourceID))).sorted().map{
                     "graph.emit(\"tap\", source: \(literal($0)))"
                 }
@@ -183,9 +188,10 @@ enum SwiftExport {
                 if !tapCalls.isEmpty {
                     view += ".contentShape(Rectangle()).onTapGesture { \(tapCalls.joined(separator:"; ")) }"
                 }
-                if !dragRules.isEmpty {
+                if !dragRules.isEmpty || interactiveProgress {
                     var fractions:[String:String]=[:]
-                    for source in Set(dragRules.map(\.sourceID)) {
+                    let dragSources=Set(dragRules.map(\.sourceID)).union(interactiveProgress ? [n.id]:[])
+                    for source in dragSources {
                         let sourceNode=allNodes.first(where:{$0.id==source}) ?? n
                         let grouped=sourceNode.group.isEmpty ? [sourceNode] :
                             allNodes.filter{$0.group==sourceNode.group}
@@ -193,7 +199,7 @@ enum SwiftExport {
                         let maxX=grouped.map{$0.x+$0.w}.max() ?? n.x+n.w
                         fractions[source]="Double(min(1,max(0,(gesture.location.x + \(n.x) - \(minX))/\(max(1,maxX-minX)))))"
                     }
-                    let sources=Array(Set(dragRules.map(\.sourceID))).sorted()
+                    let sources=Array(dragSources).sorted()
                     let change=sources.map { source in
                         "graph.dragChanged(source: \(literal(source)), fraction: \(fractions[source] ?? "0"))"
                     }.joined(separator:"; ")

@@ -41,7 +41,7 @@ enum SVGExport {
                     content="<image width=\"\(n.w)\" height=\"\(n.h)\" preserveAspectRatio=\"none\" href=\"data:\(mime);base64,\(data.base64EncodedString())\"/>"
                 }
             } else { content="<path d=\"\(VectorPath.string(VectorPath.local(n)))\" fill-rule=\"\(n.evenOdd ? "evenodd":"nonzero")\"/>" }
-            body += "<g\(clip)><g transform=\"\(transform)\" opacity=\"\(n.opacity)\" fill=\"\(fill)\" fill-opacity=\"\(n.gradKind==0 ? alpha(n.fill):1)\" stroke=\"\(color(n.stroke))\" stroke-opacity=\"\(alpha(n.stroke))\" stroke-width=\"\(n.strokeWidth)\" stroke-linejoin=\"round\"\(filter)>\(content)</g></g>"
+            body += "<g\(clip)><g transform=\"\(transform)\" opacity=\"\(n.opacity)\" fill=\"\(fill)\" fill-opacity=\"\((n.gradKind==0 ? alpha(n.fill):1)*Double(n.fillOpacity))\" stroke=\"\(color(n.stroke))\" stroke-opacity=\"\(alpha(n.stroke))\" stroke-width=\"\(n.strokeWidth)\" stroke-linejoin=\"round\"\(filter)>\(content)</g></g>"
         }
         return "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"\(p.w)\" height=\"\(p.h)\" viewBox=\"0 0 \(p.w) \(p.h)\"><defs>\(definitions)</defs>\(body)</svg>"
     }

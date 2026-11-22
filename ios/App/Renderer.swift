@@ -85,6 +85,14 @@ final class DocumentRenderer {
             };return
         }
         let path=VectorPath.local(n)
+        if n.shadowBlur>0 && n.fillOpacity<1 {
+            ctx.saveGState()
+            let margin=max(100,n.shadowBlur*4+abs(n.shadowDx)+abs(n.shadowDy))
+            ctx.addRect(rect.insetBy(dx:-margin,dy:-margin));ctx.addPath(path);ctx.clip(using:.evenOdd)
+            ctx.addPath(path);ctx.setFillColor(UIColor(argb:n.fill).cgColor);ctx.fillPath();ctx.restoreGState()
+            ctx.setShadow(offset:.zero,blur:0,color:nil)
+        }
+        ctx.setAlpha(min(1,max(0,n.opacity))*n.fillOpacity)
         ctx.addPath(path)
         if n.gradKind != 0,let gradient=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:[UIColor(argb:n.fill).cgColor,UIColor(argb:n.fill2).cgColor] as CFArray,locations:[0,1]) {
             ctx.saveGState();ctx.clip(using:n.evenOdd ? .evenOdd:.winding)
@@ -93,6 +101,7 @@ final class DocumentRenderer {
                 ctx.drawLinearGradient(gradient,start:CGPoint(x:n.w/2-dx,y:n.h/2-dy),end:CGPoint(x:n.w/2+dx,y:n.h/2+dy),options:[.drawsBeforeStartLocation,.drawsAfterEndLocation]) }
             ctx.restoreGState()
         } else { ctx.setFillColor(UIColor(argb:n.fill).cgColor);ctx.drawPath(using:n.evenOdd ? .eoFill:.fill) }
+        ctx.setAlpha(min(1,max(0,n.opacity)))
         if n.strokeWidth>0 { ctx.addPath(path);ctx.setStrokeColor(UIColor(argb:n.stroke).cgColor);ctx.setLineWidth(n.strokeWidth);ctx.setLineJoin(.round);ctx.setLineCap(.round);ctx.strokePath() }
     }
     func sample(_ p:Project,at point:CGPoint)->Int64? {

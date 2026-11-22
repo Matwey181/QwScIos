@@ -11,6 +11,7 @@ struct PlaybackLinkControls:View {
             Text("Идёт от текущего положения до конца. Нажатие источника — пауза или продолжение; перемотка меняет время.").font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"))
             QNumber(title:"Полная длительность · секунды",value:Binding(get:{CGFloat(link.duration)},set:{link.duration=max(1,Double($0))}))
             QToggle("Запускать сразу в режиме игры",isOn:flag(\.autoplay))
+            QToggle("Продолжать после перемотки",isOn:Binding(get:{link.resumeAfterSeek ?? true},set:{link.resumeAfterSeek=$0}))
             QToggle("Повторять с начала",isOn:$link.repeats)
             QToggle("Текст: прошло",isOn:flag(\.elapsedEnabled))
             if link.elapsedEnabled==true{LinkChoiceField(title:"Прошедшее время",selection:identifier(\.elapsedID),items:texts)}

@@ -10,6 +10,8 @@ struct TextRun:Codable,Equatable,Identifiable {
     var color:Int64?=nil
 }
 struct LayerExtras:Codable,Equatable {
+    var fillOpacity:CGFloat?
+    var disabled:Bool?
     var hugWidth:Bool?=nil
     var hugHeight:Bool?=nil
     var anchorX:String?=nil
@@ -45,6 +47,9 @@ struct StudioDocument:Codable,Equatable {
     var gridSnap=false
     var gridSize:CGFloat=8
     var spacingSnap=true
+    var showSafeArea:Bool?
+    var safeTop:CGFloat?
+    var safeBottom:CGFloat?
     var smartPlacement:Bool?
     var smartGap:CGFloat?
 }

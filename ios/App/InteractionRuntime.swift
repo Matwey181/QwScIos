@@ -16,6 +16,7 @@ import QuartzCore
         var to: Double
         var easing: String
         var repeats: Bool
+        var totalDuration:Double?
         var colorFrom: Int64
         var colorTo: Int64
     }
@@ -35,6 +36,8 @@ import QuartzCore
     private(set) var visibility: [String: Bool] = [:]
     private var paused:[String:Double]=[:]
     private var motions: [Motion] = []
+    private var widgetValues:[String:Double]=[:]
+    private var scrubbingGroups:Set<String>=[]
     private var toggled:Set<String>=[]
     private var morphs:[String:LinkMorph]=[:]
     private var stateLayers:[String:Node]=[:]
@@ -54,8 +57,9 @@ import QuartzCore
 
     func start(_ document: Project,widgetValues:[String:Double]=[:]) {
         project = document
+        self.widgetValues=widgetValues;scrubbingGroups=[]
         paused=[:];toggled=[];morphs=[:];valueEvents=[];stateLayers=[:]
-        for rule in document.links where rule.enabled && rule.property=="morph" {
+        for rule in document.links.flatMap({[$0]+($0.steps ?? [])}) where rule.enabled && rule.property=="morph" {
             if let node=document.nodes.first(where:{$0.id==rule.targetID}),let target=rule.shapeID {
                 morphs[node.id]=LinkMorph(from:node.shapeId,to:target)
             }
@@ -94,7 +98,8 @@ import QuartzCore
         for link in matching { execute(link, fraction: fraction) }
     }
 
-    private func execute(_ link: InteractionLink, fraction: Double?) {
+    private func execute(_ input: InteractionLink, fraction: Double?) {
+        var link=input
         guard let node = project.nodes.first(where: { $0.id == link.targetID }) else { return }
         let target = node.id
         let now = CACurrentMediaTime()
@@ -108,9 +113,20 @@ import QuartzCore
             }
             if motions.contains(where:{$0.owner==link.id}) || echoes.contains(where:{$0.owner==link.id}) || pending.contains(where:{$0.link.id==link.id}){paused[link.id]=now;return}
         }
+        if let steps=link.steps,!steps.isEmpty {
+            pending.removeAll{$0.link.id==link.id};motions.removeAll{$0.owner==link.id};echoes.removeAll{$0.owner==link.id}
+            var previousStart=max(0,link.delay),previousEnd=previousStart+actionDuration(link)
+            for item in steps where item.enabled {
+                let start=(item.stepTiming=="with" ? previousStart:previousEnd)+max(0,item.delay)
+                previousStart=start;previousEnd=start+actionDuration(item)
+                var action=item;action.id=link.id;action.sourceID=link.sourceID;action.steps=nil;action.delay=0;action.pauseOnRepeat=false;action.alternate=false
+                pending.append(Pending(link:action,at:now+start,fraction:fraction))
+            }
+        }
+        link.steps=nil
         if link.delay > 0 && !["animate","echo"].contains(link.mode) {
             var delayed=link
-            delayed.delay=0
+            delayed.delay=0;delayed.pauseOnRepeat=false
             pending.append(Pending(link:delayed,at:now+link.delay,fraction:fraction))
             return
         }
@@ -145,22 +161,22 @@ import QuartzCore
         case "set":
             set(target, link.property, returning ? baseValue(node,link.property):colorProperty ? Double(link.color):link.property=="morph" ? 1:link.value)
         default:
-            // Progress always fills from zero to one; other properties animate
-            // from their currently rendered value.
-            let from = link.property == "progress" && link.alternate != true ? 0 : current(node, link.property)
+            // Continue from the current rendered value, including a scrubbed slider.
+            let existing=current(node,link.property)
+            let from = link.property=="progress" && existing>=1 && !returning ? 0:existing
             let to = returning ? baseValue(node,link.property) : colorProperty ? Double(link.color) : ["progress","morph"].contains(link.property) ? 1 : link.value
             motions.removeAll { $0.targetID == target && $0.property == link.property }
             motions.append(Motion(owner:link.id,sourceID: link.sourceID, targetID: target,
                                   property: link.property, start: now + max(0,link.delay),
-                                  duration: max(0.01,link.duration), from: from, initialFrom: from,
+                                  duration: max(0.01,link.duration*(link.property=="progress" ? abs(to-from):1)), from: from, initialFrom: from,
                                   to: to, easing: link.easing, repeats: link.repeats,
-                                  colorFrom: Int64(from), colorTo: Int64(to)))
-            if link.property == "progress" && link.alternate != true { set(target, "progress", 0) }
+                                  totalDuration:link.property=="progress" ? max(0.01,link.duration):nil,colorFrom: Int64(from), colorTo: Int64(to)))
+
         }
     }
 
     private func transition(_ nodes:[Node],rule:InteractionLink,now:Double){
-        let properties=["x","y","width","height","rotation","opacity","fill","fill2","stroke","strokeWidth","fontSize","weight","corner","blur","shadowBlur","shadowDx","shadowDy","shadowColor"]
+        let properties=["x","y","width","height","rotation","opacity","fillOpacity","fill","fill2","stroke","strokeWidth","fontSize","weight","corner","blur","shadowBlur","shadowDx","shadowDy","shadowColor"]
         for target in nodes {
             guard let source=project.nodes.first(where:{$0.id==target.id}) else{continue}
             stateLayers[target.id]=target;text[target.id]=target.text
@@ -178,6 +194,26 @@ import QuartzCore
             }
         }
     }
+    private func actionDuration(_ link:InteractionLink)->Double{["animate","echo","state","playback"].contains(link.mode) ? max(0.01,link.duration):0}
+    func seek(group:String,value:Double){
+        playback.seek(group:group,value:value)
+        let value=min(1,max(0,value)),now=CACurrentMediaTime();widgetValues[group]=value
+        let ids=Set(project.nodes.filter{$0.group==group}.map(\.id))
+        for id in ids{number[id,default:[:]]["progress"]=value}
+        for i in motions.indices where ids.contains(motions[i].targetID) && motions[i].property=="progress"{
+            let total=motions[i].totalDuration ?? motions[i].duration
+            motions[i].from=value;motions[i].start=now;motions[i].duration=max(0.01,total*abs(motions[i].to-value))
+            if paused[motions[i].owner] != nil{paused[motions[i].owner]=now}
+        }
+    }
+    func scrub(group:String,_ enabled:Bool){
+        playback.scrub(group:group,enabled)
+        if enabled{scrubbingGroups.insert(group)}else{
+            scrubbingGroups.remove(group);seek(group:group,value:widgetValues[group] ?? 0)
+            let owners=Set(motions.filter{motion in motion.property=="progress" && project.nodes.first{$0.id==motion.targetID}?.group==group}.map(\.owner))
+            for owner in owners{if project.links.first(where:{$0.id==owner})?.resumeAfterSeek==false{paused[owner]=CACurrentMediaTime()}}
+        }
+    }
     private func mixColor(_ first:Int64,_ last:Int64,_ t:Double)->Int64 {
         let a=UInt32(truncatingIfNeeded:first),b=UInt32(truncatingIfNeeded:last)
         var result:UInt32=0
@@ -186,6 +222,7 @@ import QuartzCore
     }
     private func baseValue(_ node: Node, _ property: String) -> Double {
         switch property {
+        case "fillOpacity":return Double(node.fillOpacity)
         case "stroke":return Double(node.stroke)
         case "fill2":return Double(node.fill2)
         case "shadowColor":return Double(node.shadowColor)
@@ -208,7 +245,7 @@ import QuartzCore
         case "corner": return Double(node.corner)
         case "blur": return Double(node.softBlur)
         case "fill": return Double(node.fill)
-        case "progress": return 0
+        case "progress": return widgetValues[node.group] ?? 0
         default: return 0
         }
     }
@@ -231,11 +268,11 @@ import QuartzCore
         let clockChanged=playback.tick(now)
         let due=pending.filter{$0.at<=now && paused[$0.link.id]==nil}
         pending.removeAll{$0.at<=now && paused[$0.link.id]==nil}
-        for entry in due {execute(entry.link,fraction:entry.fraction)}
         var finished: [String] = []
         var kept: [Motion] = []
         for var motion in motions {
             if paused[motion.owner] != nil{kept.append(motion);continue}
+            if motion.property=="progress",let group=project.nodes.first(where:{$0.id==motion.targetID})?.group,scrubbingGroups.contains(group){kept.append(motion);continue}
             if now < motion.start { kept.append(motion); continue }
             let t = min(1, max(0,(now-motion.start)/motion.duration))
             let eased = InteractionLink.eased(t,motion.easing)
@@ -255,7 +292,8 @@ import QuartzCore
                 if motion.repeats {
                     motion.start = now
                     // Repeat the full forward animation, not a frozen final frame.
-                    motion.from = motion.initialFrom
+                    motion.from = motion.property=="progress" ? 0:motion.initialFrom
+                    motion.duration=motion.totalDuration ?? motion.duration
                     kept.append(motion)
                 } else {
                     finished.append(motion.targetID)
@@ -263,6 +301,7 @@ import QuartzCore
             } else { kept.append(motion) }
         }
         motions=kept
+        for entry in due {execute(entry.link,fraction:entry.fraction)}
         var budget=64
         while !valueEvents.isEmpty && budget>0 {let event=valueEvents.removeFirst();budget-=1;fire("valueChanged",sourceID:event.0,fraction:event.1)}
         valueEvents=[]
@@ -284,6 +323,7 @@ import QuartzCore
                 if let w=v["width"] { node.w=max(0,CGFloat(w)) }
                 if let h=v["height"] { node.h=max(0,CGFloat(h)) }
                 if let r=v["rotation"] { node.rotation=CGFloat(r) }
+                if let alpha=v["fillOpacity"]{node.fillOpacity=CGFloat(alpha)}
                 if let o=v["opacity"] { node.opacity=min(1,max(0,CGFloat(o))) }
                 if let z=v["scale"] {
                     let k=max(0.001,min(100,CGFloat(z)))

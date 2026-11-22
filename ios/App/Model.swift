@@ -44,6 +44,7 @@ struct Node: Codable, Identifiable, Equatable {
     var font: String = ""
     var widget: String = ""
     var action: String = ""
+    var fillOpacity:CGFloat {get{min(1,max(0,extras?.fillOpacity ?? 1))}set{var x=extras ?? LayerExtras();x.fillOpacity=min(1,max(0,newValue));extras=x}}
     init() {}
     enum CodingKeys: String, CodingKey {
         case extras = "ux"

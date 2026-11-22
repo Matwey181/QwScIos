@@ -21,6 +21,7 @@ struct EditorCanvas:UIViewRepresentable {
         self.editor=editor;super.init(frame:.zero)
         backgroundColor=UIColor.secondarySystemBackground;isMultipleTouchEnabled=true
         ratioButton.addTarget(self,action:#selector(toggleRatio),for:.touchUpInside);ratioButton.layer.cornerRadius=18;ratioButton.accessibilityLabel="Сохранение пропорций";addSubview(ratioButton)
+        let press=UILongPressGestureRecognizer(target:self,action:#selector(componentPress(_:)));press.name="componentPress";press.minimumPressDuration=0;press.allowableMovement=CGFloat.greatestFiniteMagnitude;press.cancelsTouchesInView=false;addGestureRecognizer(press)
         let tap=UITapGestureRecognizer(target:self,action:#selector(tap(_:)));addGestureRecognizer(tap)
         let double=UITapGestureRecognizer(target:self,action:#selector(doubleTap(_:)));double.numberOfTapsRequired=2;addGestureRecognizer(double);tap.require(toFail:double)
         let long=UILongPressGestureRecognizer(target:self,action:#selector(longPress(_:)));addGestureRecognizer(long)
@@ -66,6 +67,14 @@ struct EditorCanvas:UIViewRepresentable {
         }
         ctx.restoreGState()
         ctx.setStrokeColor(UIColor(argb:palette.argb("outlineVariant")).cgColor);ctx.setLineWidth(1/scale);ctx.stroke(page)
+        if !editor.playing,editor.project.studio?.showSafeArea==true {
+            let top=min(editor.project.h,max(0,editor.project.studio?.safeTop ?? 59))
+            let bottom=min(editor.project.h-top,max(0,editor.project.studio?.safeBottom ?? 34))
+            ctx.saveGState();ctx.setFillColor(UIColor.systemOrange.withAlphaComponent(0.09).cgColor)
+            ctx.fill(CGRect(x:0,y:0,width:editor.project.w,height:top));ctx.fill(CGRect(x:0,y:editor.project.h-bottom,width:editor.project.w,height:bottom))
+            ctx.setStrokeColor(UIColor.systemOrange.withAlphaComponent(0.8).cgColor);ctx.setLineWidth(1/scale);ctx.setLineDash(phase:0,lengths:[5/scale,4/scale])
+            for y in [top,editor.project.h-bottom]{ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))};ctx.strokePath();ctx.restoreGState()
+        }
         if !editor.playing,let box=editor.bounds {
             ctx.setLineWidth(2/scale);ctx.setStrokeColor(UIColor(argb:palette.argb("primary")).cgColor);ctx.setFillColor(UIColor(argb:palette.argb("surface")).cgColor);ctx.stroke(box)
             let corners=[CGPoint(x:box.minX,y:box.minY),CGPoint(x:box.maxX,y:box.minY),CGPoint(x:box.maxX,y:box.maxY),CGPoint(x:box.minX,y:box.maxY)]
@@ -90,6 +99,7 @@ struct EditorCanvas:UIViewRepresentable {
     }
     @objc private func toggleRatio(){let lock = !editor.selected.allSatisfy(\.ratioLock);editor.change{$0.ratioLock=lock};positionRatioButton()}
     private func gestureOn(_ id:String)->Bool {(UserDefaults.standard.object(forKey:"gesture_"+id) as? Bool) ?? true}
+    @objc func componentPress(_ g:UILongPressGestureRecognizer){guard editor.playing else{return};if g.state == .began{editor.originalPlay.press(document(g.location(in:self)),down:true)}else if g.state == .ended || g.state == .cancelled{editor.originalPlay.press(document(g.location(in:self)),down:false)}}
     @objc func twoTap(){if gestureOn("UNDO_TAP"){editor.undo()}}
     @objc func threeTap(){if gestureOn("REDO_TAP"){editor.redo()}}
     @objc func longPress(_ g:UILongPressGestureRecognizer){
@@ -117,9 +127,10 @@ struct EditorCanvas:UIViewRepresentable {
         if g.state == .began { initialZoom=zoom }
         zoom=min(12,max(0.15,initialZoom*g.scale));setNeedsDisplay()
     }
-    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {!(touch.view?.isDescendant(of:ratioButton) ?? false)}
+    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {if gestureRecognizer.name=="componentPress" && !editor.playing{return false};return !(touch.view?.isDescendant(of:ratioButton) ?? false)}
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool {
         let pair=[gestureRecognizer,otherGestureRecognizer]
+        if pair.contains(where:{$0.name=="componentPress"}){return true}
         return pair.contains{$0 is UIPinchGestureRecognizer} && pair.contains{($0 as? UIPanGestureRecognizer)?.minimumNumberOfTouches==2}
     }
     @objc func drag(_ g:UIPanGestureRecognizer) {

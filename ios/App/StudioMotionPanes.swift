@@ -2,8 +2,9 @@ import SwiftUI
 
 struct StudioStates:View {
     @ObservedObject var editor:Editor
+    var sourceID:String?=nil
     @State private var name="Обычно"
-    @State private var whole=true
+    @State private var whole=false
     var body:some View {VStack(spacing:16){
         StudioCard(title:"Снимки оформления"){
             Text("Снимок запоминает вид и расположение слоёв. Измените дизайн, сохраните второй снимок и свяжите переход с кнопкой.").font(qfont(13))
@@ -12,7 +13,7 @@ struct StudioStates:View {
             QToggle("Запомнить весь экран",isOn:$whole)
             LinkPill(title:"Снять состояние",icon:"camera",prominent:true){editor.captureState(name,wholeScreen:whole)}.disabled(!whole && editor.selected.isEmpty)
         }
-        ForEach(editor.project.studio?.states ?? []){state in StudioCard(title:state.name){
+        ForEach((editor.project.studio?.states ?? []).filter{state in sourceID==nil || state.nodes.contains{$0.id==sourceID}}){state in StudioCard(title:state.name){
             EffectPreview(nodes:state.nodes,renderer:editor.renderer).frame(height:140)
             HStack{LinkPill(title:"Применить",icon:"checkmark"){editor.applyState(state)};LinkPill(title:"Связать",icon:"link"){var rule=InteractionLink();rule.mode="state";rule.stateID=state.id;rule.targetID=state.nodes.first?.id ?? "";rule.sourceID=editor.selected.first?.id ?? rule.targetID;rule.duration=0.6;rule.alternate=true;editor.edit{$0.links.append(rule)}}}
             Button("Удалить состояние",role:.destructive){editor.studio{$0.states.removeAll{$0.id==state.id}}}
@@ -22,8 +23,9 @@ struct StudioStates:View {
 struct StudioTimeline:View {
     @ObservedObject var editor:Editor
     @Environment(\.q) private var q
+    var sourceID:String?=nil
     @State private var selected:String?
-    private var animations:[InteractionLink]{editor.project.links.filter{["animate","echo","state","playback"].contains($0.mode)}}
+    private var animations:[InteractionLink]{editor.project.links.filter{["animate","echo","state","playback"].contains($0.mode) && (sourceID==nil || $0.sourceID==sourceID)}}
     private var extent:Double{max(1,animations.map{max(0,$0.delay)+max(0.01,$0.duration)}.max() ?? 1)}
     var body:some View {VStack(spacing:16){
         StudioCard(title:"Общий таймлайн"){
@@ -53,6 +55,7 @@ struct StudioTimeline:View {
 }
 struct StudioGraph:View {
     @ObservedObject var editor:Editor
+    var sourceID:String?=nil
     @State private var source:String?
     @Environment(\.q) private var q
     private func issue(_ link:InteractionLink)->String?{
@@ -68,7 +71,7 @@ struct StudioGraph:View {
             Text("Источник → реакция → цель. Нажмите карточку для редактирования.").font(qfont(13))
             if editor.project.links.isEmpty{Text("Связок пока нет.").font(qfont(14))}
         }
-        ForEach(editor.project.links){rule in
+        ForEach(editor.project.links.filter{sourceID==nil || $0.sourceID==sourceID}){rule in
             StudioCard(title:InteractionLink.events.first{$0.0==rule.event}?.1 ?? rule.event){
                 Button{source=rule.sourceID}label:{HStack(spacing:10){node(rule.sourceID);Image(systemName:"arrow.right").foregroundStyle(q.color("primary"));node(rule.targetID)}}.buttonStyle(.plain)
                 Text(InteractionLink.effects.first{$0.0==rule.mode}?.1 ?? rule.mode).font(qfont(13)).foregroundStyle(q.color("primary"))
