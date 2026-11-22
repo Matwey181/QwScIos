@@ -64,9 +64,12 @@ enum SwiftExport {
         return project.links.map{encode($0)}.joined(separator:",\n")
     }
     private static func bases(_ project:Project,_ pages:[[Node]])->String {
-        let ids=Set(project.links.flatMap{[$0]+($0.steps ?? [])}.map(\.targetID) + project.nodes.compactMap {
-            $0.action.hasPrefix("toggle:") ? String($0.action.dropFirst(7)) : nil
-        })
+        let links:[InteractionLink]=project.links.flatMap{[$0]+($0.steps ?? [])}
+        let targets:[String]=links.map(\.targetID)
+        let toggles:[String]=project.nodes.compactMap {node in
+            node.action.hasPrefix("toggle:") ? String(node.action.dropFirst(7)):nil
+        }
+        let ids=Set(targets+toggles)
         let stateIDs=Set(project.studio?.states.flatMap(\.nodes).map(\.id) ?? [])
         let nodes=pages.flatMap{$0}.filter{ids.contains($0.id) || stateIDs.contains($0.id)}
         let props: [(String,(Node)->Double)] = [

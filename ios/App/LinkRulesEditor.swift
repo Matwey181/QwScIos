@@ -6,7 +6,17 @@ struct LinkRulesEditor:View {
     @Environment(\.q) private var q
     @State private var expandedID:String?
     @State private var search=""
-    private var visibleRules:[InteractionLink]{editor.project.links.filter{rule in (rule.sourceID==source.id || (!source.group.isEmpty && editor.project.nodes.first{$0.id==rule.sourceID}?.group==source.group)) && (search.isEmpty || (summary(rule)+" "+(InteractionLink.effects.first{$0.0==rule.mode}?.1 ?? "")+" "+(InteractionLink.properties.first{$0.0==rule.property}?.1 ?? "")).localizedCaseInsensitiveContains(search))}}
+    private var visibleRules:[InteractionLink]{editor.project.links.filter{matches($0)}}
+    private func matches(_ rule:InteractionLink)->Bool {
+        let other=editor.project.nodes.first(where:{$0.id==rule.sourceID})
+        let sameGroup = !source.group.isEmpty && other?.group==source.group
+        guard rule.sourceID==source.id || sameGroup else{return false}
+        if search.isEmpty{return true}
+        let effect=InteractionLink.effects.first(where:{$0.0==rule.mode})?.1 ?? ""
+        let property=InteractionLink.properties.first(where:{$0.0==rule.property})?.1 ?? ""
+        let text=summary(rule)+" "+effect+" "+property
+        return text.localizedCaseInsensitiveContains(search)
+    }
     var body:some View {
         VStack(alignment:.leading,spacing:18){
             intro
