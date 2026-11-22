@@ -134,6 +134,7 @@ struct Node: Codable, Identifiable, Equatable {
         font = try c.decodeIfPresent(String.self, forKey: .font) ?? ""
         widget = try c.decodeIfPresent(String.self, forKey: .widget) ?? ""
         action = try c.decodeIfPresent(String.self, forKey: .action) ?? ""
+        IconRepair.apply(&self)
     }
     var center: CGPoint { CGPoint(x:x+w/2, y:y+h/2) }
     var rect: CGRect { CGRect(x:x,y:y,width:w,height:h) }
