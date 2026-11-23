@@ -41,6 +41,8 @@ private struct QwelRule {
     var stateNumbers:[String:Double]=[:]
     var stateTexts:[String:String]=[:]
     var reverseTexts:[String:String]=[:]
+    var control:String=""
+    var destination:String="back"
 }
 private struct QwelMotion {
     var owner:String=""
@@ -74,6 +76,7 @@ private struct QwelEcho: Identifiable {
     @Published private var version: Int = 0
     private struct Clock {var rule:QwelRule;var position:Double;var last:Double;var running:Bool;var scrubbing=false}
     private var clocks:[String:Clock]=[:]
+    var onNavigate:((String)->Void)?
     private var rules: [QwelRule] = []
     private var paused:[String:Double]=[:]
     private var toggled:Set<String>=[]
@@ -212,6 +215,17 @@ private struct QwelEcho: Identifiable {
             if rule.alternate {if returning{toggled.remove(rule.id)}else{toggled.insert(rule.id)}}
             let isColor=["fill","stroke","fill2","shadowColor"].contains(property)
             switch rule.mode {
+            case "navigate":onNavigate?(rule.destination)
+            case "url":if let url=URL(string:rule.destination),["http","https"].contains(url.scheme ?? ""){UIApplication.shared.open(url)}
+            case "visibility":visibility[id]=rule.control=="show" ? true:rule.control=="hide" ? false:!(visibility[id] ?? ((base[key(id,"visible")] ?? 1)>0.5))
+            case "component":
+                let old=current[key(id,"progress")] ?? 0
+                let value=rule.control=="set" ? rule.value:rule.control=="increase" ? old+rule.value:rule.control=="decrease" ? old-rule.value:old>=0.5 ? 0:1
+                for target in Set(rule.targetAliases+[id]){current[key(target,"progress")]=value;emit("valueChanged",source:target,fraction:value)}
+            case "playerControl":
+                for clockID in Array(clocks.keys){guard var c=clocks[clockID],c.rule.target==id || c.rule.targetAliases.contains(id) else{continue}
+                    switch rule.control{case "pause":c.running=false;case "stop":c.running=false;c.position=0;case "restart":c.position=0;c.running=true;case "play":if c.position>=1{c.position=0};c.running=true;default:c.running.toggle()};c.last=now;clocks[clockID]=c;publishClock(c)
+                }
             case "state":
                 for (address,destination) in rule.stateNumbers {
                     guard let divider=address.lastIndex(of:"|") else{continue}

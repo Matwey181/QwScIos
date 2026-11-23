@@ -65,7 +65,7 @@ struct LinkRulesEditor:View {
                 mini("doc.on.doc","Дублировать"){var copy=link;copy.id=UUID().uuidString;editor.edit{$0.links.append(copy)};expandedID=copy.id}
                 mini("trash","Удалить"){editor.edit{$0.links.removeAll{$0.id==link.id}}}
             }
-            if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes,states:editor.project.studio?.states ?? [])}
+            if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes,states:editor.project.studio?.states ?? [],pages:editor.project.pages)}
         }.padding(18).qSurface(28,"surfaceContainerHigh")
     }
     private func mini(_ icon:String,_ label:String,action:@escaping()->Void)->some View {
@@ -109,12 +109,13 @@ struct LinkRuleForm:View {
     @Binding var link:InteractionLink
     let layers:[Node]
     let states:[VisualState]
+    var pages:[Page]=[]
     @Environment(\.q) private var q
     private var colorProperty:Bool{["fill","stroke","fill2","shadowColor"].contains(link.property)}
     private var nodeChoices:[(String,String)]{
         layers.map{node in
             let kind=node.widget.components(separatedBy:":").first ?? ""
-            let type=["slider":"Ползунок","progress":"Прогресс","switch":"Переключатель","press":"Кнопка","pick":"Выбор"][kind] ?? ["TEXT":"Текст","SHAPE":"Фигура","IMAGE":"Картинка","RECT":"Прямоугольник","ELLIPSE":"Эллипс"][node.kind] ?? "Слой"
+            let type=["slider":"Ползунок","progress":"Прогресс","switch":"Переключатель","press":"Слой","pick":"Выбор"][kind] ?? ["TEXT":"Текст","SHAPE":"Фигура","IMAGE":"Картинка","RECT":"Прямоугольник","ELLIPSE":"Эллипс"][node.kind] ?? "Слой"
             return (node.id,"\(type) · \(node.name)")
         }
     }
@@ -131,8 +132,9 @@ struct LinkRuleForm:View {
                 if link.mode=="state"{LinkChoiceField(title:"Состояние",selection:Binding(get:{link.stateID ?? ""},set:{link.stateID=$0}),items:states.map{($0.id,$0.name)})}
                 if link.mode=="playback"{PlaybackLinkControls(link:$link,layers:layers)}
             }
+            extraActions
             timingControls
-            if !isStep{AnyView(LinkStepsEditor(link:$link,layers:layers,states:states))}
+            if !isStep{AnyView(LinkStepsEditor(link:$link,layers:layers,states:states,pages:pages))}
         }.onChange(of:link.property){_,property in if property=="morph" && link.shapeID==nil{link.shapeID="star-8";link.from=0;link.to=1}}
         .onChange(of:link.targetID){_,id in
             if let node=layers.first(where:{$0.id==id}),["slider","progress","switch"].contains(node.widget.components(separatedBy:":").first ?? ""),link.property=="opacity" {link.property="progress"}
@@ -162,6 +164,15 @@ struct LinkRuleForm:View {
         if ["animate","echo","state"].contains(link.mode){choices.append(("pause","Пауза и продолжение"))}
         return choices
     }
+    @ViewBuilder private var extraActions:some View {
+        if link.mode=="visibility"{LinkChoiceField(title:"Видимость",selection:control("toggle"),items:[("show","Показать"),("hide","Скрыть"),("toggle","Переключить")])}
+        if link.mode=="navigate"{LinkChoiceField(title:"Экран",selection:destination,items:[("back","Назад")]+pages.map{($0.id,$0.name)})}
+        if link.mode=="url"{textInput("Адрес https://…",text:destination)}
+        if link.mode=="component"{LinkChoiceField(title:"Что сделать со значением",selection:control("tap"),items:[("tap","Переключить / выбрать"),("set","Установить значение"),("increase","Прибавить"),("decrease","Убавить")]);if link.control != nil && link.control != "tap"{number("Значение или шаг",value:$link.value)}}
+        if link.mode=="playerControl"{LinkChoiceField(title:"Плеер",selection:control("toggle"),items:[("play","Продолжить"),("pause","Пауза"),("toggle","Пауза / продолжение"),("restart","С начала"),("stop","Остановить и сбросить")])}
+    }
+    private var destination:Binding<String>{Binding(get:{link.destination ?? "back"},set:{link.destination=$0})}
+    private func control(_ fallback:String)->Binding<String>{Binding(get:{link.control ?? fallback},set:{link.control=$0})}
     private var boundsControls:some View {HStack(spacing:10){number("От",value:$link.from);number("До",value:$link.to)}}
     @ViewBuilder private var textControls:some View {
         if link.mode=="text"{

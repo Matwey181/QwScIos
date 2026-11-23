@@ -48,6 +48,8 @@ import UIKit
     weak var editor:Editor?
     var target:[String:Double]=[:]
     let links = InteractionRuntime()
+    private var lastTapPoint=CGPoint.zero
+    private var lastTapGroup=""
     private var pressedSourceID:String?
     private var activeSourceID: String?
     var shown:[String:Double]=[:]
@@ -74,6 +76,8 @@ import UIKit
                 self.target[group]=value
                 self.shown[group]=value
             }
+            links.onNavigate={ [weak self] destination in DispatchQueue.main.async{self?.navigate(destination)} }
+            links.onComponent={ [weak self] target,action,value in self?.component(target,action:action,value:value) }
             links.layoutRenderer=editor.renderer
             links.start(editor.project,widgetValues:shown)
             refresh()
@@ -124,24 +128,35 @@ import UIKit
         refresh()
     }
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
+    private func navigate(_ destination:String){
+        guard let editor else{return}
+        if destination=="back"{guard let page=back.popLast() else{return};stop();editor.page(page);start()}
+        else if let page=editor.project.pages.firstIndex(where:{$0.id==destination}){let previous=editor.project.active;stop();back.append(previous);editor.page(page);start()}
+    }
+    private func component(_ id:String,action:String,value:Double){
+        guard let editor,let node=editor.project.nodes.first(where:{$0.id==id}),!node.group.isEmpty else{return}
+        let group=node.group
+        if action=="tap" {
+            do{let result=try OriginalCore.shared.request(["op":"tap","group":group,"x":lastTapGroup==group ? lastTapPoint.x:node.center.x,"y":lastTapGroup==group ? lastTapPoint.y:node.center.y,"shown":target]);target=result.compactMapValues{($0 as? NSNumber)?.doubleValue}}
+            catch{editor.error=error.localizedDescription}
+        }else{let current=target[group] ?? 0;target[group]=action=="increase" ? current+value:action=="decrease" ? current-value:value}
+        if kinds[group]=="pick"{let count=Set(editor.project.nodes.filter{$0.group==group && $0.widget.hasPrefix("pick:i")}.compactMap{Int($0.widget.dropFirst(6).split(separator:"/").first ?? "")}).count;target[group]=min(Double(max(0,count-1)),max(0,target[group] ?? 0))}
+        shown[group]=target[group] ?? 0;notifyWidget(group,value:target[group] ?? 0)
+    }
     func tap(_ p:CGPoint) {
-        guard let editor else { return }
-        if let n=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{ n in (n.visible || visibility[n.id]==true) && n.extras?.disabled != true && visibility[n.id] != false && !n.mask && n.contains(p) && (!n.action.isEmpty || linked(n,events:["tap"]))}) {
-            links.fire("tap",sourceID:n.id)
-            refresh()
-            if n.action.hasPrefix("goto:"),let i=editor.project.pages.firstIndex(where:{$0.id==String(n.action.dropFirst(5))}) { let previous=editor.project.active;stop();back.append(previous);editor.page(i);start();return }
-            if n.action=="back",let page=back.popLast() { stop();editor.page(page);start();return }
-            if n.action.hasPrefix("toggle:") { let id=String(n.action.dropFirst(7));let old=visibility[id] ?? editor.project.nodes.first(where:{$0.id==id})?.visible ?? false;visibility[id] = !old;refresh();return }
-            if n.action.hasPrefix("url:"),let url=URL(string:String(n.action.dropFirst(4))),["http","https"].contains(url.scheme) { UIApplication.shared.open(url);return }
-        }
+        guard let editor else{return}
         let widget=hit(p)
-        guard let group=widget["group"] as? String else { return }
-        if (rendered?.nodes ?? editor.project.nodes).contains(where:{$0.group==group && $0.extras?.disabled==true}){return}
-        if ["slider","progress"].contains(widget["kind"] as? String ?? "") {
-            let value=(widget["value"] as? NSNumber)?.doubleValue ?? 0
-            target[group]=value;shown[group]=value;notifyWidget(group,value:value);refresh();return
+        lastTapPoint=p;lastTapGroup=widget["group"] as? String ?? ""
+        if let group=widget["group"] as? String {
+            if (rendered?.nodes ?? editor.project.nodes).contains(where:{$0.group==group && $0.extras?.disabled==true}){return}
+            if ["slider","progress"].contains(widget["kind"] as? String ?? ""){
+                let value=(widget["value"] as? NSNumber)?.doubleValue ?? 0
+                target[group]=value;shown[group]=value;notifyWidget(group,value:value)
+            }
         }
-        do { let result=try OriginalCore.shared.request(["op":"tap","group":group,"x":p.x,"y":p.y,"shown":target]);target=result.compactMapValues{($0 as? NSNumber)?.doubleValue};notifyWidget(group,value:target[group] ?? 0);refresh() } catch { editor.error=error.localizedDescription }
+        if let node=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{$0.visible && $0.extras?.disabled != true && !$0.mask && $0.contains(p) && linked($0,events:["tap"])}){links.fire("tap",sourceID:node.id);refresh();return}
+        if let group=widget["group"] as? String,let node=editor.project.nodes.first(where:{$0.group==group && linked($0,events:["tap"])}){links.fire("tap",sourceID:node.id)}
+        refresh()
     }
     private func notifyWidget(_ group:String,value:Double) {
         guard let node=editor?.project.nodes.first(where:{$0.group==group}) else{return}
@@ -201,7 +216,7 @@ import UIKit
             refresh()
         } else if kind=="pick" {
             let step=Int((initial.x-p.x)/40)
-            if step != lastStep { let d=step>lastStep ? 1:-1;lastStep=step;if let result=try? OriginalCore.shared.request(["op":"swipe","group":group,"direction":d,"shown":target]) { target=result.compactMapValues{($0 as? NSNumber)?.doubleValue};notifyWidget(group,value:target[group] ?? 0);refresh() } }
+            if step != lastStep {let event=step>lastStep ? "swipeLeft":"swipeRight";lastStep=step;if let node=editor?.project.nodes.first(where:{$0.group==group}){links.fire(event,sourceID:node.id);refresh()}}
         }
     }
     func end(_ p:CGPoint) {

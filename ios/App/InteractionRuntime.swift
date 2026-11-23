@@ -36,6 +36,7 @@ import QuartzCore
     private(set) var visibility: [String: Bool] = [:]
     private var paused:[String:Double]=[:]
     private var motions: [Motion] = []
+    private var eventDepth=0
     private var widgetValues:[String:Double]=[:]
     private var scrubbingGroups:Set<String>=[]
     private var toggled:Set<String>=[]
@@ -51,6 +52,8 @@ import QuartzCore
     private var valueEvents:[(String,Double)]=[]
     var layoutRenderer:DocumentRenderer?
     let playback=PlaybackRuntime()
+    var onNavigate:((String)->Void)?
+    var onComponent:((String,String,Double)->Void)?
     var onWidgetProgress: ((String, Double) -> Void)?
 
     var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty || playback.active }
@@ -87,6 +90,7 @@ import QuartzCore
     }
 
     func fire(_ event: String, sourceID: String, fraction: Double? = nil) {
+        guard eventDepth<32 else{return};eventDepth+=1;defer{eventDepth-=1}
         let group = project.nodes.first(where: {$0.id == sourceID})?.group ?? ""
         let matching = project.links.filter { rule in
             guard rule.enabled && (rule.event == event || event=="drag" && rule.event=="valueChanged") else { return false }
@@ -132,9 +136,21 @@ import QuartzCore
         }
         let returning=link.alternate==true && toggled.contains(link.id)
         if link.alternate==true {if returning{toggled.remove(link.id)}else{toggled.insert(link.id)}}
+        if link.property=="morph",["animate","set"].contains(link.mode) {
+            let targetShape=returning ? node.shapeId:(link.shapeID ?? node.shapeId)
+            if let destination=Catalog.shared.shapes.first(where:{$0.id==targetShape}){
+                let path=morphs[target].map{VectorPath.parse($0.svg(number[target]?["morph"] ?? 0))} ?? VectorPath.parse(Catalog.shared.shapes.first(where:{$0.id==node.shapeId})?.path ?? "")
+                morphs[target]=LinkMorph(fromPath:path,toPath:VectorPath.parse(destination.path));number[target,default:[:]]["morph"]=0
+            }
+        }
         let colorProperty=["fill","stroke","fill2","shadowColor"].contains(link.property)
         if ["bind","set","toggle","text"].contains(link.mode) {motions.removeAll{$0.targetID==target && $0.property==link.property}}
         switch link.mode {
+        case "navigate":onNavigate?(link.destination ?? "back")
+        case "url":if let url=URL(string:link.destination ?? ""),["https","http"].contains(url.scheme ?? ""){UIApplication.shared.open(url)}
+        case "component":onComponent?(target,link.control ?? "tap",link.value)
+        case "playerControl":playback.control(target:target,group:node.group,action:link.control ?? "toggle")
+        case "visibility":visibility[target]=link.control=="show" ? true:link.control=="hide" ? false:!(visibility[target] ?? node.visible)
         case "state":
             guard let state=project.studio?.states.first(where:{$0.id==link.stateID}) else{return}
             let ids=Set(state.nodes.map(\.id))
@@ -164,7 +180,7 @@ import QuartzCore
             // Continue from the current rendered value, including a scrubbed slider.
             let existing=current(node,link.property)
             let from = link.property=="progress" && existing>=1 && !returning ? 0:existing
-            let to = returning ? baseValue(node,link.property) : colorProperty ? Double(link.color) : ["progress","morph"].contains(link.property) ? 1 : link.value
+            let to = link.property=="morph" ? 1:returning ? baseValue(node,link.property) : colorProperty ? Double(link.color) : ["progress","morph"].contains(link.property) ? 1 : link.value
             motions.removeAll { $0.targetID == target && $0.property == link.property }
             motions.append(Motion(owner:link.id,sourceID: link.sourceID, targetID: target,
                                   property: link.property, start: now + max(0,link.delay),
@@ -222,6 +238,7 @@ import QuartzCore
     }
     private func baseValue(_ node: Node, _ property: String) -> Double {
         switch property {
+        case "disabled":return node.extras?.disabled==true ? 1:0
         case "fillOpacity":return Double(node.fillOpacity)
         case "stroke":return Double(node.stroke)
         case "fill2":return Double(node.fill2)
@@ -323,6 +340,7 @@ import QuartzCore
                 if let w=v["width"] { node.w=max(0,CGFloat(w)) }
                 if let h=v["height"] { node.h=max(0,CGFloat(h)) }
                 if let r=v["rotation"] { node.rotation=CGFloat(r) }
+                if let disabled=v["disabled"]{var x=node.extras ?? LayerExtras();x.disabled=disabled>=0.5;node.extras=x}
                 if let alpha=v["fillOpacity"]{node.fillOpacity=CGFloat(alpha)}
                 if let o=v["opacity"] { node.opacity=min(1,max(0,CGFloat(o))) }
                 if let z=v["scale"] {

@@ -25,7 +25,7 @@ import SwiftUI
     let renderer:DocumentRenderer
     lazy var originalPlay=OriginalPlayRuntime(editor:self)
     private var pendingSave:Task<Void,Never>?
-    init(_ p:Project,store:ProjectStore) { project=p;self.store=store;renderer=DocumentRenderer(root:store.root) }
+    init(_ p:Project,store:ProjectStore) { project=p;DefaultLinks.allPages(&project);self.store=store;renderer=DocumentRenderer(root:store.root) }
     var selected:[Node] { project.nodes.filter { selection.contains($0.id) } }
     var bounds:CGRect? { selected.reduce(nil as CGRect?) { $0?.union($1.rect) ?? $1.rect } }
     func checkpoint() { undoStack.append(project);if undoStack.count>80 { undoStack.removeFirst() };redoStack=[] }
@@ -75,10 +75,12 @@ import SwiftUI
     }
     func addComponent(_ item:CatalogItem) {
         let g=UUID().uuidString+"~"+item.id,ox=(project.w-item.project.w)/2,oy=(project.h-item.project.h)/2
-        let nodes=item.project.nodes.map { original in var n=original;n.id=UUID().uuidString;n.x += ox;n.y += oy;n.group=g
+        let identifiers=Dictionary(uniqueKeysWithValues:item.project.nodes.map{($0.id,UUID().uuidString)})
+        let nodes=item.project.nodes.map { original in var n=original;n.id=identifiers[original.id] ?? UUID().uuidString;n.x += ox;n.y += oy;n.group=g
             if project.tone.colors.indices.contains(Int(n.fillToken)) { n.fill=project.tone.colors[Int(n.fillToken)] }
             if project.tone.colors.indices.contains(Int(n.strokeToken)) { n.stroke=project.tone.colors[Int(n.strokeToken)] };return n }
-        edit { $0.nodes += nodes };selection=Set(nodes.map(\.id))
+        let links=item.project.links.map{source in var r=source;r.id=UUID().uuidString;r.sourceID=identifiers[r.sourceID] ?? r.sourceID;r.targetID=identifiers[r.targetID] ?? r.targetID;return r}
+        edit { $0.nodes += nodes;$0.links += links };selection=Set(nodes.map(\.id))
     }
     func addImage(_ data:Data,name:String) throws {
         guard let image=UIImage(data:data),image.size.width>0,image.size.height>0 else { throw CocoaError(.fileReadCorruptFile) }

@@ -30,6 +30,13 @@ import QuartzCore
         if track.position>=1{track.position=0}
         track.running=forcePlay ? true:!track.running;track.last=CACurrentMediaTime();tracks[id]=track;publish(track)
     }
+    func control(target:String,group:String,action:String){
+        for id in Array(tracks.keys){
+            guard var track=tracks[id],track.rule.targetID==target || (!group.isEmpty && track.group==group) else{continue}
+            switch action{case "pause":track.running=false;case "stop":track.running=false;track.position=0;case "restart":track.position=0;track.running=true;case "play":if track.position>=1{track.position=0};track.running=true;default:track.running.toggle()}
+            track.last=CACurrentMediaTime();tracks[id]=track;publish(track)
+        }
+    }
     func seek(group:String,value:Double) {
         for id in Array(tracks.keys) {
             guard var track=tracks[id],track.group==group else{continue}

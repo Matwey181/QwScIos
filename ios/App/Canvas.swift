@@ -127,7 +127,7 @@ struct EditorCanvas:UIViewRepresentable {
         if g.state == .began { initialZoom=zoom }
         zoom=min(12,max(0.15,initialZoom*g.scale));setNeedsDisplay()
     }
-    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {if gestureRecognizer.name=="componentPress" && !editor.playing{return false};return !(touch.view?.isDescendant(of:ratioButton) ?? false)}
+    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {if gestureRecognizer.name=="componentPress" && !editor.playing{return false};if editor.playing,let tap=gestureRecognizer as? UITapGestureRecognizer,tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{return false};if editor.playing,gestureRecognizer is UILongPressGestureRecognizer,gestureRecognizer.name != "componentPress"{return false};return !(touch.view?.isDescendant(of:ratioButton) ?? false)}
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool {
         let pair=[gestureRecognizer,otherGestureRecognizer]
         if pair.contains(where:{$0.name=="componentPress"}){return true}

@@ -59,7 +59,7 @@ enum SwiftExport {
             let numbers=stateNumbers(state?.nodes ?? [])
             let stateLabels=Dictionary((state?.nodes ?? []).filter{$0.kind=="TEXT"}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
             let reverseLabels=Dictionary(all.filter{stateLabels[$0.id] != nil}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
-            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), pauseOnRepeat: \(link.pauseOnRepeat ?? false), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))], steps: [\((link.steps ?? []).map{encode($0)}.joined(separator:","))], stepTiming: \(literal(link.stepTiming ?? "after")), resumeAfterSeek: \(link.resumeAfterSeek ?? true), stateNumbers: \(dictionary(numbers)), stateTexts: \(strings(stateLabels)), reverseTexts: \(strings(reverseLabels)))"
+            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), pauseOnRepeat: \(link.pauseOnRepeat ?? false), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))], steps: [\((link.steps ?? []).map{encode($0)}.joined(separator:","))], stepTiming: \(literal(link.stepTiming ?? "after")), resumeAfterSeek: \(link.resumeAfterSeek ?? true), stateNumbers: \(dictionary(numbers)), stateTexts: \(strings(stateLabels)), reverseTexts: \(strings(reverseLabels)), control: \(literal(link.control ?? "")), destination: \(literal(link.destination ?? "back")))"
         }
         return project.links.map{encode($0)}.joined(separator:",\n")
     }
@@ -99,6 +99,7 @@ enum SwiftExport {
         let effectiveLinks=project.links.flatMap{[$0]+($0.steps ?? [])}
         var functions:[String]=[],cases:[String]=[]
         let rulesSource=rules(project),baseSource=bases(project,pages)
+        let pageIDs=project.pages.map{literal($0.id)}.joined(separator:",")
         let dictionarySource=baseSource.isEmpty ? ":" : baseSource
 
         for (page,nodes) in pages.enumerated() {
@@ -242,7 +243,7 @@ enum SwiftExport {
                 Group { switch currentPage { \(cases.joined(separator:"\n"))
                 default: Color.white.frame(width: \(project.w), height: \(project.h))
                 } }
-                .onAppear {graph.start(rules,initial:initial)}
+                .onAppear {graph.onNavigate={ id in if id=="back" {if let page=backPages.popLast(){currentPage=page}}else if let index=([\(pageIDs)] as [String]).firstIndex(of:id){backPages.append(currentPage);currentPage=index} };graph.start(rules,initial:initial)}
                 .onDisappear {graph.stop()}
             }
             private func embeddedImage(_ base64: String) -> Image {

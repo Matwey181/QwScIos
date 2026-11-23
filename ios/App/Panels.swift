@@ -14,7 +14,7 @@ struct InspectorPanel:View {
                 if editor.selected.count==1 {
                     QTextField(title:"Имя слоя",text:bind(\.name,""))
                     AppearanceActions(editor:editor)
-                    InlineSection(title:"Общие кнопки и компоненты"){SelectedComponentControls(editor:editor)}
+                    InlineSection(title:"Общие компоненты"){SelectedComponentControls(editor:editor)}
                     InlineSection(title:"Точный сдвиг"){NudgeControls(editor:editor)}
                     if n.kind=="TEXT" {
                         TextField("Текст",text:bind(\.text,""),axis:.vertical).lineLimit(2...5).font(qfont(16)).padding(16).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
@@ -35,7 +35,7 @@ struct InspectorPanel:View {
                 }else{Text("Выбрано слоёв: \(editor.selected.count)").font(qfont(16,.semibold))}
                 if n.kind != "IMAGE"{row(n.kind=="TEXT" ? "Цвет текста":"Заливка",\.fill,token:n.fillToken)}
                 if !["TEXT","IMAGE"].contains(n.kind){slider("Непрозрачность заливки",\.fillOpacity,0...1,percent:true)}
-                InlineSection(title:"Состояния кнопки"){ComponentStateControls(editor:editor,sourceID:n.id)}
+                InlineSection(title:"Состояния объекта"){ComponentStateControls(editor:editor,sourceID:n.id)}
                 if !["TEXT","IMAGE"].contains(n.kind){
                     title("Градиент")
                     HStack(spacing:8){ForEach(Array(["Нет","Линейный","Радиальный"].enumerated()),id:\.offset){i,text in QChip(title:text,selected:n.gradKind==Int64(i)){editor.change{$0.gradKind=Int64(i)}}}}
@@ -51,11 +51,10 @@ struct InspectorPanel:View {
                     if n.shadowBlur>0.5{slider("Тень по X",\.shadowDx,-40...40);slider("Тень по Y",\.shadowDy,-40...40);row("Цвет тени",\.shadowColor)}
                     slider("Размытие фона",\.blur,0...48)
                     slider("Размытие слоя",\.softBlur,0...48)
-                    if n.kind=="RECT"{title("Скругление");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach([CGFloat(0),4,8,12,16,28,48,9999],id:\.self){v in QChip(title:v==9999 ? "Full":"\(Int(v))",selected:n.corner==v){editor.change{$0.corner=v}}.fixedSize()}}};slider("Свой радиус",\.corner,0...min(n.w,n.h)/2);QToggle("Скругление при нажатии",isOn:Binding(get:{n.pressCorner>=0},set:{v in editor.change{$0.pressCorner=v ? min($0.w,$0.h)/2:-1}}));if n.pressCorner>=0{slider("При нажатии",\.pressCorner,0...min(n.w,n.h)/2)}}
+                    if n.kind=="RECT"{title("Скругление");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach([CGFloat(0),4,8,12,16,28,48,9999],id:\.self){v in QChip(title:v==9999 ? "Full":"\(Int(v))",selected:n.corner==v){editor.change{$0.corner=v}}.fixedSize()}}};slider("Свой радиус",\.corner,0...min(n.w,n.h)/2)}
                     QToggle("Маска для нижнего слоя",isOn:bind(\.mask,false))
                 }
                 ProjectStyleControls(editor:editor)
-                ActionPanel(editor:editor,node:n)
                 Button {
                     showInteractions=true
                 } label: {

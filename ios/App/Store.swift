@@ -25,7 +25,7 @@ import CoreText
     func reload() {
         let folder=root.appendingPathComponent("projects")
         projects=((try? FileManager.default.contentsOfDirectory(at:folder,includingPropertiesForKeys:nil)) ?? []).filter { $0.pathExtension=="json" }.compactMap { u in
-            if let d=try? Data(contentsOf:u),let project=try? JSONDecoder().decode(Project.self,from:d){return project}
+            if let d=try? Data(contentsOf:u),var project=try? JSONDecoder().decode(Project.self,from:d){DefaultLinks.allPages(&project);return project}
             for revision in self.revisions(u.deletingPathExtension().lastPathComponent){if let project=try? self.readRevision(revision,projectID:u.deletingPathExtension().lastPathComponent){return project}}
             return nil
         }.sorted { $0.updated > $1.updated }
