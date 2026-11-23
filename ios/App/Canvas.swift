@@ -7,6 +7,7 @@ struct EditorCanvas:UIViewRepresentable {
     func updateUIView(_ view:CanvasView,context:Context) {
         if view.lastFit != editor.fitVersion { view.lastFit=editor.fitVersion;view.zoom=1;view.pan = .zero }
         for gesture in view.gestureRecognizers ?? []{
+            if gesture.name=="playRotate",gesture.isEnabled != editor.playing{gesture.isEnabled=editor.playing}
             if let tap=gesture as? UITapGestureRecognizer,tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{let needed = tap.name=="playTwoTap" ? editor.playing:!editor.playing || tap.numberOfTapsRequired==2 && editor.project.links.contains{$0.enabled && $0.event=="doubleTap"};if tap.isEnabled != needed{tap.isEnabled=needed}}
             if let hold=gesture as? UILongPressGestureRecognizer,hold.name != "componentPress"{if hold.isEnabled==editor.playing{hold.isEnabled = !editor.playing}}
         }
