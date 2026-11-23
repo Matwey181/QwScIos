@@ -128,9 +128,9 @@ import UIKit
         }else if let id=pressedSourceID{pressedSourceID=nil;links.advanced.press(id,at:p,down:false);links.fire("release",sourceID:id)}
         refresh()
     }
-    func gesture(_ event:String,at point:CGPoint,value:Double?=nil){
+    func gesture(_ event:String,at point:CGPoint,value:Double?=nil,began:Bool=false){
         guard let editor,let node=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{candidate in candidate.visible && candidate.extras?.disabled != true && candidate.contains(point) && (linked(candidate,events:[event]) || editor.project.links.contains{r in links.advanced.matches(r.sourceID,candidate.id) && (event=="pinch" && r.mode=="pinchObject" || event=="rotate" && r.mode=="rotateObject")} )}) else{return}
-        if let value{links.advanced.transform(event,source:node.id,value:value)}
+        if let value{links.advanced.transform(event,source:node.id,value:value,began:began)}
         links.fire(event,sourceID:node.id);refresh()
     }
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
@@ -161,7 +161,7 @@ import UIKit
             }
         }
         if let node=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{$0.visible && $0.extras?.disabled != true && !$0.mask && $0.contains(p) && linked($0,events:["tap","nthTap","stepTap"])}){links.advanced.tap(node.id);links.fire("tap",sourceID:node.id);refresh();return}
-        if let group=widget["group"] as? String,let node=editor.project.nodes.first(where:{$0.group==group && linked($0,events:["tap","nthTap","stepTap"])}){links.fire("tap",sourceID:node.id)}
+        if let group=widget["group"] as? String,let node=editor.project.nodes.first(where:{$0.group==group && linked($0,events:["tap","nthTap","stepTap"])}){links.advanced.tap(node.id);links.fire("tap",sourceID:node.id)}
         refresh()
     }
     private func notifyWidget(_ group:String,value:Double) {

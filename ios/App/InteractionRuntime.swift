@@ -29,6 +29,7 @@ import QuartzCore
         var size: Double
         var easing:String = "easeOut"
         var repeats:Bool = false
+        var repeatGap:Double = 0
     }
 
     private(set) var project = Project()
@@ -109,9 +110,10 @@ import QuartzCore
     func runAdvanced(_ link:InteractionLink){execute(link,fraction:nil)}
     func setAdvanced(_ id:String,_ property:String,_ value:Double){set(id,property,value)}
     func stopAdvancedLink(_ id:String){motions.removeAll{$0.owner==id};echoes.removeAll{$0.owner==id};pending.removeAll{$0.link.id==id};advanced.stop(id)}
-    private func execute(_ input: InteractionLink, fraction: Double?) {
+    private func execute(_ input: InteractionLink, fraction: Double?, scheduled:Bool=false) {
         var link=input
         guard let node = project.nodes.first(where: { $0.id == link.targetID }) else { return }
+        if !scheduled && !advanced.permit(link){return}
         let target = node.id
         let now = CACurrentMediaTime()
         if link.pauseOnRepeat==true {
@@ -141,7 +143,6 @@ import QuartzCore
             pending.append(Pending(link:delayed,at:now+link.delay,fraction:fraction))
             return
         }
-        if !advanced.permit(link){return}
         if advanced.handle(link,fraction:fraction){return}
         let returning=link.alternate==true && toggled.contains(link.id)
         if link.alternate==true {if returning{toggled.remove(link.id)}else{toggled.insert(link.id)}}
@@ -175,7 +176,7 @@ import QuartzCore
         case "echo":
             if !(echoes.last(where:{$0.nodeID==target}).map{now-$0.started<0.08} ?? false) {
                 echoes.append(EchoPulse(owner:link.id,nodeID: target, started: now + max(0,link.delay),
-                                        duration: max(0.15,link.duration), size: max(0.1,link.value),easing:link.easing,repeats:link.repeats))
+                                        duration: max(0.15,link.duration), size: max(0.1,link.value),easing:link.easing,repeats:link.repeats,repeatGap:max(0,link.advanced?.repeatGap ?? 0)))
                 if echoes.count>24 {echoes.removeFirst(echoes.count-24)}
             }
         case "bind":
@@ -329,7 +330,7 @@ import QuartzCore
             } else { kept.append(motion) }
         }
         motions=kept
-        for entry in due {execute(entry.link,fraction:entry.fraction)}
+        for entry in due {execute(entry.link,fraction:entry.fraction,scheduled:true)}
         var budget=64
         while !valueEvents.isEmpty && budget>0 {let event=valueEvents.removeFirst();budget-=1;fire("valueChanged",sourceID:event.0,fraction:event.1)}
         valueEvents=[]
@@ -437,7 +438,8 @@ import QuartzCore
             guard now>=pulse.started,
                   let original=output.nodes.first(where:{$0.id==pulse.nodeID}) else {continue}
             let elapsed=max(0,now-pulse.started)
-            let phase=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration)/pulse.duration:elapsed/pulse.duration
+            let phase=pulse.repeats ? elapsed.truncatingRemainder(dividingBy:pulse.duration+pulse.repeatGap)/pulse.duration:elapsed/pulse.duration
+            if phase>1{continue}
             let progress=min(1,max(0,phase))
             let curved=InteractionLink.eased(progress,pulse.easing)
             for index in 1...3 {

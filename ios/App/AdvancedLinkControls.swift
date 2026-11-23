@@ -17,7 +17,6 @@ struct AdvancedLinkControls:View {
     private func integer(_ key:WritableKeyPath<AdvancedLinkOptions,Int>)->Binding<CGFloat>{Binding(get:{CGFloat(options[keyPath:key])},set:{v in change{$0[keyPath:key]=max(0,Int(v))}})}
     private var choices:[(String,String)]{[("","Не выбран")]+layers.map{($0.id,$0.name)}}
     var body:some View{VStack(alignment:.leading,spacing:14){
-        if ["multiMorph","typewriter"].contains(link.mode){QNumber(title:"Длительность · с",value:Binding(get:{CGFloat(link.duration)},set:{link.duration=max(0.01,Double($0))}))}
         QToggle("Один раз за просмотр",isOn:flag(\.once))
         if link.repeats{QNumber(title:"Пауза между повторами · с",value:number(\.repeatGap))}
         if link.event=="holdRepeat"{QNumber(title:"Интервал удержания · с",value:number(\.holdInterval))}

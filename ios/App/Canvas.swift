@@ -37,7 +37,7 @@ struct EditorCanvas:UIViewRepresentable {
         let pan=UIPanGestureRecognizer(target:self,action:#selector(panning(_:)));pan.minimumNumberOfTouches=2;pan.delegate=self;addGestureRecognizer(pan)
         let pinch=UIPinchGestureRecognizer(target:self,action:#selector(pinching(_:)));pinch.delegate=self;addGestureRecognizer(pinch)
         // A two/three-finger tap must lose to any canvas navigation gesture.
-        for tap in [undo,redo] {tap.require(toFail:pinch);tap.require(toFail:pan)}
+        for tap in [undo,redo,two] {tap.require(toFail:pinch);tap.require(toFail:pan)}
         for recognizer in gestureRecognizers ?? []{recognizer.delegate=self}
     }
     required init?(coder:NSCoder) { fatalError() }
@@ -116,7 +116,7 @@ struct EditorCanvas:UIViewRepresentable {
         else if hits.isEmpty,gestureOn("LONG_EMPTY"){editor.requestPanel="add"}
     }
     @objc func playTwoTap(_ g:UITapGestureRecognizer){if editor.playing{editor.originalPlay.gesture("twoTap",at:document(g.location(in:self)))}}
-    @objc func playRotate(_ g:UIRotationGestureRecognizer){if editor.playing{editor.originalPlay.gesture("rotate",at:document(g.location(in:self)),value:Double(g.rotation*180 / .pi))}}
+    @objc func playRotate(_ g:UIRotationGestureRecognizer){if editor.playing{editor.originalPlay.gesture("rotate",at:document(g.location(in:self)),value:Double(g.rotation*180 / .pi),began:g.state == .began)}}
     @objc func doubleTap(_ g:UITapGestureRecognizer) {if editor.playing{editor.originalPlay.gesture("doubleTap",at:document(g.location(in:self)));return};let p=document(g.location(in:self));if let hit=editor.editableNodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
@@ -132,7 +132,7 @@ struct EditorCanvas:UIViewRepresentable {
         let t=g.translation(in:self);pan=CGPoint(x:initialPan.x+t.x,y:initialPan.y+t.y);setNeedsDisplay()
     }
     @objc func pinching(_ g:UIPinchGestureRecognizer) {
-        if editor.playing,editor.project.links.contains(where:{$0.mode=="pinchObject" || $0.event=="pinch"}){editor.originalPlay.gesture("pinch",at:document(g.location(in:self)),value:Double(g.scale));return}
+        if editor.playing,editor.project.links.contains(where:{$0.mode=="pinchObject" || $0.event=="pinch"}){editor.originalPlay.gesture("pinch",at:document(g.location(in:self)),value:Double(g.scale),began:g.state == .began);return}
         if g.state == .began { initialZoom=zoom }
         zoom=min(12,max(0.15,initialZoom*g.scale));setNeedsDisplay()
     }
@@ -140,6 +140,7 @@ struct EditorCanvas:UIViewRepresentable {
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool {
         let pair=[gestureRecognizer,otherGestureRecognizer]
         if pair.contains(where:{$0.name=="componentPress"}){return true}
+        if editor.playing && pair.contains(where:{$0 is UIRotationGestureRecognizer}) && pair.contains(where:{$0 is UIPinchGestureRecognizer}){return true}
         return pair.contains{$0 is UIPinchGestureRecognizer} && pair.contains{($0 as? UIPanGestureRecognizer)?.minimumNumberOfTouches==2}
     }
     @objc func drag(_ g:UIPanGestureRecognizer) {

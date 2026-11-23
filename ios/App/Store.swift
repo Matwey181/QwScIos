@@ -121,7 +121,15 @@ import CoreText
         let data=try JSONEncoder().encode(p)
         try zip.addEntry(with:"project.json",type:.file,uncompressedSize:Int64(data.count),compressionMethod:.deflate) { position,size in data.subdata(in:Int(position)..<min(data.count,Int(position)+size)) }
         let all=p.nodes+p.pages.flatMap(\.nodes)+(p.studio?.states.flatMap(\.nodes) ?? [])
-        for (folder,names) in [("assets",Set((all.map(\.asset)+p.links.flatMap{[$0]+($0.steps ?? [])}.compactMap{$0.advanced?.asset}).filter{!$0.isEmpty})),("fonts",Set(all.map(\.font).filter{!$0.isEmpty}))] {
+        var assetNames=Set(all.map(\.asset).filter{!$0.isEmpty})
+        func addLinkAssets(_ rules:[InteractionLink]){for rule in rules{
+            if let asset=rule.advanced?.asset,!asset.isEmpty{assetNames.insert(asset)}
+            addLinkAssets(rule.steps ?? [])
+        }}
+        addLinkAssets(p.links)
+        let fontNames=Set(all.map(\.font).filter{!$0.isEmpty})
+        let folders:[(String,Set<String>)]=[("assets",assetNames),("fonts",fontNames)]
+        for (folder,names) in folders {
             for name in names {
                 let file=root.appendingPathComponent(folder).appendingPathComponent(name)
                 if FileManager.default.fileExists(atPath:file.path) { try zip.addEntry(with:folder+"/"+name,fileURL:file,compressionMethod:.deflate) }

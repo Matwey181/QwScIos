@@ -189,12 +189,12 @@ struct LinkRuleForm:View {
         }
     }
     @ViewBuilder private var timingControls:some View {
-        if ["animate","echo","bind","state"].contains(link.mode){
+        if ["animate","echo","bind","state","thresholds","multiMorph","typewriter"].contains(link.mode){
             section("03",title:link.mode=="bind" ? "Отклик":"Анимация"){
                 if link.mode != "bind"{
                     number("Длительность · секунды",value:$link.duration)
                     QSlider(value:$link.duration,range:0.05...20)
-                    QToggle("Повторять",isOn:$link.repeats)
+                    if !["thresholds","multiMorph","typewriter"].contains(link.mode){QToggle("Повторять",isOn:$link.repeats)}
                 }
                 LinkCurveEditor(easing:curve,onPreset:{preset in if preset=="addButton"{link.duration=0.8}})
             }

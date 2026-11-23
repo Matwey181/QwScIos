@@ -6,20 +6,21 @@ import AVFoundation
     var root=FileManager.default.temporaryDirectory
     private var once=Set<String>(),hits:[String:Int]=[:],stages:[String:String]=[:],selected=Set<String>()
     private var held:String?,heldAt=0.0,lastRepeat:[String:Double]=[:],lastPoint=CGPoint.zero
-    private var typing:[String:(String,Double,Double)]=[:],players:[String:AVAudioPlayer]=[:]
+    private var typing:[String:(String,Double,Double,String)]=[:],players:[String:AVAudioPlayer]=[:]
+    private var transformStarts:[String:Double]=[:]
     private var replacements:[String:Node]=[:],dragRule:InteractionLink?,dragOrigin=CGPoint.zero
     private var inside:[String:Bool]=[:],followers:[String:InteractionLink]=[:]
     private struct Morph {var rule:InteractionLink;var sources:[Node];var targets:[Node];var paths:[LinkMorph];var start:Double}
     private var morphs:[String:Morph]=[:]
     var needsDisplay=false
     var active:Bool{held != nil || !typing.isEmpty || morphs.values.contains{CACurrentMediaTime() < $0.start+max(0.01,$0.rule.duration)} || !followers.isEmpty}
-    func reset(){once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
+    func reset(){transformStarts=[:];once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
     func stop(_ id:String){typing.removeValue(forKey:id);players[id]?.stop();players.removeValue(forKey:id);morphs.removeValue(forKey:id);followers.removeValue(forKey:id)}
     func permit(_ rule:InteractionLink)->Bool{if rule.advanced?.once==true{return once.insert(rule.id).inserted};return true}
     func tap(_ source:String){guard let r=runtime else{return};let group=r.project.nodes.first{$0.id==source}?.group ?? "";let key=group.isEmpty ? source:group;hits[key,default:0]+=1;let count=hits[key] ?? 1
         for link in r.project.links where link.enabled && ["nthTap","stepTap"].contains(link.event) && matches(link.sourceID,source){let x=link.advanced ?? AdvancedLinkOptions();let n=max(1,x.tapCount);if link.event=="nthTap" ? count%n==0:(count-1)%n+1==max(1,x.tapStep){r.runAdvanced(link)}}
     }
-    func press(_ source:String?,at point:CGPoint,down:Bool){guard let r=runtime else{return};if down{held=source;heldAt=CACurrentMediaTime();lastRepeat=[:];lastPoint=point}else{if let id=held,let node=r.project.nodes.first(where:{$0.id==id}),!node.rect.insetBy(dx:-6,dy:-6).contains(point){r.fire("cancelPress",sourceID:id)};held=nil}}
+    func press(_ source:String?,at point:CGPoint,down:Bool){guard let r=runtime else{return};if down{if let source{stages.removeValue(forKey:"held-"+source)};held=source;heldAt=CACurrentMediaTime();lastRepeat=[:];lastPoint=point}else{if let id=held,let node=r.project.nodes.first(where:{$0.id==id}),!node.rect.insetBy(dx:-6,dy:-6).contains(point){r.fire("cancelPress",sourceID:id)};held=nil}}
     func matches(_ a:String,_ b:String)->Bool{guard let r=runtime else{return false};if a==b{return true};let group=r.project.nodes.first{$0.id==a}?.group ?? "";return !group.isEmpty && r.project.nodes.first{$0.id==b}?.group==group}
     func selectedValue(_ group:String,_ value:Double){if value>=0.5{selected.insert(group)}else{selected.remove(group)}}
     func handle(_ link:InteractionLink,fraction:Double?)->Bool{
@@ -35,10 +36,10 @@ import AVFoundation
         case "formatNumber":r.text[node.id]=formatted(number(r.text[node.id] ?? node.text),x)
         case "textClear":r.text[node.id]=""
         case "textLimit":r.text[node.id]=String((r.text[node.id] ?? node.text).prefix(max(0,x.maxLength)))
-        case "typewriter":typing[link.id]=(link.text,now,max(0.01,link.duration));r.text[node.id]=""
+        case "typewriter":typing[link.id]=(link.text,now,max(0.01,link.duration),node.id);r.text[node.id]=""
         case "selectedCount":r.text[node.id]=x.prefix+String(selected.count)+x.suffix
         case "sum":let values=r.project.nodes.filter{x.sourceIDs.contains($0.id) && selected.contains($0.group.isEmpty ? $0.id:$0.group)};let total=values.reduce(0.0){$0+number(r.text[$1.id] ?? $1.text)};r.text[node.id]=formatted(total,x)
-        case "stateText":let source=r.project.nodes.first{$0.id==link.sourceID};let value=(fraction ?? (selected.contains(source?.group ?? "") ? 1:0));r.text[node.id]=value>=0.5 ? link.text:(link.reverseText ?? node.text)
+        case "stateText":let source=r.project.nodes.first{$0.id==link.sourceID};let value:Double;if let fraction{value=fraction}else if source?.widget.isEmpty==false{value=selected.contains(source?.group ?? "") ? 1:0}else{value=stages[link.id]=="on" ? 0:1;stages[link.id]=value>=0.5 ? "on":"off"};r.text[node.id]=value>=0.5 ? link.text:(link.reverseText ?? node.text)
         case "validate":let value=r.text[node.id] ?? node.text;if !valid(value,x.validation){r.fire("invalidInput",sourceID:node.id)}
         case "keyboard":keyboard(node,x)
         case "haptic":UIImpactFeedbackGenerator(style:.light).impactOccurred()
@@ -56,17 +57,18 @@ import AVFoundation
     }
     func drag(_ translation:CGPoint){guard let link=dragRule,let r=runtime,let n=r.project.nodes.first(where:{$0.id==link.targetID}) else{return};let x=link.advanced ?? AdvancedLinkOptions();var point=CGPoint(x:dragOrigin.x+(x.axis=="y" ? 0:translation.x),y:dragOrigin.y+(x.axis=="x" ? 0:translation.y));if let area=r.project.nodes.first(where:{$0.id==x.areaID}){point.x=max(area.x,min(point.x,area.x+area.w-n.w));point.y=max(area.y,min(point.y,area.y+area.h-n.h))};r.setAdvanced(n.id,"x",Double(point.x));r.setAdvanced(n.id,"y",Double(point.y))}
     func endDrag(){dragRule=nil}
-    func transform(_ event:String,source:String,value:Double){guard let r=runtime else{return};for rule in r.project.links where rule.enabled && matches(rule.sourceID,source) && (event=="pinch" && rule.mode=="pinchObject" || event=="rotate" && rule.mode=="rotateObject"){r.setAdvanced(rule.targetID,event=="pinch" ? "scale":"rotation",value)}}
+    func transform(_ event:String,source:String,value:Double,began:Bool=false){guard let r=runtime else{return};for rule in r.project.links where rule.enabled && matches(rule.sourceID,source) && (event=="pinch" && rule.mode=="pinchObject" || event=="rotate" && rule.mode=="rotateObject"){let property=event=="pinch" ? "scale":"rotation";let node=r.project.nodes.first{$0.id==rule.targetID};if began || transformStarts[rule.id]==nil{transformStarts[rule.id]=r.number[rule.targetID]?[property] ?? (event=="pinch" ? 1:Double(node?.rotation ?? 0))};let initial=transformStarts[rule.id] ?? 1;r.setAdvanced(rule.targetID,property,event=="pinch" ? max(0.01,initial*value):initial+value)}}
     func tick(_ now:Double){guard let r=runtime else{return}
         if let source=held{
             if now-heldAt>=0.5,stages["held-"+source] != "long"{stages["held-"+source]="long";r.fire("longPress",sourceID:source)}
             for rule in r.project.links where rule.enabled && rule.event=="holdRepeat" && matches(rule.sourceID,source){let gap=max(0.04,rule.advanced?.holdInterval ?? 0.15);if now-(lastRepeat[rule.id] ?? heldAt)>=gap{lastRepeat[rule.id]=now;r.runAdvanced(rule)}}
         }else{stages=stages.filter{!$0.key.hasPrefix("held-")}}
-        for (id,item) in typing{guard let rule=r.project.links.first(where:{$0.id==id}) else{continue};let t=min(1,max(0,(now-item.1)/item.2));r.text[rule.targetID]=String(item.0.prefix(Int(Double(item.0.count)*t)));if t>=1{typing.removeValue(forKey:id)}}
+        for (id,item) in Array(typing){let t=min(1,max(0,(now-item.1)/item.2));r.text[item.3]=String(item.0.prefix(Int(Double(item.0.count)*t)));if t>=1{typing.removeValue(forKey:id);r.fire("finished",sourceID:item.3)}}
+        for (id,morph) in Array(morphs) where now>=morph.start+max(0.01,morph.rule.duration) && stages["morph-"+id] != "done"{stages["morph-"+id]="done";needsDisplay=true;r.fire("finished",sourceID:morph.rule.targetID)}
         for rule in followers.values{guard let n=r.project.nodes.first(where:{$0.id==rule.advanced?.otherID}) else{continue};let padding=max(0,rule.advanced?.padding ?? 0);r.setAdvanced(rule.targetID,"width",(r.number[n.id]?["width"] ?? Double(n.w))+padding*2);r.setAdvanced(rule.targetID,"height",(r.number[n.id]?["height"] ?? Double(n.h))+padding*2)}
         for rule in r.project.links where rule.enabled && ["enterArea","exitArea","collision"].contains(rule.event){guard let source=r.project.nodes.first(where:{$0.id==rule.sourceID}),let area=r.project.nodes.first(where:{$0.id==rule.advanced?.areaID}) else{continue};var rect=source.rect;rect.origin.x=CGFloat(r.number[source.id]?["x"] ?? Double(rect.minX));rect.origin.y=CGFloat(r.number[source.id]?["y"] ?? Double(rect.minY));let hit=rule.event=="collision" ? rect.intersects(area.rect):area.rect.contains(CGPoint(x:rect.midX,y:rect.midY));let previous=inside[rule.id] ?? false;inside[rule.id]=hit;if rule.event=="exitArea" ? previous && !hit:!previous && hit{r.runAdvanced(rule)}}
     }
-    private func beginMorph(_ link:InteractionLink){guard let r=runtime else{return};let x=link.advanced ?? AdvancedLinkOptions();let source=r.project.nodes.filter{x.sourceIDs.contains($0.id)},target=r.project.nodes.filter{x.targetIDs.contains($0.id)};guard !source.isEmpty,!target.isEmpty else{return};let count=max(source.count,target.count);var paths:[LinkMorph]=[];for i in 0..<count{var a=source[i%source.count],b=target[i%target.count];a.w=1;a.h=1;b.w=1;b.h=1;paths.append(LinkMorph(fromPath:VectorPath.local(a),toPath:VectorPath.local(b)))};morphs[link.id]=Morph(rule:link,sources:source,targets:target,paths:paths,start:CACurrentMediaTime())}
+    private func beginMorph(_ link:InteractionLink){guard let r=runtime else{return};let x=link.advanced ?? AdvancedLinkOptions();let source=r.project.nodes.filter{x.sourceIDs.contains($0.id)},target=r.project.nodes.filter{x.targetIDs.contains($0.id)}.map{node in var n=node;n.visible=true;return n};guard !source.isEmpty,!target.isEmpty else{return};let count=max(source.count,target.count);var paths:[LinkMorph]=[];for i in 0..<count{var a=source[i%source.count],b=target[i%target.count];a.w=1;a.h=1;b.w=1;b.h=1;paths.append(LinkMorph(fromPath:VectorPath.local(a),toPath:VectorPath.local(b)))};stages.removeValue(forKey:"morph-"+link.id);morphs[link.id]=Morph(rule:link,sources:source,targets:target,paths:paths,start:CACurrentMediaTime())}
     func apply(_ input:Project,at now:Double)->Project{var p=input
         for i in p.nodes.indices{if let n=replacements[p.nodes[i].id]{p.nodes[i].kind=n.kind;p.nodes[i].asset=n.asset;p.nodes[i].path=n.path}}
         for morph in morphs.values{
