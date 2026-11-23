@@ -6,7 +6,7 @@ struct LinkRulesEditor:View {
     @Environment(\.q) private var q
     @State private var expandedID:String?
     @State private var search=""
-    private var visibleRules:[InteractionLink]{editor.project.links.filter{matches($0)}}
+    private var visibleRules:[InteractionLink]{editor.links(for:source).filter{matches($0)}}
     private func matches(_ rule:InteractionLink)->Bool {
         let other=editor.project.nodes.first(where:{$0.id==rule.sourceID})
         let sameGroup = !source.group.isEmpty && other?.group==source.group

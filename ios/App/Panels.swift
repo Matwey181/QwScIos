@@ -62,7 +62,7 @@ struct InspectorPanel:View {
                         Image(systemName:"point.3.connected.trianglepath.dotted")
                         Text("Связки объекта")
                         Spacer()
-                        Text("\(editor.project.links.count)")
+                        Text("\(editor.links(for:n).count)")
                         Image(systemName:"chevron.right")
                     }
                     .font(qfont(14,.semibold))
