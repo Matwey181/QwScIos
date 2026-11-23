@@ -48,7 +48,7 @@ struct ProjectsView:View {
         .fullScreenCover(isPresented:$creating) { NewProjectView { p in creating=false;DispatchQueue.main.asyncAfter(deadline:.now()+0.35){opened=p} }.environmentObject(store).modifier(OriginalTheme()) }
         .fullScreenCover(isPresented:$settings) { SettingsView().modifier(OriginalTheme()) }
         .fullScreenCover(item:$opened) { p in EditorScreen(project:p,store:store).modifier(OriginalTheme()) }
-        .fileImporter(isPresented:$importing,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in
+        .fileImporter(isPresented:$importing,allowedContentTypes:[.item],allowsMultipleSelection:false) { result in
             switch result { case .success(let urls):if let url=urls.first { Task { await store.importFile(url) } };case .failure(let e):store.error=e.localizedDescription }
         }
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }

@@ -64,16 +64,29 @@ import CoreText
                 let temp=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
                 try FileManager.default.createDirectory(at:temp,withIntermediateDirectories:true)
                 defer { try? FileManager.default.removeItem(at:temp) }
-                if url.pathExtension.lowercased()=="json" { return try JSONDecoder().decode(Project.self,from:Data(contentsOf:url)) }
-                let archive=try Archive(url:url,accessMode:.read)
+                // Coordinate File Provider/iCloud reads and keep a local copy while parsing.
+                let local=temp.appendingPathComponent("input-project")
+                var coordinationError:NSError?,copyError:Error?
+                NSFileCoordinator().coordinate(readingItemAt:url,options:[],error:&coordinationError){readable in
+                    do{try FileManager.default.copyItem(at:readable,to:local)}catch{copyError=error}
+                }
+                if let error=coordinationError{throw error};if let error=copyError{throw error}
+                let data=try Data(contentsOf:local,options:.mappedIfSafe)
+                if let project=try? JSONDecoder().decode(Project.self,from:data){return project}
+                let archive=try Archive(url:local,accessMode:.read)
+                let candidates=archive.filter{entry in entry.type == .file && URL(fileURLWithPath:entry.path).lastPathComponent.lowercased()=="project.json"}
+                guard let manifest=candidates.min(by:{$0.path.count<$1.path.count}) else{throw CocoaError(.fileReadCorruptFile)}
+                let prefix=String(manifest.path.dropLast("project.json".count))
                 var total:UInt64=0
-                for entry in archive {
+                for entry in archive where entry.type == .file && entry.path.hasPrefix(prefix){
                     total += UInt64(entry.uncompressedSize)
-                    guard total <= 150*1024*1024 else { throw CocoaError(.fileReadTooLarge) }
-                    let bits=entry.path.split(separator:"/",omittingEmptySubsequences:false)
-                    guard entry.path=="project.json" || (bits.count==2 && ["assets","fonts"].contains(String(bits[0])) && !["",".",".."].contains(String(bits[1])) && !entry.path.contains("\\")) else { continue }
-                    let target=temp.appendingPathComponent(entry.path)
+                    guard total <= 150*1024*1024 else{throw CocoaError(.fileReadTooLarge)}
+                    let relative=entry.path==manifest.path ? "project.json":String(entry.path.dropFirst(prefix.count))
+                    let bits=relative.split(separator:"/",omittingEmptySubsequences:false)
+                    guard relative=="project.json" || (bits.count==2 && ["assets","fonts"].contains(String(bits[0])) && !["",".",".."].contains(String(bits[1])) && !relative.contains("\\")) else{continue}
+                    let target=temp.appendingPathComponent(relative)
                     try FileManager.default.createDirectory(at:target.deletingLastPathComponent(),withIntermediateDirectories:true)
+                    if FileManager.default.fileExists(atPath:target.path){try FileManager.default.removeItem(at:target)}
                     _ = try archive.extract(entry,to:target)
                 }
                 var p=try JSONDecoder().decode(Project.self,from:Data(contentsOf:temp.appendingPathComponent("project.json")))
@@ -93,7 +106,7 @@ import CoreText
                 if var studio=p.studio{studio.states=studio.states.map{state in var state=state;state.nodes=map(state.nodes);return state};studio.textStyles=studio.textStyles?.map{style in var style=style;style.font=fonts[style.font] ?? style.font;return style};p.studio=studio}
                 return p
             }.value
-            var imported=p;imported.id=UUID().uuidString
+            var imported=p;imported.id=UUID().uuidString;DefaultLinks.allPages(&imported)
             try save(imported);registerFonts()
         } catch { self.error="Не удалось открыть проект: "+error.localizedDescription }
     }
