@@ -109,7 +109,7 @@ import QuartzCore
 
     func runAdvanced(_ link:InteractionLink){execute(link,fraction:nil)}
     func setAdvanced(_ id:String,_ property:String,_ value:Double){set(id,property,value)}
-    func stopAdvancedLink(_ id:String){motions.removeAll{$0.owner==id};echoes.removeAll{$0.owner==id};pending.removeAll{$0.link.id==id};advanced.stop(id)}
+    func stopAdvancedLink(_ id:String){playback.stop(id);motions.removeAll{$0.owner==id};echoes.removeAll{$0.owner==id};pending.removeAll{$0.link.id==id};advanced.stop(id)}
     func checkpointSnapshot(_ actions:[InteractionLink])->()->Void{
         var numeric:[String:Set<String>]=[:],texts=Set<String>(),visible=Set<String>(),visual=Set<String>(),full=Set<String>(),owners=Set<String>()
         let textModes:Set<String>=["text","textClear","numberAdd","numberSubtract","formatNumber","typewriter","textLimit","selectedCount","stateText","sum"]
@@ -198,6 +198,7 @@ import QuartzCore
             let ids=Set(state.nodes.map(\.id))
             transition(returning ? project.nodes.filter{ids.contains($0.id)}:state.nodes,rule:link,now:now)
         case "playback":
+            playback.ensure(link,group:node.group,position:current(node,"progress"))
             let source=project.nodes.first{$0.id==link.sourceID}
             let ownSlider=source?.id==node.id || (!node.group.isEmpty && source?.group==node.group)
             if !ownSlider || link.event != "tap" {playback.toggle(link.id,forcePlay:link.event=="start")}

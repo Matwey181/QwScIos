@@ -25,6 +25,11 @@ import QuartzCore
         }
     }
     func stop(){tracks=[:]}
+    func stop(_ id:String){tracks.removeValue(forKey:id)}
+    func ensure(_ rule:InteractionLink,group:String,position:Double){
+        guard tracks[rule.id]==nil else{return}
+        tracks[rule.id]=Track(rule:rule,group:group,position:min(1,max(0,position)),last:CACurrentMediaTime(),running:false)
+    }
     func toggle(_ id:String,forcePlay:Bool=false) {
         guard var track=tracks[id] else{return}
         if track.position>=1{track.position=0}

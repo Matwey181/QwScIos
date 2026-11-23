@@ -13,11 +13,12 @@ import AVFoundation
     private struct Morph {var rule:InteractionLink;var sources:[Node];var targets:[Node];var paths:[LinkMorph];var start:Double}
     private var morphs:[String:Morph]=[:]
     private var checkpointUndos:[String:[String:()->Void]]=[:]
+    private var checkpointOwners:[String:Set<String>]=[:]
     private var activePoints:[String:Set<String>]=[:]
     var needsDisplay=false
     var active:Bool{held != nil || !typing.isEmpty || morphs.values.contains{CACurrentMediaTime() < $0.start+max(0.01,$0.rule.duration)} || !followers.isEmpty}
-    func reset(){checkpointUndos=[:];activePoints=[:];transformStarts=[:];once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
-    func stop(_ id:String){typing.removeValue(forKey:id);players[id]?.stop();players.removeValue(forKey:id);morphs.removeValue(forKey:id);followers.removeValue(forKey:id)}
+    func reset(){checkpointUndos=[:];checkpointOwners=[:];activePoints=[:];transformStarts=[:];once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
+    func stop(_ id:String){if let owners=checkpointOwners.removeValue(forKey:id){for owner in owners{runtime?.stopAdvancedLink(owner)}};checkpointUndos.removeValue(forKey:id);activePoints.removeValue(forKey:id);typing.removeValue(forKey:id);players[id]?.stop();players.removeValue(forKey:id);morphs.removeValue(forKey:id);followers.removeValue(forKey:id)}
     func permit(_ rule:InteractionLink)->Bool{if rule.advanced?.once==true{return once.insert(rule.id).inserted};return true}
     func tap(_ source:String){guard let r=runtime else{return};let group=r.project.nodes.first{$0.id==source}?.group ?? "";let key=group.isEmpty ? source:group;hits[key,default:0]+=1;let count=hits[key] ?? 1
         for link in r.project.links where link.enabled && ["nthTap","stepTap"].contains(link.event) && matches(link.sourceID,source){let x=link.advanced ?? AdvancedLinkOptions();let n=max(1,x.tapCount);if link.event=="nthTap" ? count%n==0:(count-1)%n+1==max(1,x.tapStep){r.runAdvanced(link)}}
@@ -84,7 +85,9 @@ import AVFoundation
         }
     }
     private func thresholdActions(_ link:InteractionLink,_ point:SliderCheckpoint)->[InteractionLink]{
-        link.actions(at:point).map{input in var a=input;a.id=link.id+"|"+point.id+"|"+input.id;a.sourceID=link.sourceID;return a}
+        let actions=link.actions(at:point).map{input in var a=input;a.id=link.id+"|"+point.id+"|"+input.id;a.sourceID=link.sourceID;return a}
+        checkpointOwners[link.id,default:[]].formUnion(actions.map(\.id))
+        return actions
     }
     func checkpointVisualSnapshot(_ ids:Set<String>)->()->Void{
         let before=replacements
