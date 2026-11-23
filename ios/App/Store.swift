@@ -102,6 +102,8 @@ import CoreText
                     }
                 }
                 func map(_ list:[Node])->[Node] { list.map { n in var n=n;n.asset=assets[n.asset] ?? n.asset;n.font=fonts[n.font] ?? n.font;return n } }
+                func mapLink(_ input:InteractionLink)->InteractionLink{var link=input;if var x=link.advanced{x.asset=assets[x.asset] ?? x.asset;link.advanced=x};link.steps=link.steps?.map(mapLink);return link}
+                p.links=p.links.map(mapLink)
                 p.nodes=map(p.nodes);p.pages=p.pages.map { pg in var pg=pg;pg.nodes=map(pg.nodes);return pg }
                 if var studio=p.studio{studio.states=studio.states.map{state in var state=state;state.nodes=map(state.nodes);return state};studio.textStyles=studio.textStyles?.map{style in var style=style;style.font=fonts[style.font] ?? style.font;return style};p.studio=studio}
                 return p
@@ -119,7 +121,7 @@ import CoreText
         let data=try JSONEncoder().encode(p)
         try zip.addEntry(with:"project.json",type:.file,uncompressedSize:Int64(data.count),compressionMethod:.deflate) { position,size in data.subdata(in:Int(position)..<min(data.count,Int(position)+size)) }
         let all=p.nodes+p.pages.flatMap(\.nodes)+(p.studio?.states.flatMap(\.nodes) ?? [])
-        for (folder,names) in [("assets",Set(all.map(\.asset).filter{!$0.isEmpty})),("fonts",Set(all.map(\.font).filter{!$0.isEmpty}))] {
+        for (folder,names) in [("assets",Set((all.map(\.asset)+p.links.flatMap{[$0]+($0.steps ?? [])}.compactMap{$0.advanced?.asset}).filter{!$0.isEmpty})),("fonts",Set(all.map(\.font).filter{!$0.isEmpty}))] {
             for name in names {
                 let file=root.appendingPathComponent(folder).appendingPathComponent(name)
                 if FileManager.default.fileExists(atPath:file.path) { try zip.addEntry(with:folder+"/"+name,fileURL:file,compressionMethod:.deflate) }

@@ -21,13 +21,18 @@ struct LinkRulesEditor:View {
         VStack(alignment:.leading,spacing:18){
             intro
             presets
+            InlineSection(title:"Мои связки"){MyLinkSetsPanel(editor:editor,source:source)}
             QTextField(title:"Найти связку, слой или действие",text:$search)
             Text("Связки · \(visibleRules.count)").font(qfont(14,.semibold)).foregroundStyle(q.color("primary"))
-            ForEach(visibleRules){link in ruleCard(link)}
+            ForEach(groups,id:\.self){key in
+                let rules=visibleRules.filter{($0.bundleID ?? $0.id)==key}
+                if let first=rules.first,first.bundleID != nil{InlineSection(title:first.bundleName ?? "Набор связок"){ForEach(rules){ruleCard($0)}}}else{ForEach(rules){ruleCard($0)}}
+            }
             if visibleRules.isEmpty{Text(search.isEmpty ? "Создайте связку из быстрого старта.":"Ничего не найдено").font(qfont(14))}
             LinkPill(title:"Новая связка",icon:"plus",prominent:true){preset("custom")}
         }
     }
+    private var groups:[String]{var seen=Set<String>();return visibleRules.compactMap{let key=$0.bundleID ?? $0.id;return seen.insert(key).inserted ? key:nil}}
     private var intro:some View {
         HStack(alignment:.top,spacing:14){
             Image(systemName:"point.3.connected.trianglepath.dotted").font(.system(size:28,weight:.medium)).foregroundStyle(q.color("onPrimaryContainer")).frame(width:56,height:56).qSurface(22,"primaryContainer")
@@ -65,7 +70,7 @@ struct LinkRulesEditor:View {
                 mini("doc.on.doc","Дублировать"){var copy=link;copy.id=UUID().uuidString;editor.edit{$0.links.append(copy)};expandedID=copy.id}
                 mini("trash","Удалить"){editor.edit{$0.links.removeAll{$0.id==link.id}}}
             }
-            if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes,states:editor.project.studio?.states ?? [],pages:editor.project.pages)}
+            if expandedID==link.id {LinkRuleForm(link:binding(link.id),layers:editor.project.nodes,states:editor.project.studio?.states ?? [],pages:editor.project.pages,root:editor.store.root,stopChoices:editor.project.links.map{($0.id,$0.bundleName ?? $0.mode)})}
         }.padding(18).qSurface(28,"surfaceContainerHigh")
     }
     private func mini(_ icon:String,_ label:String,action:@escaping()->Void)->some View {
@@ -110,6 +115,8 @@ struct LinkRuleForm:View {
     let layers:[Node]
     let states:[VisualState]
     var pages:[Page]=[]
+    var root:URL=FileManager.default.temporaryDirectory
+    var stopChoices:[(String,String)]=[]
     @Environment(\.q) private var q
     private var colorProperty:Bool{["fill","stroke","fill2","shadowColor"].contains(link.property)}
     private var nodeChoices:[(String,String)]{
@@ -133,9 +140,10 @@ struct LinkRuleForm:View {
                 if link.mode=="playback"{PlaybackLinkControls(link:$link,layers:layers)}
             }
             extraActions
+            AdvancedLinkControls(link:$link,layers:layers,root:root,stopChoices:stopChoices)
             timingControls
-            if !isStep{AnyView(LinkStepsEditor(link:$link,layers:layers,states:states,pages:pages))}
-        }.onChange(of:link.property){_,property in if property=="morph" && link.shapeID==nil{link.shapeID="star-8";link.from=0;link.to=1}}
+            if !isStep{AnyView(LinkStepsEditor(link:$link,layers:layers,states:states,pages:pages,root:root,stopChoices:stopChoices))}
+        }.onChange(of:link.mode){_,mode in if mode=="thresholds"{link.event="valueChanged"};if mode=="moveObject"{link.event="dragStart"};if mode=="pinchObject"{link.event="pinch"};if mode=="rotateObject"{link.event="rotate"}}.onChange(of:link.property){_,property in if property=="morph" && link.shapeID==nil{link.shapeID="star-8";link.from=0;link.to=1}}
         .onChange(of:link.targetID){_,id in
             if let node=layers.first(where:{$0.id==id}),["slider","progress","switch"].contains(node.widget.components(separatedBy:":").first ?? ""),link.property=="opacity" {link.property="progress"}
         }

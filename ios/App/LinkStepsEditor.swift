@@ -5,6 +5,8 @@ struct LinkStepsEditor:View {
     let layers:[Node]
     let states:[VisualState]
     var pages:[Page]=[]
+    var root:URL=FileManager.default.temporaryDirectory
+    var stopChoices:[(String,String)]=[]
     @State private var expanded:String?
     @Environment(\.q) private var q
     private var enabled:Binding<Bool>{Binding(get:{link.steps != nil},set:{v in link.steps=v ? []:nil})}
@@ -17,7 +19,7 @@ struct LinkStepsEditor:View {
                     VStack(alignment:.leading,spacing:12){
                         Button{expanded=expanded==step.id ? nil:step.id}label:{HStack{Text("\((link.steps?.firstIndex{$0.id==step.id} ?? 0)+2). \(InteractionLink.effects.first{$0.0==step.mode}?.1 ?? step.mode)").font(qfont(15,.semibold));Spacer();Image(systemName:expanded==step.id ? "chevron.up":"chevron.down")}}.buttonStyle(.plain)
                         LinkChoiceField(title:"Начало шага",selection:Binding(get:{step.stepTiming ?? "after"},set:{v in update(step.id){$0.stepTiming=v}}),items:[("after","После предыдущего"),("with","Вместе с предыдущим")])
-                        if expanded==step.id{LinkRuleForm(isStep:true,link:binding(step.id),layers:layers,states:states,pages:pages)}
+                        if expanded==step.id{LinkRuleForm(isStep:true,link:binding(step.id),layers:layers,states:states,pages:pages,root:root,stopChoices:stopChoices)}
                         HStack{
                             Button("Выше"){move(step.id,-1)}.disabled(link.steps?.first?.id==step.id)
                             Button("Ниже"){move(step.id,1)}.disabled(link.steps?.last?.id==step.id)

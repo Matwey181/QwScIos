@@ -16,6 +16,7 @@ import QuartzCore
         var to: Double
         var easing: String
         var repeats: Bool
+        var repeatGap:Double=0
         var totalDuration:Double?
         var colorFrom: Int64
         var colorTo: Int64
@@ -31,8 +32,8 @@ import QuartzCore
     }
 
     private(set) var project = Project()
-    private(set) var number: [String: [String: Double]] = [:]
-    private(set) var text: [String: String] = [:]
+    var number: [String: [String: Double]] = [:]
+    var text: [String: String] = [:]
     private(set) var visibility: [String: Bool] = [:]
     private var paused:[String:Double]=[:]
     private var motions: [Motion] = []
@@ -52,13 +53,15 @@ import QuartzCore
     private var valueEvents:[(String,Double)]=[]
     var layoutRenderer:DocumentRenderer?
     let playback=PlaybackRuntime()
+    lazy var advanced:AdvancedLinkEngine={let engine=AdvancedLinkEngine();engine.runtime=self;return engine}()
     var onNavigate:((String)->Void)?
     var onComponent:((String,String,Double)->Void)?
     var onWidgetProgress: ((String, Double) -> Void)?
 
-    var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty || playback.active }
+    var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty || playback.active || advanced.active }
 
     func start(_ document: Project,widgetValues:[String:Double]=[:]) {
+        advanced.reset()
         project = document
         self.widgetValues=widgetValues;scrubbingGroups=[]
         paused=[:];toggled=[];morphs=[:];valueEvents=[];stateLayers=[:]
@@ -77,10 +80,11 @@ import QuartzCore
         playback.onText={ [weak self] id,value in self?.text[id]=value }
         playback.start(document,values:widgetValues)
         fire("start", sourceID: "")
+        fire("screenEnter",sourceID:"")
     }
 
     func stop() {
-        playback.stop();stateLayers=[:];paused=[:]
+        advanced.reset();playback.stop();stateLayers=[:];paused=[:]
         motions.removeAll()
         echoes.removeAll()
         pending.removeAll()
@@ -94,7 +98,7 @@ import QuartzCore
         let group = project.nodes.first(where: {$0.id == sourceID})?.group ?? ""
         let matching = project.links.filter { rule in
             guard rule.enabled && (rule.event == event || event=="drag" && rule.event=="valueChanged") else { return false }
-            if event == "start" { return true }
+            if event == "start" || event=="screenEnter" { return true }
             if rule.sourceID == sourceID { return true }
             return !group.isEmpty &&
                 project.nodes.first(where:{$0.id == rule.sourceID})?.group == group
@@ -102,6 +106,9 @@ import QuartzCore
         for link in matching { execute(link, fraction: fraction) }
     }
 
+    func runAdvanced(_ link:InteractionLink){execute(link,fraction:nil)}
+    func setAdvanced(_ id:String,_ property:String,_ value:Double){set(id,property,value)}
+    func stopAdvancedLink(_ id:String){motions.removeAll{$0.owner==id};echoes.removeAll{$0.owner==id};pending.removeAll{$0.link.id==id};advanced.stop(id)}
     private func execute(_ input: InteractionLink, fraction: Double?) {
         var link=input
         guard let node = project.nodes.first(where: { $0.id == link.targetID }) else { return }
@@ -134,6 +141,8 @@ import QuartzCore
             pending.append(Pending(link:delayed,at:now+link.delay,fraction:fraction))
             return
         }
+        if !advanced.permit(link){return}
+        if advanced.handle(link,fraction:fraction){return}
         let returning=link.alternate==true && toggled.contains(link.id)
         if link.alternate==true {if returning{toggled.remove(link.id)}else{toggled.insert(link.id)}}
         if link.property=="morph",["animate","set"].contains(link.mode) {
@@ -186,7 +195,7 @@ import QuartzCore
                                   property: link.property, start: now + max(0,link.delay),
                                   duration: max(0.01,link.duration*(link.property=="progress" ? abs(to-from):1)), from: from, initialFrom: from,
                                   to: to, easing: link.easing, repeats: link.repeats,
-                                  totalDuration:link.property=="progress" ? max(0.01,link.duration):nil,colorFrom: Int64(from), colorTo: Int64(to)))
+                                  repeatGap:max(0,link.advanced?.repeatGap ?? 0),totalDuration:link.property=="progress" ? max(0.01,link.duration):nil,colorFrom: Int64(from), colorTo: Int64(to)))
 
         }
     }
@@ -210,7 +219,7 @@ import QuartzCore
             }
         }
     }
-    private func actionDuration(_ link:InteractionLink)->Double{["animate","echo","state","playback"].contains(link.mode) ? max(0.01,link.duration):0}
+    private func actionDuration(_ link:InteractionLink)->Double{["animate","echo","state","playback","multiMorph","typewriter"].contains(link.mode) ? max(0.01,link.duration):0}
     func seek(group:String,value:Double){
         playback.seek(group:group,value:value)
         let value=min(1,max(0,value)),now=CACurrentMediaTime();widgetValues[group]=value
@@ -282,6 +291,8 @@ import QuartzCore
     /// Advance active animations. Returns true while a frame must be redrawn.
     @discardableResult func tick(at now: Double = CACurrentMediaTime()) -> Bool {
         let hadMotion = active
+        let advancedChanged=advanced.needsDisplay;advanced.needsDisplay=false
+        advanced.tick(now)
         let clockChanged=playback.tick(now)
         let due=pending.filter{$0.at<=now && paused[$0.link.id]==nil}
         pending.removeAll{$0.at<=now && paused[$0.link.id]==nil}
@@ -307,7 +318,7 @@ import QuartzCore
             }
             if t>=1 {
                 if motion.repeats {
-                    motion.start = now
+                    motion.start = now+motion.repeatGap
                     // Repeat the full forward animation, not a frozen final frame.
                     motion.from = motion.property=="progress" ? 0:motion.initialFrom
                     motion.duration=motion.totalDuration ?? motion.duration
@@ -325,7 +336,7 @@ import QuartzCore
         echoes.removeAll { paused[$0.owner]==nil && !$0.repeats && now > $0.started+$0.duration }
         // Completion can start new animations, but don't recursively call completion.
         for id in Set(finished) { fire("finished",sourceID:id) }
-        return clockChanged || hadMotion || !motions.isEmpty
+        return advancedChanged || advanced.needsDisplay || clockChanged || hadMotion || !motions.isEmpty
     }
 
     static func pressColor(_ value:Int64,_ strength:Double)->Int64 {
@@ -451,6 +462,6 @@ import QuartzCore
                 }
             }
         }
-        return output
+        return advanced.apply(output,at:now)
     }
 }

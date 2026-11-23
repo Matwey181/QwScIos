@@ -7,7 +7,7 @@ struct EditorCanvas:UIViewRepresentable {
     func updateUIView(_ view:CanvasView,context:Context) {
         if view.lastFit != editor.fitVersion { view.lastFit=editor.fitVersion;view.zoom=1;view.pan = .zero }
         for gesture in view.gestureRecognizers ?? []{
-            if let tap=gesture as? UITapGestureRecognizer,tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{if tap.isEnabled==editor.playing{tap.isEnabled = !editor.playing}}
+            if let tap=gesture as? UITapGestureRecognizer,tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{let needed = tap.name=="playTwoTap" ? editor.playing:!editor.playing || tap.numberOfTapsRequired==2 && editor.project.links.contains{$0.enabled && $0.event=="doubleTap"};if tap.isEnabled != needed{tap.isEnabled=needed}}
             if let hold=gesture as? UILongPressGestureRecognizer,hold.name != "componentPress"{if hold.isEnabled==editor.playing{hold.isEnabled = !editor.playing}}
         }
         view.palette=q;view.backgroundColor=UIColor(argb:q.argb("surfaceContainer"));view.setNeedsDisplay();view.setNeedsLayout()
@@ -26,6 +26,8 @@ struct EditorCanvas:UIViewRepresentable {
         backgroundColor=UIColor.secondarySystemBackground;isMultipleTouchEnabled=true
         ratioButton.addTarget(self,action:#selector(toggleRatio),for:.touchUpInside);ratioButton.layer.cornerRadius=18;ratioButton.accessibilityLabel="Сохранение пропорций";addSubview(ratioButton)
         let press=UILongPressGestureRecognizer(target:self,action:#selector(componentPress(_:)));press.name="componentPress";press.minimumPressDuration=0;press.allowableMovement=CGFloat.greatestFiniteMagnitude;press.cancelsTouchesInView=false;addGestureRecognizer(press)
+        let two=UITapGestureRecognizer(target:self,action:#selector(playTwoTap(_:)));two.numberOfTouchesRequired=2;two.name="playTwoTap";addGestureRecognizer(two)
+        let rotate=UIRotationGestureRecognizer(target:self,action:#selector(playRotate(_:)));rotate.name="playRotate";addGestureRecognizer(rotate)
         let tap=UITapGestureRecognizer(target:self,action:#selector(tap(_:)));addGestureRecognizer(tap)
         let double=UITapGestureRecognizer(target:self,action:#selector(doubleTap(_:)));double.numberOfTapsRequired=2;addGestureRecognizer(double);tap.require(toFail:double)
         let long=UILongPressGestureRecognizer(target:self,action:#selector(longPress(_:)));addGestureRecognizer(long)
@@ -62,7 +64,7 @@ struct EditorCanvas:UIViewRepresentable {
             for y in (editor.project.studio?.guidesY ?? [])+editor.snapGuidesY{ctx.move(to:CGPoint(x:0,y:y));ctx.addLine(to:CGPoint(x:editor.project.w,y:y))}
             ctx.strokePath();ctx.restoreGState()
         }
-        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):editor.canvasProject,in:ctx,background:false,includeReferences:!editor.playing)
+        editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):AdvancedLinkEngine.markers(editor.canvasProject),in:ctx,background:false,includeReferences:!editor.playing)
         if !editor.playing {
             ctx.saveGState();ctx.setStrokeColor(UIColor.systemRed.withAlphaComponent(0.65).cgColor);ctx.setLineWidth(1.25/scale)
             for x in editor.smartGuidesX{ctx.move(to:CGPoint(x:x,y:0));ctx.addLine(to:CGPoint(x:x,y:editor.project.h))}
@@ -113,7 +115,9 @@ struct EditorCanvas:UIViewRepresentable {
         else if let hit=hits.first,gestureOn("LONG_LAYER"){editor.choose(hit);editor.requestPanel="style"}
         else if hits.isEmpty,gestureOn("LONG_EMPTY"){editor.requestPanel="add"}
     }
-    @objc func doubleTap(_ g:UITapGestureRecognizer) {let p=document(g.location(in:self));if let hit=editor.editableNodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
+    @objc func playTwoTap(_ g:UITapGestureRecognizer){if editor.playing{editor.originalPlay.gesture("twoTap",at:document(g.location(in:self)))}}
+    @objc func playRotate(_ g:UIRotationGestureRecognizer){if editor.playing{editor.originalPlay.gesture("rotate",at:document(g.location(in:self)),value:Double(g.rotation*180 / .pi))}}
+    @objc func doubleTap(_ g:UITapGestureRecognizer) {if editor.playing{editor.originalPlay.gesture("doubleTap",at:document(g.location(in:self)));return};let p=document(g.location(in:self));if let hit=editor.editableNodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
         if let key=editor.eyedropTarget {
@@ -128,10 +132,11 @@ struct EditorCanvas:UIViewRepresentable {
         let t=g.translation(in:self);pan=CGPoint(x:initialPan.x+t.x,y:initialPan.y+t.y);setNeedsDisplay()
     }
     @objc func pinching(_ g:UIPinchGestureRecognizer) {
+        if editor.playing,editor.project.links.contains(where:{$0.mode=="pinchObject" || $0.event=="pinch"}){editor.originalPlay.gesture("pinch",at:document(g.location(in:self)),value:Double(g.scale));return}
         if g.state == .began { initialZoom=zoom }
         zoom=min(12,max(0.15,initialZoom*g.scale));setNeedsDisplay()
     }
-    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {if gestureRecognizer.name=="componentPress" && !editor.playing{return false};if editor.playing,let tap=gestureRecognizer as? UITapGestureRecognizer,tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{return false};if editor.playing,gestureRecognizer is UILongPressGestureRecognizer,gestureRecognizer.name != "componentPress"{return false};return !(touch.view?.isDescendant(of:ratioButton) ?? false)}
+    func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive touch:UITouch)->Bool {if gestureRecognizer.name=="componentPress" && !editor.playing{return false};if editor.playing,let tap=gestureRecognizer as? UITapGestureRecognizer,tap.name != "playTwoTap",tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{if tap.numberOfTapsRequired != 2 || !editor.project.links.contains(where:{$0.enabled && $0.event=="doubleTap"}){return false}};if editor.playing,gestureRecognizer is UILongPressGestureRecognizer,gestureRecognizer.name != "componentPress"{return false};return !(touch.view?.isDescendant(of:ratioButton) ?? false)}
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldRecognizeSimultaneouslyWith otherGestureRecognizer:UIGestureRecognizer)->Bool {
         let pair=[gestureRecognizer,otherGestureRecognizer]
         if pair.contains(where:{$0.name=="componentPress"}){return true}

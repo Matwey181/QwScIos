@@ -4,6 +4,9 @@ import CoreGraphics
 /// A declarative connection between two layers, persisted inside the .qwel project.
 /// Events and effects are strings to allow new combinations without a schema migration.
 struct InteractionLink: Codable, Identifiable, Equatable {
+    var advanced:AdvancedLinkOptions?
+    var bundleID:String?
+    var bundleName:String?
     var control:String?
     var destination:String?
     var steps:[InteractionLink]?
@@ -39,12 +42,12 @@ struct InteractionLink: Codable, Identifiable, Equatable {
     var enabled: Bool = true
 
     static let events: [(String, String)] = [
-        ("tap", "Нажатие"), ("press","Палец на объекте"), ("release","Палец отпущен"), ("valueChanged", "Изменение значения компонента"), ("dragStart", "Начало перетаскивания"),
+        ("screenEnter","Экран появился"), ("doubleTap","Двойное нажатие"), ("longPress","Долгое нажатие"), ("holdRepeat","Повтор при удержании"), ("cancelPress","Отпущено за объектом"), ("twoTap","Нажатие двумя пальцами"), ("pinch","Масштаб двумя пальцами"), ("rotate","Поворот двумя пальцами"), ("enterArea","Попадание в область"), ("exitArea","Выход из области"), ("collision","Столкновение"), ("inputDone","Ввод завершён"), ("inputChanged","Текст введён"), ("invalidInput","Неверный формат ввода"), ("nthTap","После нескольких нажатий"), ("stepTap","Определённое нажатие"), ("tap", "Нажатие"), ("press","Палец на объекте"), ("release","Палец отпущен"), ("valueChanged", "Изменение значения компонента"), ("dragStart", "Начало перетаскивания"),
         ("drag", "Движение пальца"), ("dragEnd", "Отпускание"),
-        ("swipeLeft","Свайп влево"), ("swipeRight","Свайп вправо"), ("finished", "Завершение анимации"), ("start", "Запуск игры")
+        ("swipeUp","Свайп вверх"), ("swipeDown","Свайп вниз"), ("swipeLeft","Свайп влево"), ("swipeRight","Свайп вправо"), ("finished", "Завершение анимации"), ("start", "Запуск игры")
     ]
     static let effects: [(String, String)] = [
-        ("state", "Перейти в состояние"), ("playback", "Таймер-плеер"), ("animate", "Анимировать свойство"), ("set", "Изменить сразу"),
+        ("thresholds","Точки срабатывания ползунка"), ("multiMorph","Превращение нескольких объектов"), ("moveObject","Перетаскивание объекта"), ("pinchObject","Масштаб жестом"), ("rotateObject","Поворот жестом"), ("imageSwap","Заменить изображение"), ("iconSwap","Заменить значок"), ("numberAdd","Увеличить число в тексте"), ("numberSubtract","Уменьшить число в тексте"), ("textClear","Очистить текст"), ("typewriter","Текст по буквам"), ("textLimit","Ограничить длину текста"), ("selectedCount","Количество выбранных элементов"), ("stateText","Надпись по состоянию"), ("keyboard","Ввести текст / клавиатура"), ("validate","Проверить ввод"), ("sum","Сумма выбранных значений"), ("formatNumber","Форматировать число"), ("sound","Воспроизвести звук"), ("haptic","Виброотклик"), ("stopLink","Остановить связку"), ("followSize","Размер вслед за объектом"), ("state", "Перейти в состояние"), ("playback", "Таймер-плеер"), ("animate", "Анимировать свойство"), ("set", "Изменить сразу"),
         ("bind", "Связать с движением"), ("toggle", "Переключить видимость"),
         ("text", "Изменить текст"), ("echo", "Эхо / пульсация"), ("visibility","Показать / скрыть слой"), ("navigate","Перейти на экран / назад"), ("url","Открыть ссылку"), ("component","Значение компонента"), ("playerControl","Управление плеером")
     ]
