@@ -256,7 +256,7 @@ import QuartzCore
         case "width": return Double(node.w)
         case "height": return Double(node.h)
         case "rotation": return Double(node.rotation)
-        case "scale": return 1
+        case "scale","groupScale": return 1
         case "visible": return node.visible ? 1 : 0
         case "fontSize": return Double(node.fontSize)
         case "corner": return Double(node.corner)
@@ -328,6 +328,14 @@ import QuartzCore
         return clockChanged || hadMotion || !motions.isEmpty
     }
 
+    static func pressColor(_ value:Int64,_ strength:Double)->Int64 {
+        guard strength>0 else{return value}
+        let v=UInt32(truncatingIfNeeded:value),alpha=v & 0xff000000
+        let red=Double((v>>16)&255),green=Double((v>>8)&255),blue=Double(v&255)
+        let target=(red*0.2126+green*0.7152+blue*0.0722)>128 ? 0.0:255.0
+        func channel(_ n:Double)->UInt32{UInt32(min(255,max(0,(n+(target-n)*strength).rounded())))}
+        return Int64(Int32(bitPattern:alpha | channel(red)<<16 | channel(green)<<8 | channel(blue)))
+    }
     func displayed(_ base: Project, at now: Double = CACurrentMediaTime()) -> Project {
         var output=base
         for i in output.nodes.indices {
@@ -382,6 +390,25 @@ import QuartzCore
                 if number[output.nodes[i].id]?["height"] != nil{var x=output.nodes[i].extras ?? LayerExtras();x.hugHeight=false;output.nodes[i].extras=x}
             }
             DesignLayoutEngine.resolve(&output,renderer:renderer,applyStyles:false)
+        }
+        // Scale every part around one shared center; tint remains relative to the current theme.
+        var transformedGroups=Set<String>()
+        for (id,values) in number {
+            guard values["groupScale"] != nil || values["groupTint"] != nil,let anchor=base.nodes.first(where:{$0.id==id}) else{continue}
+            let key=anchor.group.isEmpty ? anchor.id:anchor.group
+            guard transformedGroups.insert(key).inserted else{continue}
+            let members=base.nodes.filter{anchor.group.isEmpty ? $0.id==id:$0.group==anchor.group}
+            let box=members.reduce(CGRect.null){$0.union($1.rect)},center=CGPoint(x:box.midX,y:box.midY)
+            let scale=CGFloat(max(0.01,values["groupScale"] ?? 1)),tint=min(1,max(0,values["groupTint"] ?? 0))
+            for i in output.nodes.indices where anchor.group.isEmpty ? output.nodes[i].id==id:output.nodes[i].group==anchor.group {
+                var n=output.nodes[i]
+                let c=n.center
+                n.w*=scale;n.h*=scale;n.x=center.x+(c.x-center.x)*scale-n.w/2;n.y=center.y+(c.y-center.y)*scale-n.h/2
+                if n.kind=="TEXT"{n.fontSize*=scale;var x=n.extras ?? LayerExtras();x.tracking*=scale;x.lineSpacing*=scale;n.extras=x}
+                n.strokeWidth*=scale
+                n.fill=Self.pressColor(n.fill,tint);n.fill2=Self.pressColor(n.fill2,tint);n.stroke=Self.pressColor(n.stroke,tint)
+                output.nodes[i]=n
+            }
         }
         for original in output.nodes {
             guard let strength=number[original.id]?["echo"],strength>0 else{continue}

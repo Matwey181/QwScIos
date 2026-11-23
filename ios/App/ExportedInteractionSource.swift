@@ -310,13 +310,22 @@ private struct QwelEcho: Identifiable {
         _ = version
         return visibility[id] ?? fallback
     }
+    func groupValue(_ id:String,_ property:String,base fallback:Double)->Double {
+        let all=rules.flatMap{[$0]+$0.steps}
+        guard let rule=all.last(where:{$0.enabled && $0.property==property && ($0.target==id || $0.targetAliases.contains(id))}) else{return fallback}
+        return value(rule.target,property,base:fallback)
+    }
+    func groupPosition(_ id:String,axis:String,base fallback:Double,half:Double,center:Double)->Double{
+        let point=value(id,axis,base:fallback)+half
+        return center+(point-center)*groupValue(id,"groupScale",base:1)
+    }
     func fill(_ id:String,base fallback:Int64,property:String="fill")->Color {
         let raw=Int64(value(id,property,base:Double(fallback)))
-        let value=UInt32(truncatingIfNeeded:raw)
-        return Color(.sRGB,red:Double((value>>16)&255)/255,
-                     green:Double((value>>8)&255)/255,
-                     blue:Double(value&255)/255,
-                     opacity:Double(value>>24)/255)
+        let color=UInt32(truncatingIfNeeded:raw)
+        let strength=min(1,max(0,groupValue(id,"groupTint",base:0)))
+        let red=Double((color>>16)&255)/255,green=Double((color>>8)&255)/255,blue=Double(color&255)/255
+        let destination=red*0.2126+green*0.7152+blue*0.0722>0.5 ? 0.0:1.0
+        return Color(.sRGB,red:red+(destination-red)*strength,green:green+(destination-green)*strength,blue:blue+(destination-blue)*strength,opacity:Double(color>>24)/255)
     }
     func echo(_ id:String)->Double? {
         _ = version

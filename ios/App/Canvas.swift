@@ -6,6 +6,10 @@ struct EditorCanvas:UIViewRepresentable {
     func makeUIView(context:Context)->CanvasView { CanvasView(editor:editor) }
     func updateUIView(_ view:CanvasView,context:Context) {
         if view.lastFit != editor.fitVersion { view.lastFit=editor.fitVersion;view.zoom=1;view.pan = .zero }
+        for gesture in view.gestureRecognizers ?? []{
+            if let tap=gesture as? UITapGestureRecognizer,tap.numberOfTapsRequired>1 || tap.numberOfTouchesRequired>1{if tap.isEnabled==editor.playing{tap.isEnabled = !editor.playing}}
+            if let hold=gesture as? UILongPressGestureRecognizer,hold.name != "componentPress"{if hold.isEnabled==editor.playing{hold.isEnabled = !editor.playing}}
+        }
         view.palette=q;view.backgroundColor=UIColor(argb:q.argb("surfaceContainer"));view.setNeedsDisplay();view.setNeedsLayout()
     }
 }

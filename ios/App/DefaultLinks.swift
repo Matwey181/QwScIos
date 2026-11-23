@@ -22,25 +22,30 @@ enum DefaultLinks {
         for indices in groups.values {
             guard let first=indices.first else{continue}
             let source=indices.first(where:{!project.nodes[$0].widget.isEmpty}) ?? first
-            if project.nodes[source].extras?.linkDefaultsVersion==1{continue}
+            let version=project.nodes[source].extras?.linkDefaultsVersion ?? 0
+            if version>=2{continue}
             let n=project.nodes[source],kind=n.widget.components(separatedBy:":").first ?? ""
             let id=componentID ?? n.group.components(separatedBy:"~").last ?? ""
             let button=id.hasPrefix("btn-") || id.hasPrefix("icon-btn") || ["fab","ext-fab","fab-small","fab-large","split-button"].contains(id)
             let interactive = !kind.isEmpty && !["slider","progress","spin"].contains(kind)
-            if interactive{var link=rule(n.id,n.id,"tap","component","component",1);link.control="tap";added.append(link)
+            if interactive && version<1{var link=rule(n.id,n.id,"tap","component","component",1);link.control="tap";added.append(link)
                 if kind=="pick"{for (event,action) in [("swipeLeft","increase"),("swipeRight","decrease")]{var swipe=rule(n.id,n.id,event,"component","component",1);swipe.control=action;added.append(swipe)}}
             }
-            if let background=indices.first(where:{project.nodes[$0].pressCorner>=0 || button && project.nodes[$0].kind=="RECT"}){
+            let oldBackground=project.links.first{$0.id=="default-\(n.id)-press-opacity"}?.targetID
+            if let background=indices.first(where:{project.nodes[$0].pressCorner>=0 || (button || project.nodes[$0].id==oldBackground) && project.nodes[$0].kind=="RECT"}){
                 let layer=project.nodes[background]
-                added.append(rule(n.id,layer.id,"press","animate","opacity",Double(layer.opacity)*0.82))
-                added.append(rule(n.id,layer.id,"release","animate","opacity",Double(layer.opacity)))
+                project.links.removeAll{$0.id=="default-\(n.id)-press-opacity" || $0.id=="default-\(n.id)-release-opacity"}
+                added.append(rule(n.id,layer.id,"press","animate","groupScale",0.96))
+                added.append(rule(n.id,layer.id,"release","animate","groupScale",1))
+                added.append(rule(n.id,layer.id,"press","animate","groupTint",0.10))
+                added.append(rule(n.id,layer.id,"release","animate","groupTint",0))
                 if layer.pressCorner>=0 {
                     added.append(rule(n.id,layer.id,"press","animate","corner",Double(layer.pressCorner)))
                     added.append(rule(n.id,layer.id,"release","animate","corner",Double(min(layer.corner,min(layer.w,layer.h)/2))))
                     project.nodes[background].pressCorner = -1
                 }
             }
-            for i in indices{var x=project.nodes[i].extras ?? LayerExtras();x.linkDefaultsVersion=1;project.nodes[i].extras=x}
+            for i in indices{var x=project.nodes[i].extras ?? LayerExtras();x.linkDefaultsVersion=2;project.nodes[i].extras=x}
         }
         let existing=Set(project.links.map(\.id));project.links += added.filter{!existing.contains($0.id)}
     }

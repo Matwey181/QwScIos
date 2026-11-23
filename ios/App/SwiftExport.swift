@@ -76,7 +76,7 @@ enum SwiftExport {
             ("x",{Double($0.x)}),("y",{Double($0.y)}),
             ("width",{Double($0.w)}),("height",{Double($0.h)}),
             ("rotation",{Double($0.rotation)}),("opacity",{Double($0.opacity)}),("fillOpacity",{Double($0.fillOpacity)}),
-            ("scale",{_ in 1}),("progress",{_ in 0}),
+            ("scale",{_ in 1}),("groupScale",{_ in 1}),("groupTint",{_ in 0}),("progress",{_ in 0}),
             ("fontSize",{Double($0.fontSize)}),("corner",{Double($0.corner)}),
             ("blur",{Double($0.softBlur)}),("fill",{Double($0.fill)}),
             ("visible",{$0.visible ? 1 : 0}), ("morph",{_ in 0}), ("echo",{_ in 0}),
@@ -107,6 +107,8 @@ enum SwiftExport {
             for (i,n) in nodes.enumerated() where !n.mask && n.extras?.reference != true {
                 let name="layer\(page)_\(i)"
                 let identifier=literal(n.id)
+                let groupNodes=n.group.isEmpty ? [n]:nodes.filter{$0.group==n.group}
+                let groupBox=groupNodes.reduce(CGRect.null){$0.union($1.rect)}
                 let alignment=n.textAlign=="center" ? "center":n.textAlign=="right" ? "trailing":"leading"
                 var view:String
                 let nodeColor="graph.fill(\(identifier), base: \(n.fill))"
@@ -152,7 +154,7 @@ enum SwiftExport {
                 // rectangle over the exported artwork to fake its gestures.
                 let sx="graph.value(\(identifier), \"width\", base: \(n.w)) / \(max(0.001,n.w)) * graph.value(\(identifier), \"scale\", base: 1) * graph.value(\(identifier), \"progress\", base: 1)"
                 let sy="graph.value(\(identifier), \"height\", base: \(n.h)) / \(max(0.001,n.h)) * graph.value(\(identifier), \"scale\", base: 1)"
-                view += ".scaleEffect(x: CGFloat(\(sx)), y: CGFloat(\(sy)))"
+                view += ".scaleEffect(x: CGFloat(\(sx) * graph.groupValue(\(identifier), \"groupScale\", base: 1)), y: CGFloat(\(sy) * graph.groupValue(\(identifier), \"groupScale\", base: 1)))"
                 view += ".rotationEffect(.degrees(graph.value(\(identifier), \"rotation\", base: \(n.rotation))))"
                 view += ".opacity(graph.visible(\(identifier), base: \(n.visible)) ? graph.value(\(identifier), \"opacity\", base: \(n.opacity)) : 0)"
                 view += ".allowsHitTesting(graph.visible(\(identifier), base: \(n.visible)) && graph.value(\(identifier), \"disabled\", base: \(n.extras?.disabled==true ? 1:0)) < 0.5)"
@@ -212,7 +214,7 @@ enum SwiftExport {
                     }.joined(separator:"; ")
                     view += ".simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { gesture in \(change) }.onEnded { gesture in \(end) })"
                 }
-                view += ".position(x: CGFloat(graph.value(\(identifier), \"x\", base: \(n.x))) + \(n.w/2), y: CGFloat(graph.value(\(identifier), \"y\", base: \(n.y))) + \(n.h/2))"
+                view += ".position(x: CGFloat(graph.groupPosition(\(identifier), axis: \"x\", base: \(n.x), half: \(n.w/2), center: \(groupBox.midX))), y: CGFloat(graph.groupPosition(\(identifier), axis: \"y\", base: \(n.y), half: \(n.h/2), center: \(groupBox.midY))))"
 
                 if i+1<nodes.count,nodes[i+1].mask,nodes[i+1].visible {
                     let mask=nodes[i+1]
