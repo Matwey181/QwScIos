@@ -25,7 +25,7 @@ import SwiftUI
     let renderer:DocumentRenderer
     lazy var originalPlay=OriginalPlayRuntime(editor:self)
     private var pendingSave:Task<Void,Never>?
-    init(_ p:Project,store:ProjectStore) { project=p;DefaultLinks.allPages(&project);self.store=store;renderer=DocumentRenderer(root:store.root) }
+    init(_ p:Project,store:ProjectStore) { var prepared=p;DefaultLinks.allPages(&prepared);project=prepared;self.store=store;renderer=DocumentRenderer(root:store.root) }
     var selected:[Node] { project.nodes.filter { selection.contains($0.id) } }
     var bounds:CGRect? { selected.reduce(nil as CGRect?) { $0?.union($1.rect) ?? $1.rect } }
     func checkpoint() { undoStack.append(project);if undoStack.count>80 { undoStack.removeFirst() };redoStack=[] }
