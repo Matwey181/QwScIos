@@ -110,6 +110,38 @@ import QuartzCore
     func runAdvanced(_ link:InteractionLink){execute(link,fraction:nil)}
     func setAdvanced(_ id:String,_ property:String,_ value:Double){set(id,property,value)}
     func stopAdvancedLink(_ id:String){motions.removeAll{$0.owner==id};echoes.removeAll{$0.owner==id};pending.removeAll{$0.link.id==id};advanced.stop(id)}
+    func checkpointSnapshot(_ actions:[InteractionLink])->()->Void{
+        var numeric:[String:Set<String>]=[:],texts=Set<String>(),visible=Set<String>(),visual=Set<String>(),full=Set<String>(),owners=Set<String>()
+        let textModes:Set<String>=["text","textClear","numberAdd","numberSubtract","formatNumber","typewriter","textLimit","selectedCount","stateText","sum"]
+        func collect(_ rules:[InteractionLink]){for action in rules{
+            owners.insert(action.id)
+            if ["animate","set","bind"].contains(action.mode){
+                if action.property=="visible"{visible.insert(action.targetID)}else{numeric[action.targetID,default:[]].insert(action.property)}
+            }
+            if textModes.contains(action.mode){texts.insert(action.targetID)}
+            if ["toggle","visibility"].contains(action.mode){visible.insert(action.targetID)}
+            if ["imageSwap","iconSwap"].contains(action.mode){visual.insert(action.targetID)}
+            if action.mode=="state",let state=project.studio?.states.first(where:{$0.id==action.stateID}){full.formUnion(state.nodes.map(\.id))}
+            if action.mode=="multiMorph"{full.formUnion(action.advanced?.sourceIDs ?? []);full.formUnion(action.advanced?.targetIDs ?? [])}
+            collect(action.steps ?? [])
+        }}
+        collect(actions)
+        let oldNumber=number,oldText=text,oldVisible=visibility,oldMorphs=morphs,oldStates=stateLayers
+        let restoreVisual=advanced.checkpointVisualSnapshot(visual.union(full))
+        return { [weak self] in
+            guard let self else{return}
+            for owner in owners{self.stopAdvancedLink(owner)}
+            for (id,keys) in numeric{for key in keys{
+                if let value=oldNumber[id]?[key]{self.number[id,default:[:]][key]=value}else{self.number[id]?.removeValue(forKey:key)}
+                if key=="morph"{self.morphs[id]=oldMorphs[id]}
+                if key=="progress",let node=self.project.nodes.first(where:{$0.id==id}){self.seek(group:node.group,value:oldNumber[id]?[key] ?? 0)}
+            }}
+            for id in texts{self.text[id]=oldText[id]}
+            for id in visible{self.visibility[id]=oldVisible[id]}
+            for id in full{self.number[id]=oldNumber[id];self.text[id]=oldText[id];self.visibility[id]=oldVisible[id];self.morphs[id]=oldMorphs[id];self.stateLayers[id]=oldStates[id]}
+            restoreVisual();self.advanced.needsDisplay=true
+        }
+    }
     private func execute(_ input: InteractionLink, fraction: Double?, scheduled:Bool=false) {
         var link=input
         guard let node = project.nodes.first(where: { $0.id == link.targetID }) else { return }

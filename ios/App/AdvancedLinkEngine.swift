@@ -12,9 +12,11 @@ import AVFoundation
     private var inside:[String:Bool]=[:],followers:[String:InteractionLink]=[:]
     private struct Morph {var rule:InteractionLink;var sources:[Node];var targets:[Node];var paths:[LinkMorph];var start:Double}
     private var morphs:[String:Morph]=[:]
+    private var checkpointUndos:[String:[String:()->Void]]=[:]
+    private var activePoints:[String:Set<String>]=[:]
     var needsDisplay=false
     var active:Bool{held != nil || !typing.isEmpty || morphs.values.contains{CACurrentMediaTime() < $0.start+max(0.01,$0.rule.duration)} || !followers.isEmpty}
-    func reset(){transformStarts=[:];once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
+    func reset(){checkpointUndos=[:];activePoints=[:];transformStarts=[:];once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
     func stop(_ id:String){typing.removeValue(forKey:id);players[id]?.stop();players.removeValue(forKey:id);morphs.removeValue(forKey:id);followers.removeValue(forKey:id)}
     func permit(_ rule:InteractionLink)->Bool{if rule.advanced?.once==true{return once.insert(rule.id).inserted};return true}
     func tap(_ source:String){guard let r=runtime else{return};let group=r.project.nodes.first{$0.id==source}?.group ?? "";let key=group.isEmpty ? source:group;hits[key,default:0]+=1;let count=hits[key] ?? 1
@@ -29,9 +31,7 @@ import AVFoundation
         needsDisplay=true
         switch link.mode {
         case "thresholds":
-            let percent=min(100,max(0,(fraction ?? 0)*100));let point=x.checkpoints.filter{$0.percent<=percent}.max{$0.percent<$1.percent}
-            let key=point?.id ?? "base";if stages[link.id]==key{return true};stages[link.id]=key
-            var action=link;action.mode="animate";action.property="morph";action.advanced=nil;action.shapeID=point?.shapeID ?? node.shapeId;action.alternate=false;r.runAdvanced(action)
+            thresholds(link,fraction:fraction ?? 0)
         case "numberAdd","numberSubtract":let old=number(r.text[node.id] ?? node.text);let value=old+(link.mode=="numberAdd" ? link.value:-link.value);r.text[node.id]=formatted(value,x)
         case "formatNumber":r.text[node.id]=formatted(number(r.text[node.id] ?? node.text),x)
         case "textClear":r.text[node.id]=""
@@ -54,6 +54,41 @@ import AVFoundation
         default:return false
         }
         return true
+    }
+    private func thresholds(_ link:InteractionLink,fraction:Double){
+        guard let r=runtime else{return}
+        let points=(link.advanced?.checkpoints ?? []).sorted{a,b in a.percent==b.percent ? a.id<b.id:a.percent<b.percent}
+        let percent=min(100,max(0,fraction*100))
+        let previous=activePoints[link.id] ?? []
+        let eligible=Set(points.filter{$0.percent<=percent}.map(\.id))
+        guard previous != eligible else{return}
+        activePoints[link.id]=eligible
+        let removed=points.reversed().filter{previous.contains($0.id) && !eligible.contains($0.id)}
+        for point in removed{
+            if point.revertOnRewind ?? true{checkpointUndos[link.id]?[point.id]?()}
+            checkpointUndos[link.id]?.removeValue(forKey:point.id)
+        }
+        // Restore the last retained state without replaying sounds, counters or commands.
+        if removed.contains(where:{$0.revertOnRewind ?? true}){
+            let stateModes:Set<String>=["animate","set","text","visibility","imageSwap","iconSwap","state"]
+            for point in points where eligible.contains(point.id) && previous.contains(point.id){
+                for action in thresholdActions(link,point) where action.enabled && stateModes.contains(action.mode){
+                    var action=action;action.sourceID=link.sourceID;action.delay=0;action.alternate=false;action.pauseOnRepeat=false;r.runAdvanced(action)
+                }
+            }
+        }
+        for point in points where eligible.contains(point.id) && !previous.contains(point.id){
+            let actions=thresholdActions(link,point).filter(\.enabled)
+            checkpointUndos[link.id,default:[:]][point.id]=r.checkpointSnapshot(actions)
+            for action in actions{r.runAdvanced(action)}
+        }
+    }
+    private func thresholdActions(_ link:InteractionLink,_ point:SliderCheckpoint)->[InteractionLink]{
+        link.actions(at:point).map{input in var a=input;a.id=link.id+"|"+point.id+"|"+input.id;a.sourceID=link.sourceID;return a}
+    }
+    func checkpointVisualSnapshot(_ ids:Set<String>)->()->Void{
+        let before=replacements
+        return { [weak self] in guard let self else{return};for id in ids{self.replacements[id]=before[id]};self.needsDisplay=true }
     }
     func drag(_ translation:CGPoint){guard let link=dragRule,let r=runtime,let n=r.project.nodes.first(where:{$0.id==link.targetID}) else{return};let x=link.advanced ?? AdvancedLinkOptions();var point=CGPoint(x:dragOrigin.x+(x.axis=="y" ? 0:translation.x),y:dragOrigin.y+(x.axis=="x" ? 0:translation.y));if let area=r.project.nodes.first(where:{$0.id==x.areaID}){point.x=max(area.x,min(point.x,area.x+area.w-n.w));point.y=max(area.y,min(point.y,area.y+area.h-n.h))};r.setAdvanced(n.id,"x",Double(point.x));r.setAdvanced(n.id,"y",Double(point.y))}
     func endDrag(){dragRule=nil}

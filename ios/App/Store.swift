@@ -102,7 +102,7 @@ import CoreText
                     }
                 }
                 func map(_ list:[Node])->[Node] { list.map { n in var n=n;n.asset=assets[n.asset] ?? n.asset;n.font=fonts[n.font] ?? n.font;return n } }
-                func mapLink(_ input:InteractionLink)->InteractionLink{var link=input;if var x=link.advanced{x.asset=assets[x.asset] ?? x.asset;link.advanced=x};link.steps=link.steps?.map(mapLink);return link}
+                func mapLink(_ input:InteractionLink)->InteractionLink{var link=input;if var x=link.advanced{x.asset=assets[x.asset] ?? x.asset;for i in x.checkpoints.indices{x.checkpoints[i].actions=x.checkpoints[i].actions?.map(mapLink)};link.advanced=x};link.steps=link.steps?.map(mapLink);return link}
                 p.links=p.links.map(mapLink)
                 p.nodes=map(p.nodes);p.pages=p.pages.map { pg in var pg=pg;pg.nodes=map(pg.nodes);return pg }
                 if var studio=p.studio{studio.states=studio.states.map{state in var state=state;state.nodes=map(state.nodes);return state};studio.textStyles=studio.textStyles?.map{style in var style=style;style.font=fonts[style.font] ?? style.font;return style};p.studio=studio}
@@ -125,6 +125,7 @@ import CoreText
         func addLinkAssets(_ rules:[InteractionLink]){for rule in rules{
             if let asset=rule.advanced?.asset,!asset.isEmpty{assetNames.insert(asset)}
             addLinkAssets(rule.steps ?? [])
+            for point in rule.advanced?.checkpoints ?? []{addLinkAssets(point.actions ?? [])}
         }}
         addLinkAssets(p.links)
         let fontNames=Set(all.map(\.font).filter{!$0.isEmpty})

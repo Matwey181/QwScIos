@@ -117,6 +117,7 @@ struct LinkRuleForm:View {
     var pages:[Page]=[]
     var root:URL=FileManager.default.temporaryDirectory
     var stopChoices:[(String,String)]=[]
+    var availableEffects:[(String,String)]=InteractionLink.effects
     @Environment(\.q) private var q
     private var colorProperty:Bool{["fill","stroke","fill2","shadowColor"].contains(link.property)}
     private var nodeChoices:[(String,String)]{
@@ -132,7 +133,7 @@ struct LinkRuleForm:View {
                 LinkChoiceField(title:"Событие",selection:$link.event,items:InteractionLink.events)
             }}
             section("02",title:"Реакция"){
-                LinkChoiceField(title:"Что сделать",selection:$link.mode,items:InteractionLink.effects)
+                LinkChoiceField(title:"Что сделать",selection:$link.mode,items:availableEffects)
                 LinkChoiceField(title:"Какой слой изменить",selection:$link.targetID,items:nodeChoices)
                 propertyControls
                 textControls
@@ -140,7 +141,7 @@ struct LinkRuleForm:View {
                 if link.mode=="playback"{PlaybackLinkControls(link:$link,layers:layers)}
             }
             extraActions
-            AdvancedLinkControls(link:$link,layers:layers,root:root,stopChoices:stopChoices)
+            AdvancedLinkControls(link:$link,layers:layers,root:root,stopChoices:stopChoices,states:states,pages:pages)
             timingControls
             if !isStep{AnyView(LinkStepsEditor(link:$link,layers:layers,states:states,pages:pages,root:root,stopChoices:stopChoices))}
         }.onChange(of:link.mode){_,mode in if mode=="thresholds"{link.event="valueChanged"};if mode=="moveObject"{link.event="dragStart"};if mode=="pinchObject"{link.event="pinch"};if mode=="rotateObject"{link.event="rotate"}}.onChange(of:link.property){_,property in if property=="morph" && link.shapeID==nil{link.shapeID="star-8";link.from=0;link.to=1}}

@@ -64,7 +64,7 @@ struct MyLinkSetsPanel:View {
         var ids=Set<String>()
         func collect(_ rules:[InteractionLink]){for r in rules{
             for id in [r.targetID,r.elapsedID ?? "",r.remainingID ?? "",r.advanced?.areaID ?? "",r.advanced?.otherID ?? ""] where !id.isEmpty{ids.insert(id)}
-            ids.formUnion(r.advanced?.sourceIDs ?? []);ids.formUnion(r.advanced?.targetIDs ?? []);collect(r.steps ?? [])
+            ids.formUnion(r.advanced?.sourceIDs ?? []);ids.formUnion(r.advanced?.targetIDs ?? []);collect(r.steps ?? []);for point in r.advanced?.checkpoints ?? []{collect(point.actions ?? [])}
         }}
         collect(set.links);return ids.sorted()
     }
@@ -72,7 +72,7 @@ struct MyLinkSetsPanel:View {
     private func apply(_ set:SavedLinkSet){
         let bundle=UUID().uuidString
         var ids:[String:String]=[:]
-        func collect(_ rules:[InteractionLink]){for rule in rules{ids[rule.id]=UUID().uuidString;collect(rule.steps ?? [])}}
+        func collect(_ rules:[InteractionLink]){for rule in rules{ids[rule.id]=UUID().uuidString;collect(rule.steps ?? []);for point in rule.advanced?.checkpoints ?? []{collect(point.actions ?? [])}}}
         collect(set.links)
         func map(_ old:String)->String{roles[old] ?? source.id}
         func remap(_ input:InteractionLink)->InteractionLink{
@@ -86,6 +86,7 @@ struct MyLinkSetsPanel:View {
                 if !x.areaID.isEmpty{x.areaID=map(x.areaID)}
                 if !x.otherID.isEmpty{x.otherID=map(x.otherID)}
                 x.stopID=ids[x.stopID] ?? x.stopID
+                for i in x.checkpoints.indices{x.checkpoints[i].id=UUID().uuidString;x.checkpoints[i].actions=x.checkpoints[i].actions?.map(remap)}
                 r.advanced=x
             }
             return r

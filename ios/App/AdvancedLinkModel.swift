@@ -5,6 +5,8 @@ struct SliderCheckpoint:Codable,Equatable,Identifiable {
     var id=UUID().uuidString
     var percent:Double=25
     var shapeID="star-8"
+    var actions:[InteractionLink]?
+    var revertOnRewind:Bool?
 }
 struct AdvancedLinkOptions:Codable,Equatable {
     var once=false
@@ -36,4 +38,15 @@ struct AdvancedLinkOptions:Codable,Equatable {
     var markerWidth:Double=3
     var markerHeight:Double=38
     var markerShapeSize:Double=28
+}
+
+extension InteractionLink {
+    func actions(at point:SliderCheckpoint)->[InteractionLink]{
+        if let actions=point.actions{return actions}
+        var action=InteractionLink()
+        action.id=point.id+"-shape";action.sourceID=sourceID;action.targetID=targetID
+        action.mode="animate";action.property="morph";action.shapeID=point.shapeID
+        action.duration=duration;action.easing=easing
+        return [action]
+    }
 }
