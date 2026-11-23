@@ -48,8 +48,9 @@ struct ProjectsView:View {
         .fullScreenCover(isPresented:$creating) { NewProjectView { p in creating=false;DispatchQueue.main.asyncAfter(deadline:.now()+0.35){opened=p} }.environmentObject(store).modifier(OriginalTheme()) }
         .fullScreenCover(isPresented:$settings) { SettingsView().modifier(OriginalTheme()) }
         .fullScreenCover(item:$opened) { p in EditorScreen(project:p,store:store).modifier(OriginalTheme()) }
-        .fileImporter(isPresented:$importing,allowedContentTypes:[.item],allowsMultipleSelection:false) { result in
-            switch result { case .success(let urls):if let url=urls.first { Task { await store.importFile(url) } };case .failure(let e):store.error=e.localizedDescription }
+        .sheet(isPresented:$importing) {
+            ProjectDocumentPicker(picked:{url in importing=false;Task{await store.importFile(url)}},cancelled:{importing=false})
+                .ignoresSafeArea()
         }
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
         .alert("Переименовать",isPresented:Binding(get:{renaming != nil},set:{if !$0 {renaming=nil}})) { TextField("Название",text:$rename);Button("Готово"){if var p=renaming{p.name=rename;try? store.save(p)};renaming=nil};Button("Отмена",role:.cancel){renaming=nil} }
