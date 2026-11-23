@@ -23,14 +23,26 @@ struct LinkMorph {
         let matched=b.indices.map{b[($0+offset)%b.count]}
         start=Self.cubics(a);end=Self.cubics(matched)
     }
+    private static func mix(_ a:CGPoint,_ b:CGPoint,_ t:CGFloat)->CGPoint{CGPoint(x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t)}
     private static func samples(_ path:CGPath)->[CGPoint]{
         var points:[CGPoint]=[],current=CGPoint.zero,first=CGPoint.zero
         path.applyWithBlock{pointer in let e=pointer.pointee,p=e.points
             switch e.type {
             case .moveToPoint:current=p[0];first=current;points.append(current)
             case .addLineToPoint:current=p[0];points.append(current)
-            case .addQuadCurveToPoint:let a=current,b=p[0],c=p[1];for i in 1...32{let t=CGFloat(i)/32,u=1-t;points.append(CGPoint(x:u*u*a.x+2*u*t*b.x+t*t*c.x,y:u*u*a.y+2*u*t*b.y+t*t*c.y))};current=c
-            case .addCurveToPoint:let a=current,b=p[0],c=p[1],d=p[2];for i in 1...40{let t=CGFloat(i)/40,u=1-t;points.append(CGPoint(x:u*u*u*a.x+3*u*u*t*b.x+3*u*t*t*c.x+t*t*t*d.x,y:u*u*u*a.y+3*u*u*t*b.y+3*u*t*t*c.y+t*t*t*d.y))};current=d
+            case .addQuadCurveToPoint:
+                let a=current,b=p[0],c=p[1]
+                for i in 1...32{let t=CGFloat(i)/32;let ab=Self.mix(a,b,t),bc=Self.mix(b,c,t);points.append(Self.mix(ab,bc,t))}
+                current=c
+            case .addCurveToPoint:
+                let a=current,b=p[0],c=p[1],d=p[2]
+                for i in 1...40{
+                    let t=CGFloat(i)/40
+                    let ab=Self.mix(a,b,t),bc=Self.mix(b,c,t),cd=Self.mix(c,d,t)
+                    let left=Self.mix(ab,bc,t),right=Self.mix(bc,cd,t)
+                    points.append(Self.mix(left,right,t))
+                }
+                current=d
             case .closeSubpath:points.append(first);current=first
             @unknown default:break
             }

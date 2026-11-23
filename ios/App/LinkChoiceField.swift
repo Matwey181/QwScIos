@@ -80,7 +80,7 @@ private struct LinkChoiceList:UIViewRepresentable {
             cell.backgroundColor = .clear;cell.selectionStyle = .none
             cell.contentConfiguration=UIHostingConfiguration{
                 HStack(spacing:12){Text(item.1).font(qfont(16,.medium)).foregroundStyle(q.color("onSurface")).multilineTextAlignment(.leading);Spacer();if selected{Image(systemName:"checkmark.circle.fill").foregroundStyle(q.color("primary"))}}
-                    .padding(18).frame(maxWidth:.infinity,alignment:.leading).qSurface(22,selected ? "primaryContainer":"surfaceContainerHigh")
+                    .padding(18).frame(maxWidth:.infinity,alignment:.leading).qSurface(22,selected ? "primaryContainer":"surfaceContainerHigh").environment(\.q,q)
             }.margins(.vertical,4).margins(.horizontal,0)
             return cell
         }
