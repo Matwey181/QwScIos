@@ -35,7 +35,6 @@ struct InspectorPanel:View {
                 }else{Text("Выбрано слоёв: \(editor.selected.count)").font(qfont(16,.semibold))}
                 if n.kind != "IMAGE"{row(n.kind=="TEXT" ? "Цвет текста":"Заливка",\.fill,token:n.fillToken)}
                 if !["TEXT","IMAGE"].contains(n.kind){slider("Непрозрачность заливки",\.fillOpacity,0...1,percent:true)}
-                InlineSection(title:"Состояния объекта"){ComponentStateControls(editor:editor,sourceID:n.id)}
                 if !["TEXT","IMAGE"].contains(n.kind){
                     title("Градиент")
                     HStack(spacing:8){ForEach(Array(["Нет","Линейный","Радиальный"].enumerated()),id:\.offset){i,text in QChip(title:text,selected:n.gradKind==Int64(i)){editor.change{$0.gradKind=Int64(i)}}}}
@@ -55,24 +54,7 @@ struct InspectorPanel:View {
                     QToggle("Маска для нижнего слоя",isOn:bind(\.mask,false))
                 }
                 ProjectStyleControls(editor:editor)
-                Button {
-                    showInteractions=true
-                } label: {
-                    HStack(spacing:8) {
-                        Image(systemName:"point.3.connected.trianglepath.dotted")
-                        Text("Связки объекта")
-                        Spacer()
-                        Text("\(editor.links(for:n).count)")
-                        Image(systemName:"chevron.right")
-                    }
-                    .font(qfont(14,.semibold))
-                    .padding(14)
-                    .qSurface(16,"secondaryContainer")
-                }
-                .buttonStyle(.plain)
-                .fullScreenCover(isPresented:$showInteractions) {
-                    InteractionEditorPanel(editor:editor,sourceID:n.id).modifier(OriginalTheme())
-                }
+                ActionPanel(editor:editor,node:n)
                 if n.kind=="SHAPE"{title("Фигура");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){ForEach(Catalog.shared.shapes){shape in Button{editor.change{$0.shapeId=shape.id}}label:{ShapePreview(shape:shape).fill(q.color(n.shapeId==shape.id ? "onPrimaryContainer":"primary")).frame(width:34,height:34).frame(width:56,height:56).qSurface(n.shapeId==shape.id ? 28:16,n.shapeId==shape.id ? "primaryContainer":"surfaceContainerHighest")}.buttonStyle(.plain)}}}}
                 if n.kind=="TEXT"{Button("Оформление текста и выделения"){formatText=true}.font(qfont(14,.semibold)).sheet(isPresented:$formatText){TextEditPanel(editor:editor,nodeID:n.id,formattingOnly:true,close:{formatText=false}).padding(20).modifier(OriginalTheme())};slider("Размер шрифта",\.fontSize,6...160);title("Шрифт");ScrollView(.horizontal,showsIndicators:false){HStack(spacing:8){QChip(title:"Системный",selected:n.font.isEmpty){editor.change{$0.font=""}};QChip(title:"+ Шрифт",action:importFont);ForEach(["InterSA-Regular.otf","Figtree-Regular.ttf"],id:\.self){name in QChip(title:name.components(separatedBy:"-").first ?? name,selected:n.font==name){editor.change{$0.font=name}}}}};HStack(spacing:8){ForEach([Int64(400),500,700],id:\.self){weight in QChip(title:weight==400 ? "Regular":weight==500 ? "Medium":"Bold",selected:n.weight==weight){editor.change{$0.weight=weight}}}}}
             }

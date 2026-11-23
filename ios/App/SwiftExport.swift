@@ -91,7 +91,8 @@ enum SwiftExport {
         }}.joined(separator:",\n")
     }
 
-    @MainActor static func make(_ project:Project,root:URL)->String {
+    @MainActor static func make(_ input:Project,root:URL)->String {
+        var project=input;project.links=[]
         var pages=project.pages.map(\.nodes)
         if pages.isEmpty {pages=[project.nodes]}
         else if pages.indices.contains(project.active) {pages[project.active]=project.nodes}

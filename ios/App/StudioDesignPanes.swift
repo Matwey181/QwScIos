@@ -7,7 +7,7 @@ struct StudioComponents:View {
     @Environment(\.q) private var q
     var body:some View {VStack(spacing:16){
         StudioCard(title:"Свой компонент"){
-            Text("Выделите слои на холсте. Сохраняются оформление, внутренние связки и состояния.").font(qfont(13))
+            Text("Выделите слои на холсте. Сохраняется оформление выбранных слоёв.").font(qfont(13))
             QTextField(title:"Название",text:$name)
             LinkPill(title:"Сохранить выделенное",icon:"square.stack.3d.up",prominent:true){do{try editor.saveReusable(name)}catch{editor.error=error.localizedDescription}}.disabled(editor.selected.isEmpty)
         }
