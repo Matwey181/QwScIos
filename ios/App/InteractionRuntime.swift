@@ -110,13 +110,13 @@ import QuartzCore
     func runAdvanced(_ link:InteractionLink){execute(link,fraction:nil)}
     func setAdvanced(_ id:String,_ property:String,_ value:Double){set(id,property,value)}
     func stopAdvancedLink(_ id:String){playback.stop(id);motions.removeAll{$0.owner==id};echoes.removeAll{$0.owner==id};pending.removeAll{$0.link.id==id};advanced.stop(id)}
-    func checkpointSnapshot(_ actions:[InteractionLink])->()->Void{
-        var numeric:[String:Set<String>]=[:],texts=Set<String>(),visible=Set<String>(),visual=Set<String>(),full=Set<String>(),owners=Set<String>()
+    func checkpointSnapshot(_ actions:[InteractionLink],previous:[InteractionLink]=[])->()->Void{
+        var numeric:[String:[String:InteractionLink]]=[:],texts=Set<String>(),visible=Set<String>(),visual=Set<String>(),full=Set<String>(),owners=Set<String>()
         let textModes:Set<String>=["text","textClear","numberAdd","numberSubtract","formatNumber","typewriter","textLimit","selectedCount","stateText","sum"]
         func collect(_ rules:[InteractionLink]){for action in rules{
             owners.insert(action.id)
             if ["animate","set","bind"].contains(action.mode){
-                if action.property=="visible"{visible.insert(action.targetID)}else{numeric[action.targetID,default:[]].insert(action.property)}
+                if action.property=="visible"{visible.insert(action.targetID)}else{numeric[action.targetID,default:[:]][action.property]=action}
             }
             if textModes.contains(action.mode){texts.insert(action.targetID)}
             if ["toggle","visibility"].contains(action.mode){visible.insert(action.targetID)}
@@ -127,20 +127,53 @@ import QuartzCore
         }}
         collect(actions)
         let oldNumber=number,oldText=text,oldVisible=visibility,oldMorphs=morphs,oldStates=stateLayers
+        var destinations:[String:[String:Double]]=[:],paths:[String:CGPath]=[:]
+        for (id,rules) in numeric{
+            guard let node=project.nodes.first(where:{$0.id==id}) else{continue}
+            for (key,_) in rules{
+                destinations[id,default:[:]][key]=current(node,key)
+                if key=="morph"{paths[id]=currentMorphPath(node)}
+                if let prior=previous.last(where:{$0.enabled && $0.targetID==id && $0.property==key && ["animate","set"].contains($0.mode)}){
+                    if key=="morph"{paths[id]=CapsuleGeometry.unitPath(prior.shapeID ?? node.shapeId,width:node.w,height:node.h)}
+                    else if ["fill","stroke","fill2","shadowColor"].contains(key){destinations[id,default:[:]][key]=Double(prior.color)}
+                    else{destinations[id,default:[:]][key]=prior.mode=="animate" && key=="progress" ? 1:prior.value}
+                }
+            }
+        }
         let restoreVisual=advanced.checkpointVisualSnapshot(visual.union(full))
         return { [weak self] in
             guard let self else{return}
             for owner in owners{self.stopAdvancedLink(owner)}
-            for (id,keys) in numeric{for key in keys{
-                if let value=oldNumber[id]?[key]{self.number[id,default:[:]][key]=value}else{self.number[id]?.removeValue(forKey:key)}
-                if key=="morph"{self.morphs[id]=oldMorphs[id]}
-                if key=="progress",let node=self.project.nodes.first(where:{$0.id==id}){self.seek(group:node.group,value:oldNumber[id]?[key] ?? 0)}
-            }}
+            for (id,rules) in numeric{
+                guard let node=self.project.nodes.first(where:{$0.id==id}) else{continue}
+                for (key,rule) in rules{
+                    let from=self.current(node,key),to=destinations[id]?[key] ?? self.baseValue(node,key)
+                    let smooth=rule.mode=="animate"
+                    self.motions.removeAll{$0.targetID==id && $0.property==key}
+                    if key=="morph",let destination=paths[id]{
+                        let currentPath=self.currentMorphPath(node)
+                        self.morphs[id]=LinkMorph(fromPath:currentPath,toPath:destination)
+                        self.number[id,default:[:]][key]=0
+                        if smooth{self.checkpointMotion(rule,target:id,property:key,from:0,to:1)}else{self.set(id,key,1)}
+                    }else if smooth{self.checkpointMotion(rule,target:id,property:key,from:from,to:to)}
+                    else{self.set(id,key,to)}
+                }
+            }
             for id in texts{self.text[id]=oldText[id]}
             for id in visible{self.visibility[id]=oldVisible[id]}
             for id in full{self.number[id]=oldNumber[id];self.text[id]=oldText[id];self.visibility[id]=oldVisible[id];self.morphs[id]=oldMorphs[id];self.stateLayers[id]=oldStates[id]}
             restoreVisual();self.advanced.needsDisplay=true
         }
+    }
+    private func currentMorphPath(_ node:Node)->CGPath{
+        if let morph=morphs[node.id]{return VectorPath.parse(morph.svg(number[node.id]?["morph"] ?? 0))}
+        if node.kind=="SHAPE"{return CapsuleGeometry.unitPath(node.shapeId,width:node.w,height:node.h)}
+        var scale=CGAffineTransform(scaleX:1/max(0.001,node.w),y:1/max(0.001,node.h))
+        let path=VectorPath.local(node)
+        return path.copy(using:&scale) ?? path
+    }
+    private func checkpointMotion(_ rule:InteractionLink,target:String,property:String,from:Double,to:Double){
+        motions.append(Motion(owner:rule.id,sourceID:rule.sourceID,targetID:target,property:property,start:CACurrentMediaTime()+max(0,rule.delay),duration:max(0.01,rule.duration),from:from,initialFrom:from,to:to,easing:rule.easing,repeats:false,colorFrom:Int64(from),colorTo:Int64(to)))
     }
     private func execute(_ input: InteractionLink, fraction: Double?, scheduled:Bool=false) {
         var link=input
@@ -181,7 +214,7 @@ import QuartzCore
         if link.property=="morph",["animate","set"].contains(link.mode) {
             let targetShape=returning ? node.shapeId:(link.shapeID ?? node.shapeId)
             if let destination=Catalog.shared.shapes.first(where:{$0.id==targetShape}){
-                let path=morphs[target].map{VectorPath.parse($0.svg(number[target]?["morph"] ?? 0))} ?? CapsuleGeometry.unitPath(node.shapeId,width:node.w,height:node.h)
+                let path=currentMorphPath(node)
                 morphs[target]=LinkMorph(fromPath:path,toPath:CapsuleGeometry.unitPath(destination.id,width:node.w,height:node.h));number[target,default:[:]]["morph"]=0
             }
         }

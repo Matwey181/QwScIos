@@ -11,8 +11,11 @@ enum CapsuleGeometry {
             line.addLine(to:CGPoint(x:w-radius,y:radius))
             return line.copy(strokingWithWidth:radius*2,lineCap:.round,lineJoin:.round,miterLimit:4)
         }
-        let radius=min(w,h)/2
-        return CGPath(roundedRect:CGRect(x:0,y:0,width:w,height:h),cornerWidth:radius,cornerHeight:radius,transform:nil)
+        var rect=CGRect(x:0,y:0,width:w,height:h)
+        if id=="pill-horizontal"{rect.size.height=min(h,w*0.4);rect.origin.y=(h-rect.height)/2}
+        if id=="pill-vertical"{rect.size.width=min(w,h*0.4);rect.origin.x=(w-rect.width)/2}
+        let radius=min(rect.width,rect.height)/2
+        return CGPath(roundedRect:rect,cornerWidth:radius,cornerHeight:radius,transform:nil)
     }
     static func unitPath(_ id:String,width:CGFloat,height:CGFloat)->CGPath{
         guard ids.contains(id) else{return VectorPath.parse(Catalog.shared.shapes.first{$0.id==id}?.path ?? "")}

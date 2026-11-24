@@ -67,23 +67,18 @@ import AVFoundation
         let removed=points.reversed().filter{previous.contains($0.id) && !eligible.contains($0.id)}
         for point in removed{
             if point.revertOnRewind ?? true{checkpointUndos[link.id]?[point.id]?()}
-            checkpointUndos[link.id]?.removeValue(forKey:point.id)
         }
-        // Restore the last retained state without replaying sounds, counters or commands.
-        if removed.contains(where:{$0.revertOnRewind ?? true}){
-            let stateModes:Set<String>=["animate","set","text","visibility","imageSwap","iconSwap","state"]
-            for point in points where eligible.contains(point.id) && previous.contains(point.id){
-                for action in thresholdActions(link,point) where action.enabled && stateModes.contains(action.mode){
-                    var action=action;action.sourceID=link.sourceID;action.delay=0;action.alternate=false;action.pauseOnRepeat=false;r.runAdvanced(action)
-                }
-            }
-        }
-        for point in points where eligible.contains(point.id) && !previous.contains(point.id){
+        var earlier:[InteractionLink]=[]
+        for point in points where eligible.contains(point.id){
             let actions=thresholdActions(link,point).filter(\.enabled)
-            checkpointUndos[link.id,default:[:]][point.id]=r.checkpointSnapshot(actions)
-            for action in actions{r.runAdvanced(action)}
+            if !previous.contains(point.id){
+                if checkpointUndos[link.id]?[point.id]==nil{checkpointUndos[link.id,default:[:]][point.id]=r.checkpointSnapshot(actions,previous:earlier)}
+                for action in actions{r.runAdvanced(action)}
+            }
+            earlier+=actions
         }
     }
+
     private func thresholdActions(_ link:InteractionLink,_ point:SliderCheckpoint)->[InteractionLink]{
         let actions=link.actions(at:point).map{input in var a=input;a.id=link.id+"|"+point.id+"|"+input.id;a.sourceID=link.sourceID;return a}
         checkpointOwners[link.id,default:[]].formUnion(actions.map(\.id))
