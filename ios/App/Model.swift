@@ -213,6 +213,8 @@ struct Catalog: Decodable {
     static let shared: Catalog = {
         guard let url = Bundle.main.url(forResource:"catalog",withExtension:"json"),
               let data = try? Data(contentsOf:url), var result = try? JSONDecoder().decode(Catalog.self,from:data) else { fatalError("Missing Qwel catalog") }
+        let pillIndex=(result.shapes.firstIndex{$0.id=="pill"} ?? (result.shapes.count-1))+1
+        result.shapes.insert(contentsOf:CapsuleGeometry.catalog,at:pillIndex)
         for i in result.components.indices{DefaultLinks.install(&result.components[i].project,componentID:result.components[i].id)}
         for i in result.templates.indices{DefaultLinks.allPages(&result.templates[i].project)}
         return result

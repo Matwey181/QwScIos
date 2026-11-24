@@ -54,7 +54,7 @@ enum SwiftExport {
             let aliases=source?.group.isEmpty==false ? Array(Set(all.filter{$0.group==source?.group}.map(\.id))):[]
             let node=all.first{$0.id==link.targetID}
             let targetAliases=node?.group.isEmpty==false ? Array(Set(all.filter{$0.group==node?.group}.map(\.id))):[link.targetID]
-            let morph=link.property=="morph" ? LinkMorph(from:node?.shapeId ?? "",to:link.shapeID ?? "star-8"):nil
+            let morph=link.property=="morph" ? LinkMorph(from:node?.shapeId ?? "",to:link.shapeID ?? "star-8",size:CGSize(width:node?.w ?? 1,height:node?.h ?? 1)):nil
             let state=project.studio?.states.first{$0.id==link.stateID}
             let numbers=stateNumbers(state?.nodes ?? [])
             let stateLabels=Dictionary((state?.nodes ?? []).filter{$0.kind=="TEXT"}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})

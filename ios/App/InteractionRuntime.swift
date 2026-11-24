@@ -68,7 +68,7 @@ import QuartzCore
         paused=[:];toggled=[];morphs=[:];valueEvents=[];stateLayers=[:]
         for rule in document.links.flatMap({[$0]+($0.steps ?? [])}) where rule.enabled && rule.property=="morph" {
             if let node=document.nodes.first(where:{$0.id==rule.targetID}),let target=rule.shapeID {
-                morphs[node.id]=LinkMorph(from:node.shapeId,to:target)
+                morphs[node.id]=LinkMorph(from:node.shapeId,to:target,size:CGSize(width:node.w,height:node.h))
             }
         }
         number.removeAll()
@@ -181,8 +181,8 @@ import QuartzCore
         if link.property=="morph",["animate","set"].contains(link.mode) {
             let targetShape=returning ? node.shapeId:(link.shapeID ?? node.shapeId)
             if let destination=Catalog.shared.shapes.first(where:{$0.id==targetShape}){
-                let path=morphs[target].map{VectorPath.parse($0.svg(number[target]?["morph"] ?? 0))} ?? VectorPath.parse(Catalog.shared.shapes.first(where:{$0.id==node.shapeId})?.path ?? "")
-                morphs[target]=LinkMorph(fromPath:path,toPath:VectorPath.parse(destination.path));number[target,default:[:]]["morph"]=0
+                let path=morphs[target].map{VectorPath.parse($0.svg(number[target]?["morph"] ?? 0))} ?? CapsuleGeometry.unitPath(node.shapeId,width:node.w,height:node.h)
+                morphs[target]=LinkMorph(fromPath:path,toPath:CapsuleGeometry.unitPath(destination.id,width:node.w,height:node.h));number[target,default:[:]]["morph"]=0
             }
         }
         let colorProperty=["fill","stroke","fill2","shadowColor"].contains(link.property)
@@ -246,7 +246,7 @@ import QuartzCore
                 motions.append(Motion(owner:rule.id,sourceID:rule.sourceID,targetID:target.id,property:property,start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:from,initialFrom:from,to:to,easing:rule.easing,repeats:false,colorFrom:Int64(from),colorTo:Int64(to)))
             }
             if !target.visible{var hide=rule;hide.id=rule.id;hide.pauseOnRepeat=false;hide.targetID=target.id;hide.mode="set";hide.property="visible";hide.value=0;hide.alternate=false;hide.delay=0;pending.append(Pending(link:hide,at:now+max(0,rule.delay)+max(0.01,rule.duration),fraction:nil))}
-            if source.kind=="SHAPE" && target.kind=="SHAPE" && source.shapeId != target.shapeId,let morph=LinkMorph(from:source.shapeId,to:target.shapeId){
+            if source.kind=="SHAPE" && target.kind=="SHAPE" && source.shapeId != target.shapeId,let morph=LinkMorph(from:source.shapeId,to:target.shapeId,size:CGSize(width:target.w,height:target.h)){
                 morphs[target.id]=morph;number[target.id,default:[:]]["morph"]=0
                 motions.removeAll{$0.targetID==target.id && $0.property=="morph"}
                 motions.append(Motion(owner:rule.id,sourceID:rule.sourceID,targetID:target.id,property:"morph",start:now+max(0,rule.delay),duration:max(0.01,rule.duration),from:0,initialFrom:0,to:1,easing:rule.easing,repeats:false,colorFrom:0,colorTo:1))

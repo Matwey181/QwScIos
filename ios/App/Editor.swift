@@ -67,6 +67,9 @@ import SwiftUI
         var n=Node();n.kind=kind;n.name=shape?.name ?? ["RECT":"Прямоугольник","ELLIPSE":"Эллипс","TEXT":"Текст"][kind] ?? "Фигура"
         n.w=kind=="RECT" ? 160:128;n.h=kind=="RECT" ? 96:128;n.corner=kind=="RECT" ? 16:0
         n.fill=project.tone.colors.first ?? -16749974;n.shapeId=shape?.id ?? ""
+        if n.shapeId=="pill-horizontal"{n.w=180;n.h=72;n.ratioLock=false}
+        if n.shapeId=="pill-vertical"{n.w=72;n.h=180;n.ratioLock=false}
+        if n.shapeId=="pill-diagonal"{n.w=128;n.h=128;n.ratioLock=false}
         if kind=="TEXT" { n.text="Новый текст";n.fontSize=28;n.w=180;n.h=40;n.fill = -14869216 }
         if kind=="TEXT" { n.ratioLock=false;reflowText(&n) }
         n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2

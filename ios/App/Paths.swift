@@ -67,6 +67,7 @@ enum VectorPath {
     }
     static func local(_ n:Node)->CGPath {
         let rect=CGRect(x:0,y:0,width:max(0,n.w),height:max(0,n.h))
+        if n.kind=="SHAPE",CapsuleGeometry.ids.contains(n.shapeId){return CapsuleGeometry.path(n.shapeId,width:n.w,height:n.h)}
         if n.kind=="ELLIPSE" { return CGPath(ellipseIn:rect,transform:nil) }
         if n.kind=="PATH" || n.kind=="SHAPE" {
             let source=n.kind=="PATH" ? n.path : Catalog.shared.shapes.first(where:{$0.id==n.shapeId})?.path ?? ""
