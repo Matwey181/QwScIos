@@ -47,6 +47,17 @@ final class DocumentRenderer {
         let weight:UIFont.Weight = n.weight>=700 ? .bold : n.weight>=600 ? .semibold : n.weight>=500 ? .medium : n.weight<=300 ? .light : .regular
         return UIFont.systemFont(ofSize:max(1,n.fontSize),weight:weight)
     }
+    private static let systemSymbols:NSCache<NSString,UIImage>={let cache=NSCache<NSString,UIImage>();cache.countLimit=256;cache.totalCostLimit=16*1024*1024;return cache}()
+    static func symbolImage(_ node:Node)->UIImage? {
+        guard node.asset.hasPrefix("sf:") else{return nil}
+        let key="\(node.asset)|\(node.w)|\(node.h)|\(node.fill)|\(node.weight)" as NSString
+        if let image=systemSymbols.object(forKey:key){return image}
+        let name=String(node.asset.dropFirst(3))
+        let weight:UIImage.SymbolWeight=node.weight>=700 ? .bold:node.weight>=600 ? .semibold:node.weight>=500 ? .medium:.regular
+        let config=UIImage.SymbolConfiguration(pointSize:max(16,max(node.w,node.h)*2),weight:weight)
+        guard let image=UIImage(systemName:name,withConfiguration:config)?.withTintColor(UIColor(argb:node.fill),renderingMode:.alwaysOriginal) else{return nil}
+        systemSymbols.setObject(image,forKey:key,cost:Int(image.size.width*image.size.height*4));return image
+    }
     func image(_ name:String)->UIImage? {
         if let im=images.object(forKey:name as NSString) { return im }
         guard !name.contains("/"),let im=UIImage(contentsOfFile:root.appendingPathComponent("assets").appendingPathComponent(name).path) else { return nil }
@@ -121,7 +132,7 @@ final class DocumentRenderer {
             layout.draw();return
         }
         if n.kind=="IMAGE" {
-            if let image=image(n.asset){
+            if let image=n.asset.hasPrefix("sf:") ? Self.symbolImage(n):image(n.asset){
                 let extras=n.extras ?? LayerExtras()
                 if extras.imageMode=="stretch"{image.draw(in:rect)}else{
                     let sx=n.w/max(1,image.size.width),sy=n.h/max(1,image.size.height)

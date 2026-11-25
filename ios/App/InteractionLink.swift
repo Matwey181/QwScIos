@@ -4,6 +4,7 @@ import CoreGraphics
 /// A declarative connection between two layers, persisted inside the .qwel project.
 /// Events and effects are strings to allow new combinations without a schema migration.
 struct InteractionLink: Codable, Identifiable, Equatable {
+    var exactSource:Bool?
     var advanced:AdvancedLinkOptions?
     var bundleID:String?
     var bundleName:String?

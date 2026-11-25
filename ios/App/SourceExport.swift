@@ -1,9 +1,17 @@
 import Foundation
+import UIKit
 import ZIPFoundation
 
 extension OriginalCore {
     func sourceArchive(_ input:Project,root:URL,kind:String,package:String="com.example.myapp.vexel") throws -> URL {
         var project=input;project.syncPage()
+        var symbolBytes:[String:Data]=[:]
+        func materialized(_ nodes:[Node])->[Node]{nodes.map{node in
+            guard let bytes=DocumentRenderer.symbolImage(node)?.pngData() else{return node}
+            var n=node;let name="symbol-"+safeName(node.id)+".png";symbolBytes[name]=bytes;n.asset=name;return n
+        }}
+        project.nodes=materialized(project.nodes)
+        for i in project.pages.indices{project.pages[i].nodes=materialized(project.pages[i].nodes)}
         // CodeAssist's stable Material3 API has no MaterialShapes. The original
         // caller converts these to ordinary unit paths before code generation.
         if kind=="codeassist" {
@@ -23,7 +31,7 @@ extension OriginalCore {
         let archive=try Archive(url:url,accessMode:.create)
         func add(_ name:String,_ data:Data)throws{guard !name.hasPrefix("/"),!name.split(separator:"/").contains("..")else{throw CocoaError(.fileWriteInvalidFileName)};try archive.addEntry(with:name,type:.file,uncompressedSize:Int64(data.count),compressionMethod:.deflate){position,size in data.subdata(in:Int(position)..<min(data.count,Int(position)+size))}}
         for (name,text) in result["files"] as? [String:String] ?? [:] {try add(name,Data(text.utf8))}
-        for (name,path) in result["images"] as? [String:String] ?? [:] {let file=root.appendingPathComponent("assets").appendingPathComponent(name);try add(path,Data(contentsOf:file))}
+        for (name,path) in result["images"] as? [String:String] ?? [:] {let file=root.appendingPathComponent("assets").appendingPathComponent(name);try add(path,symbolBytes[name] ?? Data(contentsOf:file))}
         for (path,font) in result["fonts"] as? [String:[String:Any]] ?? [:] {if let name=font["name"] as? String {try add(path,Data(contentsOf:root.appendingPathComponent("fonts").appendingPathComponent(name)))}}
         return url
     }

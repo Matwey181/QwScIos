@@ -47,7 +47,7 @@ struct NewProjectView:View {
                     if let item {
                         // Keep the Android source template aspect ratio; do not
                         // squeeze a portrait 360x800 design into a square tile.
-                        ProjectThumbnail(project:item.project,root:store.root,inset:3)
+                        ProjectThumbnail(project:AppleCatalog.variant(item,dark:dark).project,root:store.root,inset:3)
                     } else {
                         Rectangle().fill(Color.white).padding(3)
                     }

@@ -43,3 +43,21 @@ until its input layers, geometry or settings change; changing text above an
 alert does not invalidate its backdrop. Unchanged composite scenes are also
 reused during selection and panning. Layer-cache storage is bounded to 24 MiB.
 Regression checks exercise both the uniform-page bypass and cache invalidation.
+
+## 0.11 editable iOS-inspired components
+
+New Apple presets and the iOS template use the system SF font, SF Symbols,
+updated spacing, floating tab navigation and capsule dialog actions. Existing
+saved designs are not automatically restyled. UI style iOS also uses the system
+font. Symbols remain named, tintable layers in .qwel documents and native SF
+Symbols in Swift exports; Compose archives embed rasterized PNGs.
+
+The canvas glass optics now use a three-channel Core Image kernel for restrained
+edge refraction, dispersion and saturation, plus a thin directional specular rim.
+The resource includes research references and the MIT notice for the
+BarredEwe/LiquidGlass optical approach. The existing uniform-background bypass,
+scene cache and bounded backdrop cache remain in use. This is an imitation
+compatible with iOS 17/18, not the operating system's iOS 26 material.
+
+AppleComponentTests generate light/dark showcase images from the actual UIKit
+renderer and exercise symbols, exports, the optics kernel and playback.

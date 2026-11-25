@@ -9,7 +9,9 @@ enum AppleCatalog{
         if let cached=preparedVariants[key]{return cached}
         let choices=item.id=="ios" ? bundle.templates:(dark ? bundle.dark:bundle.light)
         guard var result=choices.first(where:{$0.id==item.id && $0.project.tone.dark==dark}) else{return item}
-        prepare(&result.project,id:result.id);DefaultLinks.install(&result.project,componentID:result.id)
+        result=AppleNativeStyle.make(result)
+        prepare(&result.project,id:result.id)
+        if result.id=="ios"{DefaultLinks.allPages(&result.project)}else{DefaultLinks.install(&result.project,componentID:result.id)}
         preparedVariants[key]=result;return result
     }
     // v0.10 saved the Material engine's geometry into Apple switches. Repair

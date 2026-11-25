@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import QuartzCore
 @testable import QwelIos
 
 final class AppleComponentTests:XCTestCase {
@@ -64,7 +65,7 @@ final class AppleComponentTests:XCTestCase {
         editor.undo()
         XCTAssertEqual(editor.project.nodes.first{$0.id==thumb.id}?.x,thumb.x)
     }
-    @MainActor func testLocalizedLabelsUseBundledFontAndKeepAlignment() throws {
+    @MainActor func testNativeLabelsUseSystemFontAndKeepAlignment() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer{try? FileManager.default.removeItem(at:root)}
         let store=ProjectStore(root:root),renderer=DocumentRenderer(root:root)
@@ -73,7 +74,8 @@ final class AppleComponentTests:XCTestCase {
                 let prepared=AppleCatalog.variant(item,dark:dark).project
                 for node in prepared.nodes where node.kind=="TEXT" && !node.text.isEmpty {
                     let font=renderer.font(node)
-                    XCTAssertTrue(font.fontName.hasPrefix("InterSA"),font.fontName)
+                    XCTAssertTrue(node.font.isEmpty)
+                    XCTAssertEqual(font.fontName,UIFont.systemFont(ofSize:node.fontSize,weight:node.weight>=700 ? .bold:node.weight>=600 ? .semibold:node.weight>=500 ? .medium:node.weight<=300 ? .light:.regular).fontName)
                     let layout=TextLayout(node,font:font)
                     XCTAssertEqual(layout.lines.count,node.text.components(separatedBy:"\n").count,"\(item.id): \(node.text)")
                 }
@@ -155,6 +157,70 @@ final class AppleComponentTests:XCTestCase {
         project.nodes[0].fill = -16711936
         XCTAssertNotNil(renderer.png(project,scale:1))
         XCTAssertGreaterThan(renderer.backdropRenderCount,renders)
+        _ = store
+    }
+    @MainActor func testDialogButtonsRespondIndependently() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root)
+        let p=AppleCatalog.variant(try XCTUnwrap(Catalog.shared.components.first{$0.id=="ios-alert"}),dark:false).project
+        let ok=try XCTUnwrap(p.nodes.first{$0.kind=="RECT" && $0.name=="ОК"})
+        let cancel=try XCTUnwrap(p.nodes.first{$0.kind=="RECT" && $0.name=="Отмена"})
+        let runtime=InteractionRuntime();runtime.start(p)
+        runtime.fire("press",sourceID:ok.id);runtime.tick(at:CACurrentMediaTime()+1)
+        let shown=runtime.displayed(p)
+        XCTAssertLessThan(try XCTUnwrap(shown.nodes.first{$0.id==ok.id}).w,ok.w)
+        XCTAssertEqual(try XCTUnwrap(shown.nodes.first{$0.id==cancel.id}),cancel)
+        let restored=try JSONDecoder().decode(Project.self,from:JSONEncoder().encode(p))
+        XCTAssertTrue(restored.links.filter{$0.sourceID==ok.id}.allSatisfy{$0.exactSource==true})
+        _ = store
+    }
+    @MainActor func testSystemSymbolsSurviveProjectAndSourceExports() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root)
+        let project=AppleCatalog.variant(try XCTUnwrap(Catalog.shared.components.first{$0.id=="ios-tab-bar"}),dark:false).project
+        let symbols=project.nodes.filter{$0.asset.hasPrefix("sf:")}
+        XCTAssertEqual(symbols.count,4)
+        for node in symbols{XCTAssertNotNil(DocumentRenderer.symbolImage(node),node.asset)}
+        let imported=try JSONDecoder().decode(Project.self,from:JSONEncoder().encode(project))
+        XCTAssertEqual(imported.nodes.map(\.asset),project.nodes.map(\.asset))
+        let code=SwiftExport.make(project,root:root)
+        XCTAssertTrue(code.contains("Image(systemName: \"house.fill\")"))
+        XCTAssertTrue(code.contains("Image(systemName: \"magnifyingglass\")"))
+        let archive=try OriginalCore.shared.sourceArchive(project,root:root,kind:"codeassist")
+        XCTAssertTrue(FileManager.default.fileExists(atPath:archive.path))
+        _ = store
+    }
+    @MainActor func testGlassOpticsKernelCompilesAndRenders() throws {
+        XCTAssertNotNil(LiquidGlassRenderer.kernel)
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root),renderer=DocumentRenderer(root:root)
+        var p=AppleCatalog.variant(try XCTUnwrap(Catalog.shared.components.first{$0.id=="ios-btn-glass"}),dark:false).project
+        var background=Node();background.w=p.w;background.h=p.h;background.fill = 0xffee77aa;background.fill2 = 0xff4499ee;background.gradKind=1
+        p.nodes.insert(background,at:0);p.glassMode=1
+        XCTAssertNotNil(renderer.png(p,scale:2))
+        XCTAssertGreaterThan(renderer.backdropRenderCount,0)
+        _ = store
+    }
+    @MainActor func testNativeShowcaseFixtures() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root),renderer=DocumentRenderer(root:root)
+        for dark in [false,true]{
+            var p=Project();p.w=430;p.h=910;p.bg=dark ? 0xff11131a:0xffedf1f7
+            var title=Node();title.kind="TEXT";title.text="iOS · Liquid Glass";title.x=24;title.y=28;title.w=382;title.h=36;title.fontSize=26;title.weight=700;title.fill=dark ? 0xffffffff:0xff13141a;p.nodes.append(title)
+            var backdrop=Node();backdrop.x=20;backdrop.y=95;backdrop.w=390;backdrop.h=174;backdrop.corner=30;backdrop.gradKind=1;backdrop.gradAngle=25;backdrop.fill=dark ? 0xff653b9c:0xffb6a0ef;backdrop.fill2=dark ? 0xff184673:0xff83c2ec;p.nodes.append(backdrop)
+            let samples:[(String,CGFloat,CGFloat)]=[("ios-btn-glass",36,124),("ios-switch-on",300,136),("ios-slider",49,204),("ios-alert",65,295),("ios-segmented",75,533),("ios-search",43.5,602),("ios-list-switch",43.5,678),("ios-tab-bar",36,798)]
+            for (id,x,y) in samples{
+                let item=AppleCatalog.variant(try XCTUnwrap(Catalog.shared.components.first{$0.id==id}),dark:dark)
+                p.nodes += item.project.nodes.map{node in var n=node;n.id="fixture-"+id+"-"+node.id;n.x+=x;n.y+=y;n.group="fixture~"+id;return n}
+            }
+            let data=try XCTUnwrap(renderer.png(p,scale:2))
+            let documents=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
+            try data.write(to:documents.appendingPathComponent(dark ? "QwelNativeDark.png":"QwelNativeLight.png"))
+        }
         _ = store
     }
     func testThumbnailBackdropUsesThumbnailResolution() {

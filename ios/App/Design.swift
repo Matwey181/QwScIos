@@ -33,7 +33,7 @@ extension EnvironmentValues { var q:QPalette { get { self[PaletteKey.self] } set
 func load<T:Decodable>(_ name:String)->T { try! JSONDecoder().decode(T.self,from:Data(contentsOf:Bundle.main.url(forResource:name,withExtension:"json")!)) }
 func qfont(_ size:CGFloat,_ weight:Font.Weight = .regular)->Font {
     let suffix=weight == .bold ? "Bold":weight == .semibold ? "SemiBold":weight == .medium ? "Medium":weight == .light ? "Light":"Regular"
-    let family=UserDefaults.standard.integer(forKey:"uiStyle")==1 ? "InterSA":UserDefaults.standard.string(forKey:"uiFont") ?? "InterSA"
+    let family=UserDefaults.standard.integer(forKey:"uiStyle")==1 ? "":UserDefaults.standard.string(forKey:"uiFont") ?? "InterSA"
     return family.isEmpty ? .system(size:size,weight:weight):.custom(family+"-"+suffix,fixedSize:size)
 }
 struct OriginalTheme:ViewModifier {
@@ -107,7 +107,7 @@ struct QSurface:ViewModifier {
     @AppStorage("glass") var glassOn=true
     @Environment(\.q) var q
     func body(content:Content)->some View {
-        content.background { if glass && glassOn { RoundedRectangle(cornerRadius:radius).fill(.ultraThinMaterial).overlay(RoundedRectangle(cornerRadius:radius).fill(q.color(color).opacity(glassAlpha))) } else { RoundedRectangle(cornerRadius:radius).fill(q.color(color)) } }
+        content.background { if glass && glassOn { RoundedRectangle(cornerRadius:radius).fill(.ultraThinMaterial).overlay(RoundedRectangle(cornerRadius:radius).fill(q.color(color).opacity(q.iosStyle ? min(glassAlpha,0.18):glassAlpha))) } else { RoundedRectangle(cornerRadius:radius).fill(q.color(color)) } }
             .overlay(RoundedRectangle(cornerRadius:radius).stroke(glass && glassOn ? q.color("outlineVariant").opacity(0.7):.clear,lineWidth:0.6))
     }
 }
@@ -128,6 +128,11 @@ struct QSlider:View {
     var step:Double=0
     @Environment(\.q) var q
     var body:some View {
+        Group {
+            if q.iosStyle {
+                if step>0{Slider(value:$value,in:range,step:step).tint(q.color("primary")).frame(height:44)}
+                else{Slider(value:$value,in:range).tint(q.color("primary")).frame(height:44)}
+            } else {
         GeometryReader { g in
             let k=min(1,max(0,(value-range.lowerBound)/max(0.000001,range.upperBound-range.lowerBound))),x=12+(g.size.width-24)*k
             ZStack(alignment:.leading) {
@@ -137,6 +142,8 @@ struct QSlider:View {
                 RoundedRectangle(cornerRadius:2).fill(q.color("primary")).frame(width:4,height:44).overlay(RoundedRectangle(cornerRadius:2).stroke(q.color("surfaceContainerHigh"),lineWidth:1)).offset(x:x-2)
             }.frame(height:44).contentShape(Rectangle()).gesture(DragGesture(minimumDistance:0).onChanged { p in let t=min(1,max(0,(p.location.x-12)/(g.size.width-24)));let v=range.lowerBound+t*(range.upperBound-range.lowerBound);value=step>0 ? (v/step).rounded()*step:v })
         }.frame(height:44).accessibilityElement().accessibilityValue(String(format:"%.0f",value)).accessibilityAdjustableAction { direction in let delta=step>0 ? step:(range.upperBound-range.lowerBound)/20;value=min(range.upperBound,max(range.lowerBound,value+(direction == .increment ? delta:-delta))) }
+            }
+        }
     }
 }
 struct QSwitch:View {
@@ -157,5 +164,16 @@ struct QSubHeader:View {
     var title:String
     var back:()->Void
     @Environment(\.q) var q
-    var body:some View { HStack(spacing:12) { QIconButton(icon:"Back",label:"Назад",tonal:true,action:back);Text(title).font(qfont(22,.semibold));Spacer() }.padding(.horizontal,12).padding(.vertical,8) }
+    var body:some View {
+        Group {
+            if q.iosStyle {
+                ZStack {
+                    Text(title).font(.system(size:17,weight:.semibold)).lineLimit(1).padding(.horizontal,92)
+                    HStack {Button(action:back){HStack(spacing:6){Image(systemName:"chevron.left").font(.system(size:19,weight:.semibold));Text("Назад").font(.system(size:17))}.frame(minHeight:44).contentShape(Rectangle())}.buttonStyle(.plain).foregroundStyle(q.color("primary"));Spacer()}
+                }.frame(height:44).padding(.horizontal,16).padding(.vertical,6)
+            } else {
+                HStack(spacing:12) { QIconButton(icon:"Back",label:"Назад",tonal:true,action:back);Text(title).font(qfont(22,.semibold));Spacer() }.padding(.horizontal,12).padding(.vertical,8)
+            }
+        }
+    }
 }

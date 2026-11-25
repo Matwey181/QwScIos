@@ -146,6 +146,7 @@ import UIKit
         return editor.project.links.contains { rule in
             guard rule.enabled && events.contains(rule.event) else { return false }
             if rule.sourceID == node.id {return true}
+            if rule.exactSource==true{return false}
             if !node.group.isEmpty {
                 return editor.project.nodes.first(where:{$0.id==rule.sourceID})?.group == node.group
             }

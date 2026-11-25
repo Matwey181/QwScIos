@@ -51,7 +51,7 @@ enum SwiftExport {
         func encode(_ link:InteractionLink)->String {
             let all=project.pages.flatMap(\.nodes)+project.nodes
             let source=all.first{$0.id==link.sourceID}
-            let aliases=source?.group.isEmpty==false ? Array(Set(all.filter{$0.group==source?.group}.map(\.id))):[]
+            let aliases=link.exactSource != true && source?.group.isEmpty==false ? Array(Set(all.filter{$0.group==source?.group}.map(\.id))):[]
             let node=all.first{$0.id==link.targetID}
             let targetAliases=node?.group.isEmpty==false ? Array(Set(all.filter{$0.group==node?.group}.map(\.id))):[link.targetID]
             let morph=link.property=="morph" ? LinkMorph(from:node?.shapeId ?? "",to:link.shapeID ?? "star-8",size:CGSize(width:node?.w ?? 1,height:node?.h ?? 1)):nil
@@ -128,6 +128,9 @@ enum SwiftExport {
                     } else {
                         view=typography+".frame(width: \(n.w), alignment: .\(alignment)).fixedSize(horizontal: false, vertical: true)"
                     }
+                } else if n.kind=="IMAGE" && n.asset.hasPrefix("sf:") {
+                    let weight=n.weight>=600 ? "semibold":n.weight>=500 ? "medium":"regular"
+                    view="Image(systemName: \(literal(String(n.asset.dropFirst(3))))).resizable().scaledToFit().font(.system(size: \(n.fontSize), weight: .\(weight))).foregroundStyle(\(nodeColor))"
                 } else if n.kind=="IMAGE" {
                     let bytes=(try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset))) ?? Data()
                     view="embeddedImage(\(literal(bytes.base64EncodedString()))).resizable()"

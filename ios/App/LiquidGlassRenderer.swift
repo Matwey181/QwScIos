@@ -39,20 +39,33 @@ enum LiquidGlassRenderer {
             entries[key.id]=Entry(key:key,image:image,region:region);cost+=bytes
         }
     }
-    static let kernel=CIWarpKernel(source:"""
-    kernel vec2 qwelLiquid(vec2 center, vec2 size, float radius, float amount, float angle) {
+    // Rounded-rect refraction, saturation and a directional rim follow the
+    // optical approach explored by BarredEwe/LiquidGlass (MIT, see references).
+    // This is a canvas-specific Core Image implementation, with cached inputs.
+    static let kernel=CIKernel(source:"""
+    kernel vec4 qwelGlass(sampler image, vec2 center, vec2 size, float radius, float amount, float angle) {
         vec2 uv=destCoord();
         float c=cos(angle),s=sin(angle);
-        vec2 delta=uv-center;
-        vec2 p=vec2(c*delta.x+s*delta.y,-s*delta.x+c*delta.y);
+        vec2 d=uv-center;
+        vec2 p=vec2(c*d.x+s*d.y,-s*d.x+c*d.y);
         vec2 q=abs(p)-(size*0.5-vec2(radius));
-        float distance=length(max(q,vec2(0.0)))+min(max(q.x,q.y),0.0)-radius;
-        float band=max(1.0,min(size.x,size.y)*0.22);
-        float t=clamp(1.0+distance/band,0.0,1.0);
-        vec2 normal=normalize(sign(p)*(max(q,vec2(0.001)))+vec2(0.0001));
+        float sdf=length(max(q,vec2(0.0)))+min(max(q.x,q.y),0.0)-radius;
+        float band=max(1.0,min(size.x,size.y)*0.16);
+        float edge=clamp(1.0+sdf/band,0.0,1.0);
+        vec2 normal=normalize(sign(p)*max(q,vec2(0.001))+vec2(0.0001));
         vec2 world=vec2(c*normal.x-s*normal.y,s*normal.x+c*normal.y);
-        float bend=(1.0-sqrt(max(0.0,1.0-t*t)))*amount*band*0.55;
-        return uv-world*bend;
+        float bend=amount*band*0.36*edge*edge*edge;
+        vec2 at=uv-world*bend;
+        float dispersion=bend*0.045;
+        vec4 base=sample(image,samplerTransform(image,at));
+        vec4 red=sample(image,samplerTransform(image,at-world*dispersion));
+        vec4 blue=sample(image,samplerTransform(image,at+world*dispersion));
+        vec3 rgb=vec3(red.r,base.g,blue.b)/max(base.a,0.0001);
+        float grey=dot(rgb,vec3(0.2126,0.7152,0.0722));
+        rgb=mix(vec3(grey),rgb,1.08);
+        float light=max(0.0,dot(world,normalize(vec2(-0.65,0.76))));
+        rgb+=vec3(0.10*amount*light*light*pow(edge,7.0));
+        return vec4(clamp(rgb,0.0,1.0)*base.a,base.a);
     }
     """)
     static func draw(_ node:Node,mode:Int,in context:CGContext,using ci:CIContext,cache:Cache,lower:[Node],background:Int64,pageSize:CGSize){
@@ -74,7 +87,7 @@ enum LiquidGlassRenderer {
         if liquid>0 && !simple,let kernel{
             let radius=node.kind=="ELLIPSE" ? min(size.width,size.height)/2:min(node.corner*scale,min(size.width,size.height)/2)
             let margin=max(size.width,size.height)*0.3
-            if let warped=kernel.apply(extent:extent,roiCallback:{_,rect in rect.insetBy(dx:-margin,dy:-margin)},image:output,arguments:[CIVector(x:center.x,y:center.y),CIVector(x:size.width,y:size.height),radius,liquid,angle]){output=warped}
+            if let warped=kernel.apply(extent:region,roiCallback:{_,rect in rect.insetBy(dx:-margin,dy:-margin)},arguments:[output,CIVector(x:center.x,y:center.y),CIVector(x:size.width,y:size.height),radius,liquid,angle]){output=warped}
         }
         guard let image=ci.createCGImage(output,from:region) else{return}
         cache.insert(image,region:region,key:key)
@@ -88,10 +101,16 @@ enum LiquidGlassRenderer {
     static func rim(_ node:Node,in context:CGContext){
         guard node.liquid>0 else{return}
         let path=VectorPath.local(node),strength=min(1,max(0,node.liquid))
-        context.saveGState();context.addPath(path);context.clip()
-        if let light=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:[UIColor.white.withAlphaComponent(0.38*strength).cgColor,UIColor.white.withAlphaComponent(0.02).cgColor,UIColor.black.withAlphaComponent(0.1*strength).cgColor] as CFArray,locations:[0,0.4,1]){
+        let width:CGFloat=max(0.6,min(1.1,min(node.w,node.h)*0.025))
+        context.saveGState();defer{context.restoreGState()}
+        context.addPath(path);context.clip()
+        // Keep the specular on the rim instead of painting a white gradient
+        // over all the content, which made the old material look like plastic.
+        let edge=path.copy(strokingWithWidth:width*2,lineCap:.round,lineJoin:.round,miterLimit:2)
+        context.addPath(edge);context.clip()
+        let colors=[UIColor.white.withAlphaComponent(0.68*strength).cgColor,UIColor.white.withAlphaComponent(0.06*strength).cgColor,UIColor.black.withAlphaComponent(0.10*strength).cgColor,UIColor.white.withAlphaComponent(0.30*strength).cgColor]
+        if let light=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:colors as CFArray,locations:[0,0.35,0.65,1]){
             context.drawLinearGradient(light,start:.zero,end:CGPoint(x:node.w,y:node.h),options:[])
         }
-        context.restoreGState();context.addPath(path);context.setStrokeColor(UIColor.white.withAlphaComponent(0.4*strength).cgColor);context.setLineWidth(max(0.5,min(node.w,node.h)*0.01));context.strokePath()
     }
 }

@@ -101,6 +101,7 @@ import QuartzCore
             guard rule.enabled && (rule.event == event || event=="drag" && rule.event=="valueChanged") else { return false }
             if event == "start" || event=="screenEnter" { return true }
             if rule.sourceID == sourceID { return true }
+            if rule.exactSource==true{return false}
             return !group.isEmpty &&
                 project.nodes.first(where:{$0.id == rule.sourceID})?.group == group
         }

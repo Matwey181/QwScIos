@@ -25,6 +25,9 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build/AppleSimulator -parallel-testing-enabled NO -only-testing:QwelTests/AppleComponentTests -resultBundlePath build/AppleTests.xcresult CODE_SIGNING_ALLOWED=NO test > apple-tests.log 2>&1 || { tail -180 apple-tests.log; exit 1; }
           tail -45 apple-tests.log
+          APP_DATA=$(xcrun simctl get_app_container "$DEVICE" com.matwey181.qwelios data)
+          cp "$APP_DATA/Documents/QwelNativeLight.png" build/
+          cp "$APP_DATA/Documents/QwelNativeDark.png" build/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -32,3 +35,5 @@ jobs:
           path: |
             apple-tests.log
             build/AppleTests.xcresult
+            build/QwelNativeLight.png
+            build/QwelNativeDark.png

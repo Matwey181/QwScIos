@@ -37,7 +37,8 @@ enum SVGExport {
                 let x:CGFloat=n.textAlign=="center" ? n.w/2:n.textAlign=="right" ? n.w:0
                 content="<text text-anchor=\"\(anchor)\" xml:space=\"preserve\" font-family=\"\(family)\" letter-spacing=\"\(n.extras?.tracking ?? 0)\" font-size=\"\(layout.resolvedFont.pointSize)\" font-weight=\"\(n.weight)\">"+layout.lines.enumerated().map { index,line in "<tspan x=\"\(x)\" y=\"\(layout.resolvedFont.ascender+CGFloat(index)*(layout.lineHeight+(n.extras?.lineSpacing ?? 0)))\">\(StyledSVGText.line(n,range:layout.ranges.indices.contains(index) ? layout.ranges[index]:NSRange(location:0,length:0),defaultFill:n.gradKind != 0 ? fill:nil))</tspan>" }.joined()+"</text>"
             } else if n.kind=="IMAGE" {
-                if let data=try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset)) {
+                let symbol=DocumentRenderer.symbolImage(n)?.pngData()
+                if let data=symbol ?? (try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset))) {
                     let mime=n.asset.lowercased().hasSuffix("jpg") ? "image/jpeg":"image/png"
                     content="<image width=\"\(n.w)\" height=\"\(n.h)\" preserveAspectRatio=\"none\" href=\"data:\(mime);base64,\(data.base64EncodedString())\"/>"
                 }
