@@ -9,6 +9,7 @@ enum AppleCatalog{
         prepare(&result.project,id:result.id);DefaultLinks.install(&result.project,componentID:result.id);return result
     }
     static func prepare(_ project:inout Project,id:String){
+        guard id=="ios" || id.hasPrefix("ios-") else{return}
         if id=="ios-slider",project.nodes.count>=3{
             project.nodes[0].widget="slider:track";project.nodes[1].widget="slider:active";project.nodes[2].widget="slider:thumb"
         }
@@ -16,9 +17,24 @@ enum AppleCatalog{
             project.nodes[1].widget="pick:ind"
             for i in 2..<5{project.nodes[i].widget="pick:i\(i-2)/4278190080/4285295728"}
         }
-        for i in project.nodes.indices{
-            if project.nodes[i].widget.hasPrefix("switch:itrack"){project.nodes[i].widget=project.nodes[i].widget.replacingOccurrences(of:"switch:itrack",with:"switch:track")}
-            if project.nodes[i].widget.hasPrefix("switch:ithumb"){project.nodes[i].widget="switch:thumb"}
+        // Keep the APK's iOS widget roles: the shared v44 engine only understands
+        // Material roles, so compatibility aliases belong at the bridge boundary.
+        let renderer=DocumentRenderer(root:FileManager.default.temporaryDirectory)
+        for i in project.nodes.indices where project.nodes[i].kind=="TEXT" && (id != "ios" || project.nodes[i].group.contains("~ios-")) {
+            var n=project.nodes[i]
+            guard n.extras?.appleTextPrepared != true else{continue}
+            let component=id=="ios" ? (n.group.components(separatedBy:"~").last ?? id):id
+            let oldWidth=n.w
+            let groupX=project.nodes.filter{$0.group==n.group}.map(\.x).min() ?? 0
+            if ["search","dialog_text","message","cancel","ok"].contains(n.text){n.text=tr(n.text)}
+            let font=renderer.font(n)
+            n.w=max(1,ceil(n.text.components(separatedBy:"\n").map{($0 as NSString).size(withAttributes:[.font:font]).width}.max() ?? 0)+2)
+            n.h=max(1,CGFloat(n.text.components(separatedBy:"\n").count)*n.fontSize*1.25)
+            let centered=component.hasPrefix("ios-btn-") || ["ios-segmented","ios-nav-bar","ios-tab-bar","ios-alert","ios-action-sheet","ios-app-icon"].contains(component) || component=="ios-sheet" && n.x-groupX>40
+            if centered {n.x+=(oldWidth-n.w)/2}
+            else if component=="ios-list-group",n.x-groupX>100{n.x+=oldWidth-n.w}
+            var extras=n.extras ?? LayerExtras();extras.appleTextPrepared=true;extras.hugHeight=false;n.extras=extras
+            project.nodes[i]=n
         }
     }
 }
@@ -57,25 +73,61 @@ struct TextFrameControls:View{
     }}
 }
 enum AppleControls {
+    static func isApple(_ node:Node)->Bool {
+        node.group.contains("~ios-") || node.group=="apple" || node.widget.hasPrefix("switch:i")
+    }
+    static func isTrack(_ node:Node)->Bool {node.widget.hasPrefix("switch:track") || node.widget.hasPrefix("switch:itrack")}
+    static func isThumb(_ node:Node)->Bool {node.widget=="switch:thumb" || node.widget.hasPrefix("switch:ithumb")}
     static func initial(_ project:Project,values:inout [String:Double]){
-        let groups=Dictionary(grouping:project.nodes.filter{$0.group.contains("~ios-")},by:\.group)
-        for (group,nodes) in groups where group.contains("ios-switch") || group.contains("ios-list-switch"){
-            if let track=nodes.first(where:{$0.widget.hasPrefix("switch:track")}),let thumb=nodes.first(where:{$0.widget=="switch:thumb"}){values[group]=thumb.center.x>track.center.x ? 1:0}
+        let groups=Dictionary(grouping:project.nodes.filter(isApple),by:\.group)
+        for (group,nodes) in groups {
+            if let track=nodes.first(where:isTrack),let thumb=nodes.first(where:isThumb){values[group]=thumb.center.x>track.center.x ? 1:0}
         }
     }
     static func apply(_ project:inout Project,base:Project,values:[String:Double]){
-        let groups=Dictionary(grouping:base.nodes.filter{$0.group.contains("~ios-")},by:\.group)
-        for (group,nodes) in groups{
-            let value=min(1,max(0,values[group] ?? 0))
-            if let track=nodes.first(where:{$0.widget.hasPrefix("switch:track")}),let thumb=nodes.first(where:{$0.widget=="switch:thumb"}){
-                let parts=track.widget.split(separator:"/");let off=parts.count>1 ? Int64(parts[1]) ?? track.fill:track.fill;let on=parts.count>2 ? Int64(parts[2]) ?? track.fill:track.fill
-                if let i=project.nodes.firstIndex(where:{$0.id==track.id}){project.nodes[i]=track;project.nodes[i].fill=mix(off,on,value)}
-                if let i=project.nodes.firstIndex(where:{$0.id==thumb.id}){project.nodes[i]=thumb;project.nodes[i].x=track.x+2+(track.w-thumb.w-4)*CGFloat(value)}
+        let groups=Dictionary(grouping:base.nodes.filter(isApple),by:\.group)
+        let indices=Dictionary(project.nodes.indices.map{(project.nodes[$0].id,$0)},uniquingKeysWith:{a,_ in a})
+        for (group,nodes) in groups {
+            guard let raw=values[group] else{continue}
+            let value=min(1,max(0,raw))
+            if let track=nodes.first(where:isTrack),let thumb=nodes.first(where:isThumb){
+                let parts=track.widget.split(separator:"/")
+                let off=parts.count>1 ? Int64(parts[1]) ?? track.fill:track.fill
+                let on=parts.count>2 ? Int64(parts[2]) ?? track.fill:track.fill
+                if let i=indices[track.id]{project.nodes[i]=track;project.nodes[i].fill=mix(off,on,value)}
+                if let i=indices[thumb.id]{
+                    // The APK stretches the thumb by four dp halfway through the
+                    // transition. Scale those dimensions with the component.
+                    let scale=track.h/28,inset=2*scale,t=CGFloat(value)
+                    let stretch=(1-abs(2*t-1))*4*scale
+                    project.nodes[i]=thumb
+                    project.nodes[i].x=track.x+inset+(track.w-thumb.w-2*inset)*t-t*stretch
+                    project.nodes[i].w=thumb.w+stretch
+                }
             }
-            if group.hasSuffix("ios-slider"),let track=nodes.first(where:{$0.widget=="slider:track"}),let active=nodes.first(where:{$0.widget=="slider:active"}),let thumb=nodes.first(where:{$0.widget=="slider:thumb"}){
-                if let i=project.nodes.firstIndex(where:{$0.id==track.id}){project.nodes[i]=track}
-                if let i=project.nodes.firstIndex(where:{$0.id==active.id}){project.nodes[i]=active;project.nodes[i].w=track.w*CGFloat(value)}
-                if let i=project.nodes.firstIndex(where:{$0.id==thumb.id}){project.nodes[i]=thumb;project.nodes[i].x=track.x+track.w*CGFloat(value)-thumb.w/2}
+            let pickNodes=nodes.filter{$0.widget.hasPrefix("pick:i") && !$0.widget.hasPrefix("pick:ind")}
+            let items=Dictionary(grouping:pickNodes,by:{Int($0.widget.dropFirst(6).split(separator:"/").first ?? "") ?? 0})
+            if !items.isEmpty {
+                let selection=min(Double(max(0,items.count-1)),max(0,raw))
+                let boxes=items.mapValues{members in members.reduce(CGRect.null){$0.union($1.rect)}}
+                let low=Int(floor(selection)),high=min(items.count-1,low+1),fraction=CGFloat(selection-Double(low))
+                if let indicator=nodes.first(where:{$0.widget=="pick:ind"}),let i=indices[indicator.id],let a=boxes[low],let b=boxes[high]{
+                    project.nodes[i]=indicator
+                    project.nodes[i].x=a.midX+(b.midX-a.midX)*fraction-indicator.w/2
+                }
+                for (index,members) in items {
+                    for member in members {
+                        let colors=member.widget.split(separator:"/")
+                        guard colors.count>2,let on=Int64(colors[1]),let off=Int64(colors[2]),let i=indices[member.id] else{continue}
+                        project.nodes[i]=member
+                        project.nodes[i].fill=mix(off,on,max(0,1-abs(selection-Double(index))))
+                    }
+                }
+            }
+            if let track=nodes.first(where:{$0.widget=="slider:track"}),let active=nodes.first(where:{$0.widget=="slider:active"}),let thumb=nodes.first(where:{$0.widget=="slider:thumb"}){
+                if let i=indices[track.id]{project.nodes[i]=track}
+                if let i=indices[active.id]{project.nodes[i]=active;project.nodes[i].w=track.w*CGFloat(value)}
+                if let i=indices[thumb.id]{project.nodes[i]=thumb;project.nodes[i].x=track.x+track.w*CGFloat(value)-thumb.w/2}
             }
         }
     }

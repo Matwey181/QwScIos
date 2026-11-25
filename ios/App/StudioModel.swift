@@ -10,6 +10,7 @@ struct TextRun:Codable,Equatable,Identifiable {
     var color:Int64?=nil
 }
 struct LayerExtras:Codable,Equatable {
+    var appleTextPrepared:Bool?
     var templatePlayerVersion:Int?
     var linkDefaultsVersion:Int?
     var fillOpacity:CGFloat?

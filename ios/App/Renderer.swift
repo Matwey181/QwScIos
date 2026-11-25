@@ -6,9 +6,26 @@ final class DocumentRenderer {
     let root:URL
     private let images=NSCache<NSString,UIImage>()
     private var glassPass=false
+    private var textLayouts:[String:(Node,TextLayout)]=[:]
+    private var fonts:[String:UIFont]=[:]
+    static func backdropScale(_ project:Project,transform:CGAffineTransform)->CGFloat {
+        min(2,4096/max(project.w,project.h),max(0.01,min(hypot(transform.a,transform.b),hypot(transform.c,transform.d))))
+    }
     private let ci=CIContext(options:[.cacheIntermediates:false])
     init(root:URL) { self.root=root }
     func font(_ n:Node)->UIFont {
+        let key="\(n.font)|\(n.fontSize)|\(n.weight)"
+        if let font=fonts[key]{return font}
+        let result=resolveFont(n)
+        if fonts.count>512{fonts.removeAll(keepingCapacity:true)}
+        fonts[key]=result;return result
+    }
+    private func resolveFont(_ n:Node)->UIFont {
+        if n.font.hasPrefix("asset:") {
+            let family=String(n.font.dropFirst(6))
+            let face=n.weight>=700 ? "Bold":n.weight>=600 ? "SemiBold":n.weight>=500 ? "Medium":n.weight<=300 ? "Light":"Regular"
+            if let font=UIFont(name:family+"-"+face,size:max(1,n.fontSize)){return font}
+        }
         if !n.font.isEmpty, let provider=CGDataProvider(url:root.appendingPathComponent("fonts").appendingPathComponent(n.font) as CFURL),let cg=CGFont(provider) {
             return CTFontCreateWithGraphicsFont(cg,max(1,n.fontSize),nil,nil) as UIFont
         }
@@ -24,7 +41,7 @@ final class DocumentRenderer {
         UIGraphicsPushContext(ctx);defer { UIGraphicsPopContext() }
         if !glassPass && p.nodes.contains(where:{$0.visible && ($0.liquid>0 || $0.blur>0)}){
             glassPass=true;defer{glassPass=false}
-            let format=UIGraphicsImageRendererFormat();format.scale=min(2,4096/max(p.w,p.h));format.opaque=false
+            let format=UIGraphicsImageRendererFormat();format.scale=Self.backdropScale(p,transform:ctx.ctm);format.opaque=false
             let image=UIGraphicsImageRenderer(size:CGSize(width:p.w,height:p.h),format:format).image{target in draw(p,in:target.cgContext,background:true,includeReferences:includeReferences)}
             image.draw(in:CGRect(x:0,y:0,width:p.w,height:p.h));return
         }
@@ -68,8 +85,12 @@ final class DocumentRenderer {
         }
         let rect=CGRect(x:0,y:0,width:n.w,height:n.h)
         if n.kind=="TEXT" {
-            TextLayout(n,font:font(n)).draw()
-            return
+            // Position changes do not invalidate glyph layout during animations.
+            var key=n;key.x=0;key.y=0;key.rotation=0;key.opacity=1
+            let layout:TextLayout
+            if let cached=textLayouts[n.id],cached.0==key{layout=cached.1}
+            else{layout=TextLayout(n,font:font(n));if textLayouts.count>1024{textLayouts.removeAll(keepingCapacity:true)};textLayouts[n.id]=(key,layout)}
+            layout.draw();return
         }
         if n.kind=="IMAGE" {
             if let image=image(n.asset){

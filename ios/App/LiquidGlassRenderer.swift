@@ -23,6 +23,8 @@ enum LiquidGlassRenderer {
     static func draw(_ node:Node,mode:Int,in context:CGContext,using ci:CIContext){
         guard node.liquid>0 || node.blur>0,let bitmap=context.makeImage() else{return}
         let input=CIImage(cgImage:bitmap),extent=input.extent,t=context.ctm
+        let region=VectorPath.world(node).boundingBoxOfPath.applying(t).integral.intersection(extent)
+        guard !region.isNull,!region.isEmpty else{return}
         let sx=hypot(t.a,t.b),sy=hypot(t.c,t.d),scale=max(0.01,min(sx,sy))
         let center=node.center.applying(t),size=CGSize(width:node.w*sx,height:node.h*sy)
         let angle=atan2(t.b,t.a)-node.rotation * .pi/180
@@ -35,9 +37,9 @@ enum LiquidGlassRenderer {
             let margin=max(size.width,size.height)*0.3
             if let warped=kernel.apply(extent:extent,roiCallback:{_,rect in rect.insetBy(dx:-margin,dy:-margin)},image:output,arguments:[CIVector(x:center.x,y:center.y),CIVector(x:size.width,y:size.height),radius,liquid,angle]){output=warped}
         }
-        guard let image=ci.createCGImage(output,from:extent) else{return}
+        guard let image=ci.createCGImage(output,from:region) else{return}
         context.saveGState();context.addPath(VectorPath.world(node));context.clip();context.setAlpha(min(1,max(0,node.opacity)))
-        context.concatenate(t.inverted());context.draw(image,in:extent);context.restoreGState()
+        context.concatenate(t.inverted());context.draw(image,in:region);context.restoreGState()
     }
     static func rim(_ node:Node,in context:CGContext){
         guard node.liquid>0 else{return}

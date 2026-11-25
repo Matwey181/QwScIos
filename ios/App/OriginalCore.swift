@@ -10,6 +10,7 @@ import UIKit
     private var studioDocument:StudioDocument?
     private var savedLinks:[InteractionLink]=[]
     private var modernFields:[String:Node]=[:]
+    private var nativeProject:Project?
     private var projectGlassMode:Int?
     private var textAlignments:[String:String]=[:]
     private init() {
@@ -23,11 +24,21 @@ import UIKit
     func request(_ values:[String:Any],project:Project?=nil) throws -> [String:Any] {
         var request=values
         if let project {
+            nativeProject=project
             modernFields=Dictionary((project.pages.flatMap(\.nodes)+project.nodes).map{($0.id,$0)},uniquingKeysWith:{_,b in b});projectGlassMode=project.glassMode
             layerExtras=Dictionary((project.pages.flatMap(\.nodes)+project.nodes).compactMap{n in n.extras.map{(n.id,$0)}},uniquingKeysWith:{_,new in new})
             studioDocument=project.studio;savedLinks=project.links
             textAlignments=Dictionary((project.pages.flatMap(\.nodes)+project.nodes).map{($0.id,$0.textAlign)},uniquingKeysWith: { _,new in new })
-            request["project"]=try JSONSerialization.jsonObject(with:JSONEncoder().encode(project))
+            var compatible=project
+            func alias(_ node:Node)->Node {
+                var n=node
+                if n.widget.hasPrefix("switch:itrack"){n.widget=n.widget.replacingOccurrences(of:"switch:itrack",with:"switch:track")}
+                if n.widget.hasPrefix("switch:ithumb"){n.widget="switch:thumb"}
+                return n
+            }
+            compatible.nodes=compatible.nodes.map(alias)
+            for i in compatible.pages.indices{compatible.pages[i].nodes=compatible.pages[i].nodes.map(alias)}
+            request["project"]=try JSONSerialization.jsonObject(with:JSONEncoder().encode(compatible))
         }
         let data=try JSONSerialization.data(withJSONObject:request,options:[.sortedKeys])
         context.exception=nil
@@ -38,10 +49,14 @@ import UIKit
         var request=values;request["op"]=operation
         let output=try self.request(request,project:project)
         var decoded=try JSONDecoder().decode(Project.self,from:JSONSerialization.data(withJSONObject:output))
-        func restore(_ node:Node)->Node {var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;n.extras=layerExtras[n.id] ?? n.extras;if let old=modernFields[n.id]{n.liquid=old.liquid;n.fixW=old.fixW;n.fixH=old.fixH;n.textVAlign=old.textVAlign;n.spans=old.spans};return n}
+        func restore(_ node:Node)->Node {var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;n.extras=layerExtras[n.id] ?? n.extras;if let old=modernFields[n.id]{n.liquid=old.liquid;n.fixW=old.fixW;n.fixH=old.fixH;n.textVAlign=old.textVAlign;n.spans=old.spans;if AppleControls.isApple(old){n.widget=old.widget}};return n}
         decoded.nodes=decoded.nodes.map(restore)
         for i in decoded.pages.indices {decoded.pages[i].nodes=decoded.pages[i].nodes.map(restore)}
         decoded.glassMode=projectGlassMode;decoded.studio=studioDocument;decoded.links=savedLinks
+        if ["apply","stop"].contains(operation),let base=nativeProject {
+            AppleControls.apply(&decoded,base:base,values:values["shown"] as? [String:Double] ?? [:])
+            decoded.syncPage()
+        }
         return decoded
     }
     func compose(_ project:Project) throws -> String { try request(["op":"compose"],project:project)["code"] as? String ?? "" }
@@ -59,6 +74,7 @@ import UIKit
     private var kinds:[String:String]=[:]
     private var link:CADisplayLink?
     private var startTime=0.0
+    private var lastFrameTime=0.0
     private var rendered:Project?
     private var activeHit:[String:Any]?
     private var initial=CGPoint.zero
@@ -74,7 +90,7 @@ import UIKit
             target=[:];kinds=[:];visibility=[:]
             for w in result["widgets"] as? [[String:Any]] ?? [] { if let group=w["group"] as? String { target[group]=(w["value"] as? NSNumber)?.doubleValue ?? 0;kinds[group]=w["kind"] as? String } }
             AppleControls.initial(editor.project,values:&target)
-            shown=target;startTime=CACurrentMediaTime();editor.selection=[];editor.playing=true
+            shown=target;startTime=CACurrentMediaTime();lastFrameTime=startTime;editor.selection=[];editor.playing=true
             links.onWidgetProgress = { [weak self] group,value in
                 guard let self else {return}
                 self.target[group]=value
@@ -100,18 +116,29 @@ import UIKit
     }
     @objc private func frame() {
         guard editor != nil else { link?.invalidate();link=nil;return }
-        var changed=kinds.values.contains("spin")
-        for (group,value) in target {
-            let current=shown[group] ?? value
-            if abs(value-current)>0.001 { shown[group]=current+(value-current)*0.4;changed=true }
-            if kinds[group]=="press",(shown[group] ?? 0)>0.9,value>0.5 { target[group]=0;notifyWidget(group,value:0) }
-        }
+        let now=CACurrentMediaTime()
+        var changed=advanceWidgetAnimations(by:now-lastFrameTime)
+        lastFrameTime=now
         if links.tick() { changed=true }
         if changed { refresh() }
     }
+    @discardableResult func advanceWidgetAnimations(by delta:Double)->Bool {
+        var changed=kinds.values.contains("spin")
+        let fraction=1-exp(-18*min(0.05,max(0,delta)))
+        for (group,value) in target {
+            let current=shown[group] ?? value
+            if current != value {
+                let next=current+(value-current)*fraction
+                shown[group]=abs(value-next)<0.001 ? value:next
+                changed=true
+            }
+            if kinds[group]=="press",(shown[group] ?? 0)>0.9,value>0.5 {target[group]=0;notifyWidget(group,value:0)}
+        }
+        return changed
+    }
     private func refresh() {
         guard let editor else { return }
-        do { var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":CACurrentMediaTime()-startTime]);result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n };AppleControls.apply(&result,base:editor.project,values:shown);rendered=links.displayed(result);editor.objectWillChange.send() }
+        do { var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":CACurrentMediaTime()-startTime]);result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n };rendered=links.displayed(result);editor.objectWillChange.send() }
         catch { editor.error=error.localizedDescription;link?.invalidate();link=nil }
     }
     private func linked(_ node:Node,events:[String])->Bool {
@@ -151,7 +178,9 @@ import UIKit
             catch{editor.error=error.localizedDescription}
         }else{let current=target[group] ?? 0;target[group]=action=="increase" ? current+value:action=="decrease" ? current-value:value}
         if kinds[group]=="pick"{let count=Set(editor.project.nodes.filter{$0.group==group && $0.widget.hasPrefix("pick:i")}.compactMap{Int($0.widget.dropFirst(6).split(separator:"/").first ?? "")}).count;target[group]=min(Double(max(0,count-1)),max(0,target[group] ?? 0))}
-        shown[group]=target[group] ?? 0;notifyWidget(group,value:target[group] ?? 0)
+        // Keep the current display value so CADisplayLink can animate toward
+        // the new target. Direct slider scrubbing still updates immediately.
+        notifyWidget(group,value:target[group] ?? 0)
     }
     func tap(_ p:CGPoint) {
         guard let editor else{return}

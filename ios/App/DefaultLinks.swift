@@ -92,10 +92,11 @@ enum DefaultLinks {
         }
     }
     static func allPages(_ project:inout Project){
+        AppleCatalog.prepare(&project,id:"ios")
         install(&project)
         for i in project.pages.indices where i != project.active{
             let sourceIDs=Set(project.pages[i].nodes.map(\.id))
-            var page=Project();page.nodes=project.pages[i].nodes;page.links=project.links.filter{sourceIDs.contains($0.sourceID)};install(&page)
+            var page=Project();page.nodes=project.pages[i].nodes;page.links=project.links.filter{sourceIDs.contains($0.sourceID)};AppleCatalog.prepare(&page,id:"ios");install(&page)
             project.pages[i].nodes=page.nodes
             project.links.removeAll{sourceIDs.contains($0.sourceID)};project.links += page.links
         }
