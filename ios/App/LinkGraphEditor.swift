@@ -160,7 +160,19 @@ struct LinkGraphEditor:View {
 
     private func graphControl(_ icon:String,action:@escaping()->Void)->some View {Button(action:action){Image(systemName:icon).font(.system(size:17,weight:.semibold)).frame(width:48,height:48).foregroundStyle(q.color("onSurface")).background(q.color("surfaceContainerHighest").opacity(0.82),in:Circle())}.buttonStyle(QPressStyle())}
 
-    private var helpCard:some View {VStack{HStack(alignment:.top,spacing:10){Image(systemName:"hand.draw").foregroundStyle(q.color("primary"));VStack(alignment:.leading,spacing:3){Text("Свободное полотно").font(qfont(13,.semibold));Text("Тяните фон, двигайте узлы и меняйте масштаб двумя пальцами.").font(qfont(11)).foregroundStyle(q.color("onSurfaceVariant"))};Button{withAnimation{showHelp=false}}label:{Image(systemName:"xmark").font(.system(size:11,weight:.bold)).frame(width:28,height:28)}.buttonStyle(.plain)}.padding(13).frame(maxWidth:310).qSurface(20,"surfaceContainerHigh",glass:true,alpha:0.86).padding(14);Spacer()},alignment:.topTrailing}
+    private var helpCard:some View {
+        VStack{
+            HStack(alignment:.top,spacing:10){
+                Image(systemName:"hand.draw").foregroundStyle(q.color("primary"))
+                VStack(alignment:.leading,spacing:3){
+                    Text("Свободное полотно").font(qfont(13,.semibold))
+                    Text("Тяните фон, двигайте узлы и меняйте масштаб двумя пальцами.").font(qfont(11)).foregroundStyle(q.color("onSurfaceVariant"))
+                }
+                Button{withAnimation{showHelp=false}}label:{Image(systemName:"xmark").font(.system(size:11,weight:.bold)).frame(width:28,height:28)}.buttonStyle(.plain)
+            }.padding(13).frame(maxWidth:310).qSurface(20,"surfaceContainerHigh",glass:true,alpha:0.86).padding(14)
+            Spacer()
+        }.frame(maxWidth:.infinity,alignment:.trailing)
+    }
 
     private var emptyState:some View {VStack(spacing:10){Image(systemName:"point.3.filled.connected.trianglepath.dotted").font(.system(size:30)).foregroundStyle(q.color("primary"));Text("Добавьте первую связку").font(qfont(17,.semibold));Text("Она появится на полотне как цепочка узлов.").font(qfont(12)).foregroundStyle(q.color("onSurfaceVariant"));Button("Создать"){addRule()}.buttonStyle(.borderedProminent)}.padding(24).qSurface(26,"surfaceContainerHigh")}
 

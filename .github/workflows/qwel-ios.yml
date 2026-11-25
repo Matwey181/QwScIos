@@ -1,7 +1,7 @@
 name: Build Qwel iOS
 on:
   push:
-    branches: [codex/qwel-ios, codex/qwel-node-build]
+    branches: [codex/qwel-ios]
   workflow_dispatch:
     inputs:
       run_tests:
