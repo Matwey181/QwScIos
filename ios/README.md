@@ -59,5 +59,13 @@ BarredEwe/LiquidGlass optical approach. The existing uniform-background bypass,
 scene cache and bounded backdrop cache remain in use. This is an imitation
 compatible with iOS 17/18, not the operating system's iOS 26 material.
 
+## 0.12 node-based link editor
+
+The Links screen is now a spatial Material 3 graph. Each rule is presented as a
+source, event, action and target chain with animated Bézier wires. The canvas can
+be panned and pinched, individual nodes can be rearranged, and the action node
+opens the complete existing rule editor in a bottom sheet. States, the animation
+timeline and reusable link sets remain available from the floating graph toolbar.
+
 AppleComponentTests generate light/dark showcase images from the actual UIKit
 renderer and exercise symbols, exports, the optics kernel and playback.
