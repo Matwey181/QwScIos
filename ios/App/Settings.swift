@@ -38,7 +38,7 @@ struct SettingsView:View {
     }
     private var root:some View {
         Group {
-            VStack(spacing:0){QLogo().frame(width:88,height:88);Text("Vexel").font(qfont(28,.semibold)).padding(.top,12);Text("2.8.8 · iOS 0.11").font(qfont(14,.semibold)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity).padding(.top,8).padding(.bottom,12)
+            VStack(spacing:0){QLogo().frame(width:88,height:88);Text("Vexel").font(qfont(28,.semibold)).padding(.top,12);Text("2.8.8 · iOS 0.12").font(qfont(14,.semibold)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity).padding(.top,8).padding(.bottom,12)
             QSettingsGroup {
                 QSetting("Внешний вид и стиль",subtitle:"Тема, акцент, шрифт, стекло",icon:"Style",chevron:true){page="look"}
                 QSetting("Язык",icon:"Text",value:language=="en" ? "English":"Русский"){page="lang"}
