@@ -22,7 +22,7 @@ extension TextLayout {
 }
 
 enum StyledSVGText {
-    static func line(_ node:Node,range:NSRange)->String {
+    static func line(_ node:Node,range:NSRange,defaultFill:String?=nil)->String {
         let string=node.text as NSString,start=max(0,min(string.length,range.location)),end=max(start,min(string.length,range.location+range.length))
         var boundaries=Set([start,end]);let runs=node.extras?.runs ?? []
         for run in runs {if run.start>start && run.start<end{boundaries.insert(run.start)};let last=run.start+run.length;if last>start && last<end{boundaries.insert(last)}}
@@ -30,7 +30,7 @@ enum StyledSVGText {
         for i in 0..<max(0,positions.count-1){
             let a=positions[i],b=positions[i+1],text=string.substring(with:NSRange(location:a,length:b-a)).trimmingCharacters(in:.newlines)
             let run=runs.last{$0.start<=a && $0.start+$0.length>a}
-            let color=String(format:"#%06X",UInt32(truncatingIfNeeded:run?.color ?? node.fill)&0xffffff)
+            let color=run?.color==nil && defaultFill != nil ? defaultFill!:String(format:"#%06X",UInt32(truncatingIfNeeded:run?.color ?? node.fill)&0xffffff)
             output += "<tspan font-weight=\"\(run?.weight ?? Int(node.weight))\" font-style=\"\(run?.italic==true ? "italic":"normal")\" fill=\"\(color)\">\(xml(text))</tspan>"
         }
         return output

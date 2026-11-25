@@ -3,6 +3,7 @@ import UIKit
 func xml(_ s:String)->String { s.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;").replacingOccurrences(of:"\"",with:"&quot;") }
 enum SVGExport {
     static func make(_ p:Project,root:URL)->String {
+        if p.nodes.contains(where:{$0.visible && $0.liquid>0}),let data=DocumentRenderer(root:root).png(p,scale:2){return "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"\(p.w)\" height=\"\(p.h)\" viewBox=\"0 0 \(p.w) \(p.h)\"><image width=\"100%\" height=\"100%\" href=\"data:image/png;base64,\(data.base64EncodedString())\"/></svg>"}
         func color(_ value:Int64)->String { String(format:"#%06X",UInt32(truncatingIfNeeded:value)&0xffffff) }
         func alpha(_ value:Int64)->Double { Double((UInt32(truncatingIfNeeded:value)>>24)&255)/255 }
         var definitions="",body=""
@@ -34,7 +35,7 @@ enum SVGExport {
                 let font=DocumentRenderer(root:root).font(n),layout=TextLayout(n,font:DocumentRenderer(root:root).font(n))
                 let anchor=n.textAlign=="center" ? "middle":n.textAlign=="right" ? "end":"start"
                 let x:CGFloat=n.textAlign=="center" ? n.w/2:n.textAlign=="right" ? n.w:0
-                content="<text text-anchor=\"\(anchor)\" xml:space=\"preserve\" font-family=\"\(family)\" letter-spacing=\"\(n.extras?.tracking ?? 0)\" font-size=\"\(layout.resolvedFont.pointSize)\" font-weight=\"\(n.weight)\">"+layout.lines.enumerated().map { index,line in "<tspan x=\"\(x)\" y=\"\(layout.resolvedFont.ascender+CGFloat(index)*(layout.lineHeight+(n.extras?.lineSpacing ?? 0)))\">\(StyledSVGText.line(n,range:layout.ranges.indices.contains(index) ? layout.ranges[index]:NSRange(location:0,length:0)))</tspan>" }.joined()+"</text>"
+                content="<text text-anchor=\"\(anchor)\" xml:space=\"preserve\" font-family=\"\(family)\" letter-spacing=\"\(n.extras?.tracking ?? 0)\" font-size=\"\(layout.resolvedFont.pointSize)\" font-weight=\"\(n.weight)\">"+layout.lines.enumerated().map { index,line in "<tspan x=\"\(x)\" y=\"\(layout.resolvedFont.ascender+CGFloat(index)*(layout.lineHeight+(n.extras?.lineSpacing ?? 0)))\">\(StyledSVGText.line(n,range:layout.ranges.indices.contains(index) ? layout.ranges[index]:NSRange(location:0,length:0),defaultFill:n.gradKind != 0 ? fill:nil))</tspan>" }.joined()+"</text>"
             } else if n.kind=="IMAGE" {
                 if let data=try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset)) {
                     let mime=n.asset.lowercased().hasSuffix("jpg") ? "image/jpeg":"image/png"

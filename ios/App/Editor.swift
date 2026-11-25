@@ -41,7 +41,8 @@ import SwiftUI
     func edit(_ block:(inout Project)->Void) { checkpoint();block(&project);DesignLayoutEngine.resolve(&project,renderer:renderer);saveSoon() }
     func reflowText(_ node:inout Node) {
         guard node.kind=="TEXT" else{return}
-        if node.extras?.autoFit != true && node.extras?.hugHeight != false{node.h=TextLayout(node,font:renderer.font(node)).height}
+        if !node.fixW && node.extras?.hugWidth==true{node.w=max(1,ceil(TextLayout.attributed(node,font:renderer.font(node)).size().width)+2)}
+        if !node.fixH && node.extras?.autoFit != true && node.extras?.hugHeight != false{node.h=TextLayout(node,font:renderer.font(node)).height}
     }
     func commitText(_ id:String,text:String) {
         guard let index=project.nodes.firstIndex(where:{$0.id==id && $0.kind=="TEXT"}),project.nodes[index].text != text else{return}
@@ -70,16 +71,19 @@ import SwiftUI
         if n.shapeId=="pill-horizontal"{n.w=180;n.h=72;n.ratioLock=false}
         if n.shapeId=="pill-vertical"{n.w=72;n.h=180;n.ratioLock=false}
         if n.shapeId=="pill-diagonal"{n.w=128;n.h=128;n.ratioLock=false}
-        if kind=="TEXT" { n.text="Новый текст";n.fontSize=28;n.w=180;n.h=40;n.fill = -14869216 }
+        if kind=="TEXT" { n.fixW=true;n.text="Новый текст";n.fontSize=28;n.w=180;n.h=40;n.fill = -14869216 }
         if kind=="TEXT" { n.ratioLock=false;reflowText(&n) }
         n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2
         edit { $0.nodes.append(n) };selection=[n.id]
         if kind=="TEXT" { requestTextEdit=n.id }
     }
-    func addComponent(_ item:CatalogItem) {
+    func addComponent(_ input:CatalogItem) {
+        let item=AppleCatalog.variant(input,dark:project.tone.dark)
+        let configured=UserDefaults.standard.double(forKey:"componentScale")
+        let factor=CGFloat(configured>0 ? configured:Double(min(1,project.w*0.9/max(1,item.project.w))))
         let g=UUID().uuidString+"~"+item.id,ox=(project.w-item.project.w)/2,oy=(project.h-item.project.h)/2
         let identifiers=Dictionary(uniqueKeysWithValues:item.project.nodes.map{($0.id,UUID().uuidString)})
-        let nodes=item.project.nodes.map { original in var n=original;n.id=identifiers[original.id] ?? UUID().uuidString;n.x += ox;n.y += oy;n.group=g
+        let nodes=item.project.nodes.map { original in var n=original;n.id=identifiers[original.id] ?? UUID().uuidString;n.w*=factor;n.h*=factor;n.fontSize*=factor;n.corner*=factor;n.strokeWidth*=factor;n.x=n.x*factor+(project.w-item.project.w*factor)/2;n.y=n.y*factor+(project.h-item.project.h*factor)/2;n.group=g
             if project.tone.colors.indices.contains(Int(n.fillToken)) { n.fill=project.tone.colors[Int(n.fillToken)] }
             if project.tone.colors.indices.contains(Int(n.strokeToken)) { n.stroke=project.tone.colors[Int(n.strokeToken)] };return n }
         let links=item.project.links.map{source in var r=source;r.id=UUID().uuidString;r.sourceID=identifiers[r.sourceID] ?? r.sourceID;r.targetID=identifiers[r.targetID] ?? r.targetID;return r}

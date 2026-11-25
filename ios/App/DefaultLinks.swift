@@ -32,7 +32,7 @@ enum DefaultLinks {
                 return ["RECT","ELLIPSE"].contains(layer.kind) && ["кнопка","button","fab"].contains(name)
             }
             let plainButton=namedBackground != nil && kind.isEmpty
-            let button=plainButton || id.hasPrefix("btn-") || id.hasPrefix("icon-btn") || ["fab","ext-fab","fab-small","fab-large","split-button"].contains(id)
+            let button=plainButton || id.hasPrefix("btn-") || id.hasPrefix("ios-btn-") || id.hasPrefix("icon-btn") || ["fab","ext-fab","fab-small","fab-large","split-button"].contains(id)
             let interactive = !kind.isEmpty && !["slider","progress","spin"].contains(kind)
             if interactive && version<1{var link=rule(n.id,n.id,"tap","component","component",1);link.control="tap";added.append(link)
                 if kind=="pick"{for (event,action) in [("swipeLeft","increase"),("swipeRight","decrease")]{var swipe=rule(n.id,n.id,event,"component","component",1);swipe.control=action;added.append(swipe)}}
@@ -42,7 +42,7 @@ enum DefaultLinks {
                 let layer=project.nodes[index]
                 return layer.pressCorner>=0 || (button || layer.id==oldBackground) && ["RECT","ELLIPSE"].contains(layer.kind)
             }
-            let background=plainButton ? namedBackground:fallback
+            let background=plainButton ? namedBackground:(fallback ?? (button ? indices.first:nil))
             if let background=background{
                 let layer=project.nodes[background]
                 project.links.removeAll{$0.id=="default-\(n.id)-press-opacity" || $0.id=="default-\(n.id)-release-opacity"}

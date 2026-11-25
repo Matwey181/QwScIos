@@ -5,6 +5,9 @@ struct SettingsView:View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.q) var q
     @State private var page=""
+    @AppStorage("uiStyle") private var uiStyle=0
+    @AppStorage("liquidMode") private var liquidMode=0
+    @AppStorage("componentScale") private var componentScale=0.0
     @AppStorage("appearance") private var appearance=2
     @AppStorage("glass") private var glass=true
     @AppStorage("accent") private var accent=0
@@ -26,7 +29,7 @@ struct SettingsView:View {
                     case "gest":gestures
                     case "export":QSettingsGroup("Масштаб PNG по умолчанию"){ForEach([1.0,2,3,4],id:\.self){n in QSetting("\(Int(n))x",selected:scale==n){scale=n}}}
                     case "fun":funny
-                    case "news":QSettingsGroup("Vexel v44"){Text("Интерфейс Material 3 Expressive, проекты, фигуры, компоненты, режим игры, эффекты, экспорт PNG/SVG и Compose.").font(qfont(16)).padding(20)}
+                    case "news":QSettingsGroup("Vexel 2.8.8 · iOS"){Text("Liquid Glass с преломлением фона и выбором режима. 24 компонента Apple и новый шаблон iOS. Цвета отдельных слов, градиент текста и настройки текстовой рамки. Размер компонентов и стиль интерфейса iOS.").font(qfont(16)).padding(20)}
                     default:root
                     }
                 }.padding(.horizontal,16).padding(.bottom,24)
@@ -35,7 +38,7 @@ struct SettingsView:View {
     }
     private var root:some View {
         Group {
-            VStack(spacing:0){QLogo().frame(width:88,height:88);Text("Vexel").font(qfont(28,.semibold)).padding(.top,12);Text("v44 · iOS 0.2").font(qfont(14,.semibold)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity).padding(.top,8).padding(.bottom,12)
+            VStack(spacing:0){QLogo().frame(width:88,height:88);Text("Vexel").font(qfont(28,.semibold)).padding(.top,12);Text("2.8.8 · iOS 0.10").font(qfont(14,.semibold)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity).padding(.top,8).padding(.bottom,12)
             QSettingsGroup {
                 QSetting("Внешний вид и стиль",subtitle:"Тема, акцент, шрифт, стекло",icon:"Style",chevron:true){page="look"}
                 QSetting("Язык",icon:"Text",value:language=="en" ? "English":"Русский"){page="lang"}
@@ -53,6 +56,9 @@ struct SettingsView:View {
     }
     private var look:some View {
         Group {
+            QSettingsGroup("Интерфейс Vexel") {QSetting("Классика",selected:uiStyle==0){uiStyle=0};QSetting("iOS",subtitle:"Синие акценты, сгруппированный фон и системные переключатели",selected:uiStyle==1){uiStyle=1}}
+            QSettingsGroup("Жидкое стекло в слоях") {QSetting("Авто",selected:liquidMode==0){liquidMode=0};QSetting("Преломление · Core Image",subtitle:"Искажает фон у края слоя",selected:liquidMode==1){liquidMode=1};QSetting("Упрощённое",subtitle:"Размытие, светлая кромка и блик",selected:liquidMode==2){liquidMode=2}}
+            QSettingsGroup("Размер компонентов") {ForEach([0.0,0.75,1,1.25,1.5],id:\.self){value in QSetting(value==0 ? "Авто":"\(Int(value*100))%",selected:componentScale==value){componentScale=value}}}
             QSettingsGroup("Тема приложения") {ForEach(Array(["Как в системе","Светлая","Тёмная","AMOLED","AMOLED светлая"].enumerated()),id:\.offset){i,title in QSetting(title,selected:appearance==i){appearance=i}}}
             QSettingsGroup("Акцент") {
                 QSetting("Vexel",selected:accent==0){accent=0}

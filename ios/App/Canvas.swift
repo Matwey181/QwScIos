@@ -174,6 +174,7 @@ struct EditorCanvas:UIViewRepresentable {
                     out[i].x=target.minX+(startNodes[i].x-box.minX)*sx;out[i].y=target.minY+(startNodes[i].y-box.minY)*sy
                     out[i].w=max(1,startNodes[i].w*sx);out[i].h=max(1,startNodes[i].h*sy)
                     if out[i].kind=="TEXT" {
+                        out[i].fixW=true;var extras=out[i].extras ?? LayerExtras();extras.hugWidth=false;out[i].extras=extras
                         if startNodes.count>1 {out[i].fontSize=startNodes[i].fontSize*min(sx,sy)}
                         editor.reflowText(&out[i])
                     }

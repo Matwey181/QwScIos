@@ -40,10 +40,10 @@ struct AddPanel:View {
     private var components:some View {
         VStack(alignment:.leading,spacing:8) {
             InlineSection(title:"Мои компоненты · сохранить и вставить"){StudioComponents(editor:editor)}
-            ForEach(["actions","navigation","containment","communication","selection","inputs"],id:\.self){category in
-                Text(["actions":"Действия","navigation":"Навигация","containment":"Контейнеры","communication":"Сообщения","selection":"Выбор","inputs":"Ввод"][category] ?? category).font(qfont(14,.semibold)).foregroundStyle(q.color("primary")).padding(.top,8)
+            ForEach(["apple","actions","navigation","containment","communication","selection","inputs"],id:\.self){category in
+                Text(["apple":"Стиль Apple","actions":"Действия","navigation":"Навигация","containment":"Контейнеры","communication":"Сообщения","selection":"Выбор","inputs":"Ввод"][category] ?? category).font(qfont(14,.semibold)).foregroundStyle(q.color("primary")).padding(.top,8)
                 LazyVGrid(columns:[GridItem(.flexible(),spacing:8),GridItem(.flexible(),spacing:8)],spacing:8){ForEach(Catalog.shared.components.filter{$0.category==category}){item in
-                    Button {editor.addComponent(item)}label:{VStack(spacing:4){ProjectThumbnail(project:preview(item.project),root:editor.store.root).frame(height:76);Text(item.name).font(qfont(12,.medium)).lineLimit(1).padding(.bottom,8)}.frame(maxWidth:.infinity).qSurface(20,"surfaceContainerHighest")}.buttonStyle(QPressStyle()).accessibilityIdentifier("component-"+item.id)
+                    Button {editor.addComponent(item)}label:{VStack(spacing:4){ProjectThumbnail(project:preview(AppleCatalog.variant(item,dark:editor.project.tone.dark).project),root:editor.store.root).frame(height:76);Text(item.name).font(qfont(12,.medium)).lineLimit(1).padding(.bottom,8)}.frame(maxWidth:.infinity).qSurface(20,"surfaceContainerHighest")}.buttonStyle(QPressStyle()).accessibilityIdentifier("component-"+item.id)
                 }}
             }
         }

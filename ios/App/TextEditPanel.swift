@@ -16,6 +16,7 @@ struct TextEditPanel:View {
             Text(formattingOnly ? "Стиль текста":"Редактировать текст").font(qfont(22,.semibold))
             RichTextInput(text:$draft,runs:$runs,selection:$selection,node:node,font:editor.renderer.font(node))
                 .frame(height:145).overlay(RoundedRectangle(cornerRadius:16).stroke(q.color("outline")))
+            if !formattingOnly{HStack{Button("Цвет выделенного"){color=true};Button("Сбросить цвета"){runs=runs.map{var r=$0;r.color=nil;return r}}}.font(qfont(13));Text("Выдели слово и выбери цвет.").font(qfont(11))}
             if formattingOnly {
             VStack(spacing:8){HStack(spacing:8){QChip(title:"Жирный"){style(weight:700)};QChip(title:"Курсив"){style(italic:true)}};HStack(spacing:8){QChip(title:"Цвет"){color=true};QChip(title:"Обычный"){style(weight:400,italic:false,reset:true)}}}
             Text(selection.length>0 ? "Выделено: \(selection.length)":"Без выделения стиль применяется ко всему тексту.").font(qfont(11)).foregroundStyle(q.color("onSurfaceVariant"))
@@ -32,6 +33,6 @@ struct TextEditPanel:View {
     }
     private func commit(){
         guard let i=editor.project.nodes.firstIndex(where:{$0.id==nodeID}) else{return}
-        editor.edit{p in p.nodes[i].text=draft;var extras=p.nodes[i].extras ?? LayerExtras();extras.runs=runs;p.nodes[i].extras=extras;editor.reflowText(&p.nodes[i])}
+        editor.edit{p in p.nodes[i].text=draft;p.nodes[i].spans=AndroidTextSpans.format(runs);var extras=p.nodes[i].extras ?? LayerExtras();extras.runs=runs;p.nodes[i].extras=extras;editor.reflowText(&p.nodes[i])}
     }
 }

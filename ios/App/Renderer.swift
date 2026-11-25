@@ -5,6 +5,7 @@ import CoreText
 final class DocumentRenderer {
     let root:URL
     private let images=NSCache<NSString,UIImage>()
+    private var glassPass=false
     private let ci=CIContext(options:[.cacheIntermediates:false])
     init(root:URL) { self.root=root }
     func font(_ n:Node)->UIFont {
@@ -21,6 +22,13 @@ final class DocumentRenderer {
     }
     func draw(_ p:Project,in ctx:CGContext,background:Bool=true,includeReferences:Bool=false) {
         UIGraphicsPushContext(ctx);defer { UIGraphicsPopContext() }
+        if !glassPass && p.nodes.contains(where:{$0.visible && ($0.liquid>0 || $0.blur>0)}){
+            glassPass=true;defer{glassPass=false}
+            let format=UIGraphicsImageRendererFormat();format.scale=min(2,4096/max(p.w,p.h));format.opaque=false
+            let image=UIGraphicsImageRenderer(size:CGSize(width:p.w,height:p.h),format:format).image{target in draw(p,in:target.cgContext,background:true,includeReferences:includeReferences)}
+            image.draw(in:CGRect(x:0,y:0,width:p.w,height:p.h));return
+        }
+
         if background { ctx.setFillColor(UIColor(argb:p.bg).cgColor);ctx.fill(CGRect(x:0,y:0,width:p.w,height:p.h)) }
         var i=0
         while i<p.nodes.count {
@@ -31,17 +39,8 @@ final class DocumentRenderer {
             if i+1<p.nodes.count,p.nodes[i+1].mask,p.nodes[i+1].visible {
                 ctx.addPath(VectorPath.world(p.nodes[i+1]));ctx.clip(using:p.nodes[i+1].evenOdd ? .evenOdd:.winding)
             }
-            if n.blur>0,let snapshot=ctx.makeImage() {
-                let input=CIImage(cgImage:snapshot)
-                if let filter=CIFilter(name:"CIGaussianBlur",parameters:[kCIInputImageKey:input,kCIInputRadiusKey:min(100,n.blur)]),let result=filter.outputImage,let blurred=ci.createCGImage(result,from:input.extent) {
-                    ctx.saveGState();ctx.addPath(VectorPath.world(n));ctx.clip();ctx.saveGState()
-                    // Bitmap snapshots use pixel coordinates; map them back to
-                    // the current document coordinate system before clipping.
-                    let bounds=ctx.boundingBoxOfClipPath
-                    ctx.translateBy(x:0,y:bounds.maxY+bounds.minY);ctx.scaleBy(x:1,y:-1)
-                    ctx.draw(blurred,in:bounds);ctx.restoreGState();ctx.restoreGState()
-                }
-            }
+            let mode=p.glassMode ?? UserDefaults.standard.integer(forKey:"liquidMode")
+            LiquidGlassRenderer.draw(n,mode:mode,in:ctx,using:ci)
             draw(n,in:ctx)
             ctx.restoreGState();i += 1
         }
@@ -102,6 +101,7 @@ final class DocumentRenderer {
             ctx.restoreGState()
         } else { ctx.setFillColor(UIColor(argb:n.fill).cgColor);ctx.drawPath(using:n.evenOdd ? .eoFill:.fill) }
         ctx.setAlpha(min(1,max(0,n.opacity)))
+        LiquidGlassRenderer.rim(n,in:ctx)
         if n.strokeWidth>0 { ctx.addPath(path);ctx.setStrokeColor(UIColor(argb:n.stroke).cgColor);ctx.setLineWidth(n.strokeWidth);ctx.setLineJoin(.round);ctx.setLineCap(.round);ctx.strokePath() }
     }
     func sample(_ p:Project,at point:CGPoint)->Int64? {

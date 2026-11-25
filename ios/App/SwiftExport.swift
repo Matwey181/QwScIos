@@ -40,7 +40,7 @@ enum SwiftExport {
     private static func stateNumbers(_ nodes:[Node])->[String:Double]{
         var result:[String:Double]=[:]
         for n in nodes {
-            let values:[String:Double]=["x":Double(n.x),"y":Double(n.y),"width":Double(n.w),"height":Double(n.h),"rotation":Double(n.rotation),"opacity":Double(n.opacity),"fillOpacity":Double(n.fillOpacity),"disabled":n.extras?.disabled==true ? 1:0,"fill":Double(n.fill),"stroke":Double(n.stroke),"strokeWidth":Double(n.strokeWidth),"fontSize":Double(n.fontSize),"corner":Double(n.corner),"blur":Double(n.softBlur),"visible":n.visible ? 1:0,"weight":Double(n.weight)]
+            let values:[String:Double]=["liquid":Double(n.liquid),"x":Double(n.x),"y":Double(n.y),"width":Double(n.w),"height":Double(n.h),"rotation":Double(n.rotation),"opacity":Double(n.opacity),"fillOpacity":Double(n.fillOpacity),"disabled":n.extras?.disabled==true ? 1:0,"fill":Double(n.fill),"stroke":Double(n.stroke),"strokeWidth":Double(n.strokeWidth),"fontSize":Double(n.fontSize),"corner":Double(n.corner),"blur":Double(n.softBlur),"visible":n.visible ? 1:0,"weight":Double(n.weight)]
             for (key,value) in values{result[n.id+"|"+key]=value}
         }
         return result
@@ -114,8 +114,9 @@ enum SwiftExport {
                 let nodeColor="graph.fill(\(identifier), base: \(n.fill))"
                 if n.kind=="TEXT" {
                     let runs=(n.extras?.runs ?? []).map{"QwelTextSpan(start: \($0.start), length: \($0.length), weight: \($0.weight), italic: \($0.italic), color: \($0.color.map(String.init) ?? "nil"))"}.joined(separator:",")
-                    let actualSize=n.extras?.autoFit==true ? TextLayout(n,font:DocumentRenderer(root:root).font(n)).resolvedFont.pointSize:n.fontSize
-                    let textBase="graph.styledLabel(\(identifier), base: \(literal(n.text)), runs: [\(runs)]).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize))), weight: (graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 700 ? .bold : graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 500 ? .medium : .regular))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment))"
+                    let actualSize=(n.extras?.autoFit==true || n.fixH) ? TextLayout(n,font:DocumentRenderer(root:root).font(n)).resolvedFont.pointSize:n.fontSize
+                    var textBase="graph.styledLabel(\(identifier), base: \(literal(n.text)), runs: [\(runs)]).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize))), weight: (graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 700 ? .bold : graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 500 ? .medium : .regular))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment))"
+                    if n.gradKind != 0{let gradient=n.gradKind==2 ? "RadialGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], center: .center, startRadius: 0, endRadius: \(max(n.w,n.h)/2))":"LinearGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], startPoint: .topLeading, endPoint: .bottomTrailing)";textBase += ".overlay(\(gradient).mask(\(textBase)))"}
                     let fontName=DocumentRenderer(root:root).font(n).fontName
                     let selectedFont=n.font.isEmpty ? textBase:textBase+".font(.custom(\(literal(fontName)), size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize)))))"
                     let typography=selectedFont+".tracking(\(n.extras?.tracking ?? 0)).lineSpacing(\(n.extras?.lineSpacing ?? 0))"
@@ -148,6 +149,7 @@ enum SwiftExport {
                     if n.strokeWidth>0 || effectiveLinks.contains(where:{$0.targetID==n.id && ["stroke","strokeWidth"].contains($0.property)}) {view += ".overlay { \(shape).stroke(graph.fill(\(identifier), base: \(n.stroke), property: \"stroke\"), lineWidth: CGFloat(graph.value(\(identifier), \"strokeWidth\", base: \(n.strokeWidth)))) }"}
                 }
                 view += ".frame(width: \(n.w), height: \(n.h), alignment: .topLeading)"
+                if n.liquid>0{view += ".background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: \(n.kind=="ELLIPSE" ? min(n.w,n.h)/2:n.corner))).overlay(RoundedRectangle(cornerRadius: \(n.kind=="ELLIPSE" ? min(n.w,n.h)/2:n.corner)).stroke(Color.white.opacity(0.35), lineWidth: 0.6))"}
                 if n.shadowBlur>0 || effectiveLinks.contains(where:{$0.targetID==n.id && $0.property.hasPrefix("shadow")}) {view += ".shadow(color: graph.fill(\(identifier), base: \(n.shadowColor), property: \"shadowColor\"), radius: CGFloat(graph.value(\(identifier), \"shadowBlur\", base: \(n.shadowBlur))), x: CGFloat(graph.value(\(identifier), \"shadowDx\", base: \(n.shadowDx))), y: CGFloat(graph.value(\(identifier), \"shadowDy\", base: \(n.shadowDy))))"}
                 view += ".blur(radius: CGFloat(graph.value(\(identifier), \"blur\", base: \(n.softBlur))))"
                 // Animate all supported geometry directly; never place an invisible

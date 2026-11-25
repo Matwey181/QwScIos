@@ -13,6 +13,8 @@ final class TextLayout {
     let resolvedFont:UIFont
     let isAndroidCatalogText: Bool
     private let horizontalOffset: CGFloat
+    private let node:Node
+    private let frameHeight:CGFloat
 
     var height: CGFloat {
         max(lineHeight,ceil(max(manager.usedRect(for:container).maxY,
@@ -20,6 +22,7 @@ final class TextLayout {
     }
 
     static func isAndroidCatalogText(_ node: Node) -> Bool {
+        if node.fixW || node.fixH{return false}
         if let extras=node.extras,extras.tracking != 0 || extras.lineSpacing != 0 || extras.autoFit || !extras.runs.isEmpty{return false}
         guard node.kind == "TEXT", !node.text.isEmpty, node.fontSize > 0 else { return false }
         let lines=node.text.components(separatedBy:"\n")
@@ -33,8 +36,9 @@ final class TextLayout {
     }
 
     init(_ node: Node,font sourceFont: UIFont) {
+        self.node=node;frameHeight=node.h
         var font=sourceFont
-        if node.extras?.autoFit==true {
+        if node.extras?.autoFit==true || node.fixH {
             var low:CGFloat=4,high=max(4,sourceFont.pointSize)
             for _ in 0..<12 {
                 let mid=(low+high)/2,candidate=sourceFont.withSize(mid)
@@ -93,8 +97,16 @@ final class TextLayout {
 
     func draw() {
         let range=manager.glyphRange(for:container)
-        let origin=CGPoint(x:horizontalOffset,y:0)
-        manager.drawBackground(forGlyphRange:range,at:origin)
+        let y=node.textVAlign==1 ? max(0,(frameHeight-height)/2):node.textVAlign==2 ? max(0,frameHeight-height):0
+        let origin=CGPoint(x:horizontalOffset,y:y)
+        guard let context=UIGraphicsGetCurrentContext(),node.gradKind != 0 else{manager.drawBackground(forGlyphRange:range,at:origin);manager.drawGlyphs(forGlyphRange:range,at:origin);return}
+        context.saveGState();context.beginTransparencyLayer(auxiliaryInfo:nil)
         manager.drawGlyphs(forGlyphRange:range,at:origin)
+        context.setBlendMode(.sourceIn)
+        if let gradient=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:[UIColor(argb:node.fill).cgColor,UIColor(argb:node.fill2).cgColor] as CFArray,locations:[0,1]){
+            if node.gradKind==2{context.drawRadialGradient(gradient,startCenter:CGPoint(x:node.w/2,y:frameHeight/2),startRadius:0,endCenter:CGPoint(x:node.w/2,y:frameHeight/2),endRadius:max(node.w,frameHeight)/2,options:[.drawsAfterEndLocation])}
+            else{let angle=node.gradAngle * .pi/180,dx=cos(angle)*node.w/2,dy=sin(angle)*frameHeight/2;context.drawLinearGradient(gradient,start:CGPoint(x:node.w/2-dx,y:frameHeight/2-dy),end:CGPoint(x:node.w/2+dx,y:frameHeight/2+dy),options:[.drawsBeforeStartLocation,.drawsAfterEndLocation])}
+        }
+        context.endTransparencyLayer();context.restoreGState()
     }
 }

@@ -268,7 +268,7 @@ import QuartzCore
     }
 
     private func transition(_ nodes:[Node],rule:InteractionLink,now:Double){
-        let properties=["x","y","width","height","rotation","opacity","fillOpacity","fill","fill2","stroke","strokeWidth","fontSize","weight","corner","blur","shadowBlur","shadowDx","shadowDy","shadowColor"]
+        let properties=["liquid","x","y","width","height","rotation","opacity","fillOpacity","fill","fill2","stroke","strokeWidth","fontSize","weight","corner","blur","shadowBlur","shadowDx","shadowDy","shadowColor"]
         for target in nodes {
             guard let source=project.nodes.first(where:{$0.id==target.id}) else{continue}
             stateLayers[target.id]=target;text[target.id]=target.text
@@ -314,6 +314,7 @@ import QuartzCore
     }
     private func baseValue(_ node: Node, _ property: String) -> Double {
         switch property {
+        case "liquid":return Double(node.liquid)
         case "disabled":return node.extras?.disabled==true ? 1:0
         case "fillOpacity":return Double(node.fillOpacity)
         case "stroke":return Double(node.stroke)
@@ -452,6 +453,7 @@ import QuartzCore
                 if let value=v["shadowDx"]{node.shadowDx=CGFloat(value)}
                 if let value=v["shadowDy"]{node.shadowDy=CGFloat(value)}
                 if let value=v["backgroundBlur"]{node.blur=max(0,CGFloat(value))}
+                if let liquid=v["liquid"]{node.liquid=CGFloat(min(1,max(0,liquid)))}
                 if let value=v["morph"],let morph=morphs[node.id]{node.kind="PATH";node.path=morph.svg(value);node.shapeId=""}
             }
             if let value=text[node.id],node.kind=="TEXT" { node.text=value }

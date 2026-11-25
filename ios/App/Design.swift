@@ -4,9 +4,19 @@ struct QPalette {
     var dark=true
     var mode=2
     var seed:Int64=0
+    var iosStyle=false
     static let values:[String:[String:Int64]] = load("ui-colors")
     func color(_ key:String)->Color { Color(argb:argb(key)) }
     func argb(_ key:String)->Int64 {
+        if iosStyle{
+            if ["primary","secondary","tertiary"].contains(key){return dark ? 0xff0a84ff:0xff007aff}
+            if key=="onPrimary"{return 0xffffffff}
+            if key.hasSuffix("Container") && !key.hasPrefix("surface"){return dark ? 0xff18334f:0xffe0eeff}
+            if key=="surface" || key=="surfaceContainerLowest"{return dark ? 0xff000000:0xfff2f2f7}
+            if key.hasPrefix("surfaceContainer"){return dark ? 0xff1c1c1e:0xffffffff}
+            if key=="onSurface"{return dark ? 0xffffffff:0xff000000}
+            if key=="onSurfaceVariant"{return dark ? 0xff98989f:0xff6c6c70}
+        }
         if mode==3 || mode==4 {
             let names=["surface","surfaceContainerLowest","surfaceContainerLow","surfaceContainer","surfaceContainerHigh","surfaceContainerHighest"]
             if let i=names.firstIndex(of:key) { return Int64((dark ? [0xff000000,0xff000000,0xff0b0b0b,0xff121212,0xff1a1a1a,0xff232323]:[0xffffffff,0xffffffff,0xfff7f7f7,0xfff1f1f1,0xffebebeb,0xffe5e5e5])[i]) }
@@ -23,10 +33,11 @@ extension EnvironmentValues { var q:QPalette { get { self[PaletteKey.self] } set
 func load<T:Decodable>(_ name:String)->T { try! JSONDecoder().decode(T.self,from:Data(contentsOf:Bundle.main.url(forResource:name,withExtension:"json")!)) }
 func qfont(_ size:CGFloat,_ weight:Font.Weight = .regular)->Font {
     let suffix=weight == .bold ? "Bold":weight == .semibold ? "SemiBold":weight == .medium ? "Medium":weight == .light ? "Light":"Regular"
-    let family=UserDefaults.standard.string(forKey:"uiFont") ?? "InterSA"
+    let family=UserDefaults.standard.integer(forKey:"uiStyle")==1 ? "InterSA":UserDefaults.standard.string(forKey:"uiFont") ?? "InterSA"
     return family.isEmpty ? .system(size:size,weight:weight):.custom(family+"-"+suffix,fixedSize:size)
 }
 struct OriginalTheme:ViewModifier {
+    @AppStorage("uiStyle") var uiStyle=0
     @AppStorage("appearance") var appearance=2
     @AppStorage("accent") var accent=0
     @AppStorage("accentSeed") var accentSeed:Int=0xff006a6a
@@ -34,7 +45,7 @@ struct OriginalTheme:ViewModifier {
     @Environment(\.colorScheme) var system
     func body(content:Content)->some View {
         let dark=appearance==0 ? system == .dark : appearance==2 || appearance==3
-        let palette=QPalette(dark:dark,mode:appearance,seed:accent==2 ? Int64(accentSeed):0)
+        let palette=QPalette(dark:dark,mode:appearance,seed:accent==2 ? Int64(accentSeed):0,iosStyle:uiStyle==1)
         content.environment(\.q,palette).font(qfont(14)).foregroundStyle(palette.color("onSurface")).tint(palette.color("primary"))
             .preferredColorScheme(appearance==0 ? nil:dark ? .dark:.light)
     }
@@ -46,8 +57,9 @@ struct QIcon:View {
     var tint:Color?
     @Environment(\.q) var q
     static let icons:[String:[IconCommand]]=load("ui-icons")
+    private var symbol:String?{["Back":"chevron.left","Add":"plus","Close":"xmark","Settings":"gearshape","Import":"square.and.arrow.down","Export":"square.and.arrow.up","Text":"textformat","Search":"magnifyingglass","Home":"house","Style":"slider.horizontal.3","Layers":"square.3.layers.3d"][id]}
     var body:some View {
-        Canvas { context,dimensions in
+        Group{if q.iosStyle,let symbol{Image(systemName:symbol).font(.system(size:size,weight:.regular)).foregroundStyle(tint ?? q.color("onSurface"))}else{Canvas { context,dimensions in
             var c=context;c.scaleBy(x:dimensions.width/24,y:dimensions.height/24)
             let color=tint ?? q.color("onSurface")
             for command in Self.icons[id] ?? [] {
@@ -65,7 +77,7 @@ struct QIcon:View {
                 }
                 if filled { c.fill(path,with:.color(color)) } else { c.stroke(path,with:.color(color),style:StrokeStyle(lineWidth:2,lineCap:.round,lineJoin:.round,dash:command.dash ?? [])) }
             }
-        }.frame(width:size,height:size).accessibilityHidden(true)
+        }}}.frame(width:size,height:size).accessibilityHidden(true)
     }
 }
 struct QIconButton:View {
@@ -130,7 +142,10 @@ struct QSlider:View {
 struct QSwitch:View {
     @Binding var on:Bool
     @Environment(\.q) var q
-    var body:some View { Button { withAnimation(.spring(response:0.25,dampingFraction:0.8)) { on.toggle() } } label:{Capsule().fill(q.color(on ? "primary":"surfaceContainerHighest")).overlay(Capsule().stroke(on ? .clear:q.color("outline"),lineWidth:2)).overlay(alignment:on ? .trailing:.leading) { Circle().fill(q.color(on ? "onPrimary":"outline")).frame(width:on ? 24:16,height:on ? 24:16).padding(.horizontal,on ? 4:8) }.frame(width:52,height:32)}.buttonStyle(.plain).accessibilityLabel(on ? "Включено":"Выключено").accessibilityAddTraits(on ? .isSelected:[]) }
+    var body:some View {Group{
+        if q.iosStyle{Toggle("",isOn:$on).labelsHidden().tint(.green).frame(width:52)}
+        else{Button{withAnimation(.spring(response:0.25,dampingFraction:0.8)){on.toggle()}}label:{Capsule().fill(q.color(on ? "primary":"surfaceContainerHighest")).overlay(Capsule().stroke(on ? .clear:q.color("outline"),lineWidth:2)).overlay(alignment:on ? .trailing:.leading){Circle().fill(q.color(on ? "onPrimary":"outline")).frame(width:on ? 24:16,height:on ? 24:16).padding(.horizontal,on ? 4:8)}.frame(width:52,height:32)}.buttonStyle(.plain)}
+    }.accessibilityLabel(on ? "Включено":"Выключено").accessibilityAddTraits(on ? .isSelected:[])}
 }
 struct QTextField:View {
     var title:String

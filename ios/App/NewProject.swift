@@ -74,10 +74,10 @@ struct NewProjectView:View {
     }
     private func create() {
         do {
-            var source=Catalog.shared.templates.first{$0.id==template}?.project
+            var source=Catalog.shared.templates.first{$0.id==template}.map{AppleCatalog.variant($0,dark:dark).project}
             if source != nil { source!.tone=tone;source!.bg=tone.colors[12];source!.nodes=source!.nodes.map { n in var n=n;if tone.colors.indices.contains(Int(n.fillToken)){n.fill=tone.colors[Int(n.fillToken)]};if tone.colors.indices.contains(Int(n.strokeToken)){n.stroke=tone.colors[Int(n.strokeToken)]};return n } }
             var p=try store.create(name:name,width:CGFloat(min(4096,max(16,Double(width) ?? 360))),height:CGFloat(min(4096,max(16,Double(height) ?? 800))),template:source)
-            p.tone=tone;p.bgToken=12;p.bg=tone.colors[12];try store.save(p);created(p)
+            p.tone=tone;p.bgToken=template=="ios" ? -1:12;p.bg=template=="ios" ? (dark ? -16777216:-855305):tone.colors[12];try store.save(p);created(p)
         } catch { store.error=error.localizedDescription }
     }
 }

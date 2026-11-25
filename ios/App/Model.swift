@@ -2,6 +2,11 @@ import SwiftUI
 import UIKit
 
 struct Node: Codable, Identifiable, Equatable {
+    var liquid:CGFloat=0
+    var fixW=false
+    var fixH=false
+    var textVAlign:Int=0
+    var spans=""
     var extras:LayerExtras?
     var id: String = UUID().uuidString
     var kind: String = "RECT"
@@ -37,7 +42,8 @@ struct Node: Codable, Identifiable, Equatable {
     var mask: Bool = false
     var shapeId: String = ""
     var text: String = ""
-    var textAlign: String = "left"
+    var androidTextAlign:Int=0
+    var textAlign: String = "left"{didSet{androidTextAlign=textAlign=="center" ? 1:textAlign=="right" ? 2:0}}
     var group: String = ""
     var path: String = ""
     var asset: String = ""
@@ -47,6 +53,7 @@ struct Node: Codable, Identifiable, Equatable {
     var fillOpacity:CGFloat {get{min(1,max(0,extras?.fillOpacity ?? 1))}set{var x=extras ?? LayerExtras();x.fillOpacity=min(1,max(0,newValue));extras=x}}
     init() {}
     enum CodingKeys: String, CodingKey {
+        case androidTextAlign="tal",liquid="lq",fixW="tfw",fixH="tfh",textVAlign="tva",spans="sp"
         case extras = "ux"
         case id = "id"
         case kind = "kind"
@@ -92,6 +99,11 @@ struct Node: Codable, Identifiable, Equatable {
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        liquid=try c.decodeIfPresent(CGFloat.self,forKey:.liquid) ?? 0
+        fixW=try c.decodeIfPresent(Bool.self,forKey:.fixW) ?? false
+        fixH=try c.decodeIfPresent(Bool.self,forKey:.fixH) ?? false
+        textVAlign=try c.decodeIfPresent(Int.self,forKey:.textVAlign) ?? 0
+        spans=try c.decodeIfPresent(String.self,forKey:.spans) ?? ""
         extras = try c.decodeIfPresent(LayerExtras.self,forKey:.extras)
         id = try c.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
         kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "RECT"
@@ -134,8 +146,12 @@ struct Node: Codable, Identifiable, Equatable {
         font = try c.decodeIfPresent(String.self, forKey: .font) ?? ""
         widget = try c.decodeIfPresent(String.self, forKey: .widget) ?? ""
         action = try c.decodeIfPresent(String.self, forKey: .action) ?? ""
+        if !spans.isEmpty && (extras?.runs.isEmpty ?? true){var x=extras ?? LayerExtras();x.runs=AndroidTextSpans.parse(spans);extras=x}
+        let android=try decoder.container(keyedBy:AndroidNodeKeys.self)
+        if let alignment=try android.decodeIfPresent(Int.self,forKey:.alignment){androidTextAlign=alignment;textAlign=alignment==1 ? "center":alignment==2 ? "right":"left"}else{androidTextAlign=textAlign=="center" ? 1:textAlign=="right" ? 2:0}
         IconRepair.apply(&self)
     }
+    private enum AndroidNodeKeys:String,CodingKey{case alignment="tal"}
     var center: CGPoint { CGPoint(x:x+w/2, y:y+h/2) }
     var rect: CGRect { CGRect(x:x,y:y,width:w,height:h) }
     func contains(_ p: CGPoint) -> Bool {
@@ -169,9 +185,11 @@ struct Project: Codable, Identifiable, Equatable {
     var bgToken = -1
     var pages: [Page] = []
     var active = 0
+    var glassMode:Int?
     var studio:StudioDocument?
     var links: [InteractionLink] = []
-    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links,studio }
+    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links,studio
+        case glassMode="glass" }
     init() {}
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy:CodingKeys.self)
@@ -186,6 +204,7 @@ struct Project: Codable, Identifiable, Equatable {
         tone = try c.decodeIfPresent(Tone.self,forKey:.tone) ?? Tone()
         bgToken = try c.decodeIfPresent(Int.self,forKey:.bgToken) ?? -1
         pages = try c.decodeIfPresent([Page].self,forKey:.pages) ?? []
+        glassMode=try c.decodeIfPresent(Int.self,forKey:.glassMode)
         studio = try c.decodeIfPresent(StudioDocument.self,forKey:.studio)
         links = try c.decodeIfPresent([InteractionLink].self,forKey:.links) ?? []
         active = min(max(0,try c.decodeIfPresent(Int.self,forKey:.active) ?? 0),max(0,pages.count-1))
@@ -215,7 +234,9 @@ struct Catalog: Decodable {
               let data = try? Data(contentsOf:url), var result = try? JSONDecoder().decode(Catalog.self,from:data) else { fatalError("Missing Qwel catalog") }
         let pillIndex=(result.shapes.firstIndex{$0.id=="pill"} ?? (result.shapes.count-1))+1
         result.shapes.insert(contentsOf:CapsuleGeometry.catalog,at:pillIndex)
-        for i in result.components.indices{DefaultLinks.install(&result.components[i].project,componentID:result.components[i].id)}
+        result.components+=AppleCatalog.bundle.light
+        result.templates+=AppleCatalog.bundle.templates.filter{!$0.project.tone.dark}
+        for i in result.components.indices{AppleCatalog.prepare(&result.components[i].project,id:result.components[i].id);DefaultLinks.install(&result.components[i].project,componentID:result.components[i].id)}
         for i in result.templates.indices{DefaultLinks.allPages(&result.templates[i].project)}
         return result
     }()
