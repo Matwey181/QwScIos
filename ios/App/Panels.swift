@@ -34,7 +34,7 @@ struct InspectorPanel:View {
                     if n.kind != "TEXT"{HStack(spacing:8){QNumber(title:"Ширина",value:bind(\.w,100));QNumber(title:"Высота",value:bind(\.h,100))}}
                     HStack(spacing:8){QNumber(title:"Поворот",value:bind(\.rotation,0));if n.kind != "TEXT"{QSwitch(on:bind(\.ratioLock,false));Text("Пропорции").font(qfont(14,.semibold))}}
                 }else{Text("Выбрано слоёв: \(editor.selected.count)").font(qfont(16,.semibold))}
-                if n.kind != "IMAGE"{row(n.kind=="TEXT" ? "Цвет текста":"Заливка",\.fill,token:n.fillToken)}
+                if n.kind != "IMAGE" || n.asset.hasPrefix("sf:"){row(n.asset.hasPrefix("sf:") ? "Цвет значка":n.kind=="TEXT" ? "Цвет текста":"Заливка",\.fill,token:n.fillToken)}
                 if !["TEXT","IMAGE"].contains(n.kind){slider("Непрозрачность заливки",\.fillOpacity,0...1,percent:true)}
                 InlineSection(title:"Состояния объекта"){ComponentStateControls(editor:editor,sourceID:n.id)}
                 if !["TEXT","IMAGE"].contains(n.kind){

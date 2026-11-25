@@ -41,7 +41,8 @@ enum AppleNativeStyle {
         }
         switch item.id {
         case "ios-btn-filled","ios-btn-tinted","ios-btn-plain","ios-btn-glass":
-            let width=item.id=="ios-btn-plain" ? CGFloat(120):CGFloat(200)
+            let captionWidth=ceil(("Продолжить" as NSString).size(withAttributes:[.font:UIFont.systemFont(ofSize:17,weight:.semibold)]).width)+32
+            let width=max(item.id=="ios-btn-plain" ? CGFloat(120):CGFloat(200),captionWidth)
             result.project.w=width;result.project.h=50
             if item.id != "ios-btn-plain"{
                 let fill=item.id=="ios-btn-filled" ? blue:item.id=="ios-btn-tinted" ? (dark ? 0x330a84ff:0x1f007aff):(dark ? 0x242c2c2e:0x26ffffff)
@@ -74,6 +75,12 @@ enum AppleNativeStyle {
         case "ios-search":
             result.project.w=343;result.project.h=44
             nodes=[box("Поиск",0,0,343,44,22,dark ? 0x33767680:0x1f767680),symbol("magnifyingglass",14,13,18,secondary),label("Поиск",42,11,254,17,400,secondary),symbol("mic.fill",312,14,16,secondary)]
+        case "ios-section-header":
+            result.project.w=343;result.project.h=28
+            nodes=[label("РАЗДЕЛ",16,6,311,13,400,secondary)]
+        case "ios-section-footer":
+            result.project.w=343;result.project.h=48
+            nodes=[label("Дополнительная информация\nо выбранной настройке.",16,8,311,13,400,secondary,height:36)]
         case "ios-alert":
             result.project.w=300;result.project.h=202;dialog(300,202,30)
             nodes += [label("Заголовок",20,25,260,17,600,ink,"center"),label("Сообщение с пояснением\nвыбранного действия.",20,57,260,13,400,ink,"center",height:40)]
@@ -99,7 +106,7 @@ enum AppleNativeStyle {
                 let x=CGFloat(i)*87+5
                 let role="pick:i\(i)/\(UInt32(truncatingIfNeeded:blue))/\(UInt32(truncatingIfNeeded:secondary))"
                 var icon=symbol(tab.0,x+32,18,23,i==0 ? blue:secondary,500);icon.widget=role
-                var text=label(tab.1,x,47,87,10,500,i==0 ? blue:secondary,"center");text.widget=role
+                var text=label(tab.1,x,47,87,11,500,i==0 ? blue:secondary,"center");text.widget=role
                 nodes += [icon,text]
             }
         case "ios-list-group":
