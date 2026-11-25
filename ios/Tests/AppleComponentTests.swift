@@ -123,6 +123,40 @@ final class AppleComponentTests:XCTestCase {
         AppleCatalog.prepare(&p,id:"ios")
         XCTAssertEqual(p,once)
     }
+    @MainActor func testAlertOnBlankPageDoesNotNeedBackdropPipeline() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root),renderer=DocumentRenderer(root:root)
+        let alert=try XCTUnwrap(Catalog.shared.components.first{$0.id=="ios-alert"})
+        let project=AppleCatalog.variant(alert,dark:false).project
+        XCTAssertFalse(DocumentRenderer.needsBackdrop(project))
+        XCTAssertNotNil(renderer.png(project,scale:1))
+        XCTAssertEqual(renderer.backdropRenderCount,0)
+        _ = store
+    }
+    @MainActor func testBackdropCacheInvalidatesOnlyWhenItsInputChanges() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer{try? FileManager.default.removeItem(at:root)}
+        let store=ProjectStore(root:root),renderer=DocumentRenderer(root:root)
+        var project=AppleCatalog.variant(try XCTUnwrap(Catalog.shared.components.first{$0.id=="ios-alert"}),dark:false).project
+        var lower=Node();lower.x=15;lower.y=15;lower.w=200;lower.h=100;lower.fill = -65536
+        project.nodes.insert(lower,at:0)
+        XCTAssertTrue(DocumentRenderer.needsBackdrop(project))
+        XCTAssertNotNil(renderer.png(project,scale:1))
+        let renders=renderer.backdropRenderCount
+        XCTAssertGreaterThan(renders,0)
+        XCTAssertNotNil(renderer.png(project,scale:1))
+        XCTAssertEqual(renderer.backdropRenderCount,renders)
+        let title=try XCTUnwrap(project.nodes.firstIndex{$0.kind=="TEXT"})
+        project.nodes[title].text="Другой заголовок"
+        XCTAssertNotNil(renderer.png(project,scale:1))
+        XCTAssertEqual(renderer.backdropRenderCount,renders)
+        XCTAssertGreaterThan(renderer.backdropCacheHits,0)
+        project.nodes[0].fill = -16711936
+        XCTAssertNotNil(renderer.png(project,scale:1))
+        XCTAssertGreaterThan(renderer.backdropRenderCount,renders)
+        _ = store
+    }
     func testThumbnailBackdropUsesThumbnailResolution() {
         var project=Project();project.w=390;project.h=844
         XCTAssertEqual(DocumentRenderer.backdropScale(project,transform:CGAffineTransform(scaleX:0.25,y:0.25)),0.25)

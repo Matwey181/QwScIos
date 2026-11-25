@@ -3,10 +3,14 @@ import SwiftUI
 struct AppleCatalogBundle:Decodable{var light:[CatalogItem];var dark:[CatalogItem];var templates:[CatalogItem]}
 enum AppleCatalog{
     static let bundle:AppleCatalogBundle=load("apple-catalog")
+    private static var preparedVariants:[String:CatalogItem]=[:]
     static func variant(_ item:CatalogItem,dark:Bool)->CatalogItem{
+        let key=item.id+"|"+String(dark)+"|"+(UserDefaults.standard.string(forKey:"language") ?? "ru")
+        if let cached=preparedVariants[key]{return cached}
         let choices=item.id=="ios" ? bundle.templates:(dark ? bundle.dark:bundle.light)
         guard var result=choices.first(where:{$0.id==item.id && $0.project.tone.dark==dark}) else{return item}
-        prepare(&result.project,id:result.id);DefaultLinks.install(&result.project,componentID:result.id);return result
+        prepare(&result.project,id:result.id);DefaultLinks.install(&result.project,componentID:result.id)
+        preparedVariants[key]=result;return result
     }
     // v0.10 saved the Material engine's geometry into Apple switches. Repair
     // that specific signature once when reopening an affected project.

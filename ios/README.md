@@ -32,3 +32,14 @@ bounds. Fonts and unchanged text layouts are reused during animation. These
 changes reduce unnecessary rendering; physical-device frame rates still require
 verification. AppleComponentTests cover layout, switch state persistence, legacy
 repair, intermediate animation values, picker geometry and thumbnail scale.
+
+## 0.10.2 alert rendering performance
+
+CIContext is initialized lazily and reused, including across preview renderers.
+Prepared Apple variants are reused per language and appearance. A glass layer on
+a uniform page bypasses refraction and blur because those filters cannot alter
+that backdrop. For detailed backgrounds, each layer reuses its filtered image
+until its input layers, geometry or settings change; changing text above an
+alert does not invalidate its backdrop. Unchanged composite scenes are also
+reused during selection and panning. Layer-cache storage is bounded to 24 MiB.
+Regression checks exercise both the uniform-page bypass and cache invalidation.

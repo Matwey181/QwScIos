@@ -6,12 +6,27 @@ final class DocumentRenderer {
     let root:URL
     private let images=NSCache<NSString,UIImage>()
     private var glassPass=false
+    private let backdrops=LiquidGlassRenderer.Cache()
+    private var glassScene:(nodes:[Node],size:CGSize,bg:Int64,mode:Int,references:Bool,scale:CGFloat,image:UIImage)?
+    var backdropRenderCount:Int {backdrops.renderCount}
+    var backdropCacheHits:Int {backdrops.hits}
+    static func needsBackdrop(_ project:Project,includeReferences:Bool=false)->Bool {
+        var hasLowerLayer=false
+        for node in project.nodes where node.visible && !node.mask && (includeReferences || node.extras?.reference != true) {
+            if (node.liquid>0 || node.blur>0) && hasLowerLayer{return true}
+            hasLowerLayer=true
+        }
+        return false
+    }
     private var textLayouts:[String:(Node,TextLayout)]=[:]
     private var fonts:[String:UIFont]=[:]
     static func backdropScale(_ project:Project,transform:CGAffineTransform)->CGFloat {
         min(2,4096/max(project.w,project.h),max(0.01,min(hypot(transform.a,transform.b),hypot(transform.c,transform.d))))
     }
-    private let ci=CIContext(options:[.cacheIntermediates:false])
+    // Font measurements and component previews must not allocate one CIContext
+    // per renderer. Initialize the shared graphics resource only for real effects.
+    private static let sharedCI=CIContext(options:[.cacheIntermediates:true])
+    private var ci:CIContext {Self.sharedCI}
     init(root:URL) { self.root=root }
     func font(_ n:Node)->UIFont {
         let key="\(n.font)|\(n.fontSize)|\(n.weight)"
@@ -39,11 +54,17 @@ final class DocumentRenderer {
     }
     func draw(_ p:Project,in ctx:CGContext,background:Bool=true,includeReferences:Bool=false) {
         UIGraphicsPushContext(ctx);defer { UIGraphicsPopContext() }
-        if !glassPass && p.nodes.contains(where:{$0.visible && ($0.liquid>0 || $0.blur>0)}){
+        if !glassPass && Self.needsBackdrop(p,includeReferences:includeReferences){
+            let scale=Self.backdropScale(p,transform:ctx.ctm),size=CGSize(width:p.w,height:p.h)
+            let mode=p.glassMode ?? UserDefaults.standard.integer(forKey:"liquidMode")
+            if let cached=glassScene,cached.size==size,cached.bg==p.bg,cached.mode==mode,cached.references==includeReferences,cached.scale==scale,cached.nodes==p.nodes {
+                cached.image.draw(in:CGRect(origin:.zero,size:size));return
+            }
             glassPass=true;defer{glassPass=false}
-            let format=UIGraphicsImageRendererFormat();format.scale=Self.backdropScale(p,transform:ctx.ctm);format.opaque=false
-            let image=UIGraphicsImageRenderer(size:CGSize(width:p.w,height:p.h),format:format).image{target in draw(p,in:target.cgContext,background:true,includeReferences:includeReferences)}
-            image.draw(in:CGRect(x:0,y:0,width:p.w,height:p.h));return
+            let format=UIGraphicsImageRendererFormat();format.scale=scale;format.opaque=false
+            let image=UIGraphicsImageRenderer(size:size,format:format).image{target in draw(p,in:target.cgContext,background:true,includeReferences:includeReferences)}
+            glassScene=(p.nodes,size,p.bg,mode,includeReferences,scale,image)
+            image.draw(in:CGRect(origin:.zero,size:size));return
         }
 
         if background { ctx.setFillColor(UIColor(argb:p.bg).cgColor);ctx.fill(CGRect(x:0,y:0,width:p.w,height:p.h)) }
@@ -57,7 +78,14 @@ final class DocumentRenderer {
                 ctx.addPath(VectorPath.world(p.nodes[i+1]));ctx.clip(using:p.nodes[i+1].evenOdd ? .evenOdd:.winding)
             }
             let mode=p.glassMode ?? UserDefaults.standard.integer(forKey:"liquidMode")
-            LiquidGlassRenderer.draw(n,mode:mode,in:ctx,using:ci)
+            if n.liquid>0 || n.blur>0 {
+                let lower=Array(p.nodes.prefix(i)).filter{$0.visible && (includeReferences || $0.extras?.reference != true)}
+                // Refraction and blur cannot change a uniformly colored page.
+                // This also keeps single alerts out of the bitmap/CI pipeline.
+                if lower.contains(where:{!$0.mask}) {
+                    LiquidGlassRenderer.draw(n,mode:mode,in:ctx,using:ci,cache:backdrops,lower:lower,background:p.bg,pageSize:CGSize(width:p.w,height:p.h))
+                }
+            }
             draw(n,in:ctx)
             ctx.restoreGState();i += 1
         }

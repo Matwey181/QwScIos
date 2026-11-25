@@ -4,6 +4,41 @@ import CoreImage
 // Port of the rounded-edge refraction found in Vexel 2.8.8's LiquidShader.
 // Android's RuntimeShader is replaced by Core Image on iOS.
 enum LiquidGlassRenderer {
+    struct CacheKey:Equatable {
+        var id:String
+        var kind:String
+        var rect:CGRect
+        var rotation:CGFloat
+        var corner:CGFloat
+        var path:String
+        var shape:String
+        var liquid:CGFloat
+        var blur:CGFloat
+        var lower:[Node]
+        var background:Int64
+        var pageSize:CGSize
+        var transform:CGAffineTransform
+        var mode:Int
+    }
+    final class Cache {
+        struct Entry {var key:CacheKey;var image:CGImage;var region:CGRect}
+        private var entries:[String:Entry]=[:]
+        private var cost=0
+        private(set) var renderCount=0
+        private(set) var hits=0
+        func image(for key:CacheKey)->Entry? {
+            guard let entry=entries[key.id],entry.key==key else{return nil}
+            hits+=1;return entry
+        }
+        func insert(_ image:CGImage,region:CGRect,key:CacheKey){
+            renderCount+=1
+            if let old=entries.removeValue(forKey:key.id){cost-=old.image.bytesPerRow*old.image.height}
+            let bytes=image.bytesPerRow*image.height
+            guard bytes<=24*1024*1024 else{return}
+            if entries.count>=24 || cost+bytes>24*1024*1024{entries.removeAll(keepingCapacity:true);cost=0}
+            entries[key.id]=Entry(key:key,image:image,region:region);cost+=bytes
+        }
+    }
     static let kernel=CIWarpKernel(source:"""
     kernel vec2 qwelLiquid(vec2 center, vec2 size, float radius, float amount, float angle) {
         vec2 uv=destCoord();
@@ -20,9 +55,13 @@ enum LiquidGlassRenderer {
         return uv-world*bend;
     }
     """)
-    static func draw(_ node:Node,mode:Int,in context:CGContext,using ci:CIContext){
-        guard node.liquid>0 || node.blur>0,let bitmap=context.makeImage() else{return}
-        let input=CIImage(cgImage:bitmap),extent=input.extent,t=context.ctm
+    static func draw(_ node:Node,mode:Int,in context:CGContext,using ci:CIContext,cache:Cache,lower:[Node],background:Int64,pageSize:CGSize){
+        guard node.liquid>0 || node.blur>0 else{return}
+        let t=context.ctm
+        let key=CacheKey(id:node.id,kind:node.kind,rect:node.rect,rotation:node.rotation,corner:node.corner,path:node.path,shape:node.shapeId,liquid:node.liquid,blur:node.blur,lower:lower,background:background,pageSize:pageSize,transform:t,mode:mode)
+        if let cached=cache.image(for:key){composite(cached.image,region:cached.region,node:node,in:context);return}
+        guard let bitmap=context.makeImage() else{return}
+        let input=CIImage(cgImage:bitmap),extent=input.extent
         let region=VectorPath.world(node).boundingBoxOfPath.applying(t).integral.intersection(extent)
         guard !region.isNull,!region.isEmpty else{return}
         let sx=hypot(t.a,t.b),sy=hypot(t.c,t.d),scale=max(0.01,min(sx,sy))
@@ -38,6 +77,11 @@ enum LiquidGlassRenderer {
             if let warped=kernel.apply(extent:extent,roiCallback:{_,rect in rect.insetBy(dx:-margin,dy:-margin)},image:output,arguments:[CIVector(x:center.x,y:center.y),CIVector(x:size.width,y:size.height),radius,liquid,angle]){output=warped}
         }
         guard let image=ci.createCGImage(output,from:region) else{return}
+        cache.insert(image,region:region,key:key)
+        composite(image,region:region,node:node,in:context)
+    }
+    private static func composite(_ image:CGImage,region:CGRect,node:Node,in context:CGContext){
+        let t=context.ctm
         context.saveGState();context.addPath(VectorPath.world(node));context.clip();context.setAlpha(min(1,max(0,node.opacity)))
         context.concatenate(t.inverted());context.draw(image,in:region);context.restoreGState()
     }
