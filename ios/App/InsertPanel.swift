@@ -17,7 +17,7 @@ struct AddPanel:View {
             else if tab==1 { shapes }
             else if tab==2 { components }
             else { ImportedIconPanel(editor:editor,choose:importFile) }
-        }
+        }.onAppear{if PromoCapture.enabled{tab=PromoCapture.mode=="shapes" ? 1:PromoCapture.mode=="components" ? 2:0}}
     }
     private var basics:some View {
         HStack(spacing:12) {

@@ -3,8 +3,9 @@ import UniformTypeIdentifiers
 
 @main struct QwelApp:App {
     @StateObject private var store=ProjectStore()
+    init(){PromoCapture.configure()}
     var body:some Scene {
-        WindowGroup { ProjectsView().environmentObject(store).modifier(OriginalTheme())
+        WindowGroup { Group{if PromoCapture.enabled{PromoCaptureRoot(store:store)}else{ProjectsView()}}.environmentObject(store).modifier(OriginalTheme())
             .onOpenURL { url in Task { await store.importFile(url) } }
         }
     }

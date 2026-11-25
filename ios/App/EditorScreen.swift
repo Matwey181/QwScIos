@@ -19,7 +19,12 @@ struct EditorScreen:View {
     @State private var history=false
     @State private var preview=false
     @AppStorage("pngScale") private var pngScale=2.0
-    init(project:Project,store:ProjectStore) { _editor=StateObject(wrappedValue:Editor(project,store:store)) }
+    init(project:Project,store:ProjectStore) {
+        let value=Editor(project,store:store)
+        if PromoCapture.enabled{value.showGrid=false;if PromoCapture.mode=="selected",let n=project.nodes.first(where:{$0.kind=="SHAPE"}){value.selection=[n.id]}}
+        _editor=StateObject(wrappedValue:value)
+        if PromoCapture.enabled{_panel=State(initialValue:PromoCapture.panel);_dialog=State(initialValue:PromoCapture.mode=="export" ? "export":nil)}
+    }
     var body:some View {
         ZStack {
             EditorCanvas(editor:editor).accessibilityIdentifier("editorCanvas")
@@ -43,6 +48,7 @@ struct EditorScreen:View {
                 }.padding(.horizontal,28)
             }
         }
+        .onAppear{if PromoCapture.enabled && PromoCapture.mode=="play" && !editor.playing{editor.togglePlay()}}
         .sheet(isPresented:$editor.showLayerPicker){OverlapLayerPicker(editor:editor).modifier(OriginalTheme())}
         .fullScreenCover(isPresented:$preview){DesignPreviewPanel(editor:editor).modifier(OriginalTheme())}
         .fullScreenCover(isPresented:$history){ProjectHistoryPanel(editor:editor).modifier(OriginalTheme())}
