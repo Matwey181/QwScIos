@@ -8,8 +8,33 @@ enum AppleCatalog{
         guard var result=choices.first(where:{$0.id==item.id && $0.project.tone.dark==dark}) else{return item}
         prepare(&result.project,id:result.id);DefaultLinks.install(&result.project,componentID:result.id);return result
     }
+    // v0.10 saved the Material engine's geometry into Apple switches. Repair
+    // that specific signature once when reopening an affected project.
+    static func repairLegacySwitches(_ project:inout Project){
+        let groups=Dictionary(grouping:project.nodes.indices.filter{project.nodes[$0].group.contains("~ios-")},by:{project.nodes[$0].group})
+        for indices in groups.values {
+            guard let rail=indices.first(where:{project.nodes[$0].widget.hasPrefix("switch:track/")}),
+                  let knob=indices.first(where:{project.nodes[$0].widget=="switch:thumb"}),
+                  [Int64(0),16].contains(project.nodes[rail].fillToken) else{continue}
+            var track=project.nodes[rail],thumb=project.nodes[knob]
+            let on=track.fillToken==0
+            if on{track.x+=1;track.y+=1;track.w=max(1,track.w-2);track.h=max(1,track.h-2)}
+            let scale=track.h/28,colors=track.widget.split(separator:"/")
+            if colors.count>2,let color=Int64(colors[on ? 2:1]){track.fill=Int64(Int32(truncatingIfNeeded:color))}
+            track.fillToken = -1;track.strokeToken = -1;track.strokeWidth=0;track.stroke=0;track.corner=track.h/2
+            track.widget=track.widget.replacingOccurrences(of:"switch:track",with:"switch:itrack")
+            let source=(project.tone.dark ? bundle.dark:bundle.light).first{$0.id=="ios-switch-on"}?.project.nodes.first{$0.widget.hasPrefix("switch:ithumb")}
+            thumb.kind="RECT";thumb.w=40*scale;thumb.h=24*scale;thumb.corner=12*scale
+            thumb.x=track.x+2*scale+(on ? track.w-thumb.w-4*scale:0);thumb.y=track.y+2*scale
+            thumb.fill=source?.fill ?? -251658241;thumb.fillToken = -1;thumb.strokeToken = -1
+            thumb.stroke=source?.stroke ?? -2130706433;thumb.strokeWidth=0.5*scale
+            thumb.widget="switch:ithumb/0/0"
+            project.nodes[rail]=track;project.nodes[knob]=thumb
+        }
+    }
     static func prepare(_ project:inout Project,id:String){
         guard id=="ios" || id.hasPrefix("ios-") else{return}
+        repairLegacySwitches(&project)
         if id=="ios-slider",project.nodes.count>=3{
             project.nodes[0].widget="slider:track";project.nodes[1].widget="slider:active";project.nodes[2].widget="slider:thumb"
         }

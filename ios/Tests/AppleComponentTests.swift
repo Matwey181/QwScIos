@@ -105,6 +105,24 @@ final class AppleComponentTests:XCTestCase {
             base.nodes=final.nodes
         }
     }
+    @MainActor func testPreviouslyMaterializedAppleSwitchIsRepairedWhenOpened() throws {
+        var p=try XCTUnwrap(AppleCatalog.bundle.light.first{$0.id=="ios-switch-on"}).project
+        let rail=try XCTUnwrap(p.nodes.firstIndex(where:AppleControls.isTrack))
+        let knob=try XCTUnwrap(p.nodes.firstIndex(where:AppleControls.isThumb))
+        let original=p.nodes
+        for i in p.nodes.indices{p.nodes[i].group="fixture~ios-switch-on"}
+        p.nodes[rail].widget=p.nodes[rail].widget.replacingOccurrences(of:"switch:itrack",with:"switch:track")
+        p.nodes[rail].fillToken=0;p.nodes[rail].x-=1;p.nodes[rail].y-=1;p.nodes[rail].w+=2;p.nodes[rail].h+=2
+        p.nodes[knob].widget="switch:thumb";p.nodes[knob].w=24;p.nodes[knob].h=24;p.nodes[knob].fillToken=1
+        AppleCatalog.prepare(&p,id:"ios")
+        XCTAssertEqual(p.nodes[rail].rect,original[rail].rect)
+        XCTAssertEqual(p.nodes[knob].rect,original[knob].rect)
+        XCTAssertEqual(p.nodes[knob].fill,original[knob].fill)
+        XCTAssertTrue(p.nodes[rail].widget.hasPrefix("switch:itrack"))
+        let once=p
+        AppleCatalog.prepare(&p,id:"ios")
+        XCTAssertEqual(p,once)
+    }
     func testThumbnailBackdropUsesThumbnailResolution() {
         var project=Project();project.w=390;project.h=844
         XCTAssertEqual(DocumentRenderer.backdropScale(project,transform:CGAffineTransform(scaleX:0.25,y:0.25)),0.25)
