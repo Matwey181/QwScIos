@@ -30,7 +30,8 @@ enum PromoCapture {
 struct PromoCaptureRoot:View {
     let store:ProjectStore
     @StateObject private var editor:Editor
-    init(store:ProjectStore){self.store=store;_editor=StateObject(wrappedValue:Editor(PromoCapture.project("music"),store:store));for id in ["home","weather","settings","music"]{try? store.save(PromoCapture.project(id))}}
+    @State private var seeded=false
+    init(store:ProjectStore){self.store=store;_editor=StateObject(wrappedValue:Editor(PromoCapture.project("music"),store:store))}
     var body:some View {
         Group{
             switch PromoCapture.mode{
@@ -40,6 +41,6 @@ struct PromoCaptureRoot:View {
             case "color":ZStack{EditorCanvas(editor:editor);Color.black.opacity(0.35).ignoresSafeArea();QColorDialog(initial:editor.project.tone.colors[0],cancel:{},confirm:{_ in}).padding(.horizontal,28)}
             default:EditorScreen(project:editor.project,store:store)
             }
-        }
+        }.task{if PromoCapture.mode=="home" && !seeded{seeded=true;for id in ["home","weather","settings","music"]{try? store.save(PromoCapture.project(id))}}}
     }
 }
