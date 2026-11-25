@@ -118,7 +118,8 @@ enum AppleNativeStyle {
                     if ["search","dialog_text","message","cancel","ok"].contains(nodes[i].text){nodes[i].text=tr(nodes[i].text)}
                     let old=nodes[i],center=old.center
                     nodes[i].font="";nodes[i].fixW=true
-                    let font=UIFont.systemFont(ofSize:old.fontSize,weight:old.weight>=600 ? .semibold:.regular)
+                    let weight:UIFont.Weight=old.weight>=700 ? .bold:old.weight>=600 ? .semibold:old.weight>=500 ? .medium:old.weight<=300 ? .light:.regular
+                    let font=UIFont.systemFont(ofSize:old.fontSize,weight:weight)
                     nodes[i].w=ceil((old.text as NSString).size(withAttributes:[.font:font]).width)+2
                     nodes[i].h=ceil(old.fontSize*1.3)
                     if ["ios-app-icon"].contains(item.id){nodes[i].x=center.x-nodes[i].w/2}
