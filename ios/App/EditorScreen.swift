@@ -18,6 +18,9 @@ struct EditorScreen:View {
     @State private var dialog:String?
     @State private var history=false
     @State private var preview=false
+    @State private var motion=false
+    @State private var video=false
+    @StateObject private var recorder=CanvasRecorder()
     @AppStorage("pngScale") private var pngScale=2.0
     init(project:Project,store:ProjectStore) { _editor=StateObject(wrappedValue:Editor(project,store:store)) }
     var body:some View {
@@ -46,6 +49,8 @@ struct EditorScreen:View {
         .sheet(isPresented:$editor.showLayerPicker){OverlapLayerPicker(editor:editor).modifier(OriginalTheme())}
         .fullScreenCover(isPresented:$preview){DesignPreviewPanel(editor:editor).modifier(OriginalTheme())}
         .fullScreenCover(isPresented:$history){ProjectHistoryPanel(editor:editor).modifier(OriginalTheme())}
+        .fullScreenCover(isPresented:$motion){MotionPanel(editor:editor).modifier(OriginalTheme())}
+        .sheet(isPresented:$video){MotionVideoPanel(editor:editor).modifier(OriginalTheme())}
         .sheet(item:$shared) { ShareSheet(urls:[$0.url]) }
         .fileImporter(isPresented:$importer,allowedContentTypes:[.data],allowsMultipleSelection:false) { result in switch result { case .success(let urls):if let url=urls.first{importFile(url)};case .failure(let e):editor.error=e.localizedDescription } }
         .onChange(of:photos) { _,items in Task { for item in items{do{if let data=try await item.loadTransferable(type:Data.self){try editor.addImage(data,name:"Картинка")}}catch{editor.error=error.localizedDescription}};photos=[] } }
@@ -53,7 +58,8 @@ struct EditorScreen:View {
         .onChange(of:editor.requestTextEdit){_,id in if let id{editor.selection=[id];panel=nil;dockOpen=false;dialog="text";editor.requestTextEdit=nil}}
         .onChange(of:editor.selection){_,ids in if let isolated=editor.isolatedIDs,!ids.isSubset(of:isolated){editor.isolatedIDs=nil}}
         .onChange(of:phase) { _,phase in if phase != .active { editor.saveNow() } }
-        .onDisappear { if editor.playing{editor.originalPlay.stop()};editor.saveNow() }
+        .onDisappear { recorder.cancel();if editor.playing{editor.originalPlay.stop()};editor.saveNow() }
+        .onChange(of:editor.playing){_,playing in if !playing && recorder.recording{finishRecording()}}
         .alert("Не удалось выполнить действие",isPresented:Binding(get:{editor.error != nil},set:{if !$0{editor.error=nil}})){Button("OK"){editor.error=nil}}message:{Text(editor.error ?? "")}
     }
     private var topBar:some View {
@@ -80,7 +86,13 @@ struct EditorScreen:View {
             if !editor.selection.isEmpty && !editor.playing { SelectionPill(editor:editor,expanded:$dockOpen,openPanel:{panel=$0;dockOpen=false},echo:{dialog=editor.selected.count==2 ? "blend":"echo"}) }
             if let panel,!editor.playing { floatingPanel(panel).transition(.move(edge:.bottom).combined(with:.opacity)) }
             if editor.playing {
-                Button { editor.togglePlay() } label:{Text("Режим игры: тяните слайдеры, нажимайте переключатели. Всё, что выставили, останется. Нажмите, чтобы выйти").font(qfont(14,.semibold)).multilineTextAlignment(.center).padding(.horizontal,20).padding(.vertical,14).background(q.color("primaryContainer"),in:Capsule()).foregroundStyle(q.color("onPrimaryContainer"))}.buttonStyle(.plain)
+                HStack(spacing:8){
+                    QChip(title:"Выйти"){editor.togglePlay()}
+                    QChip(title:editor.originalPlay.frozen ? "Продолжить":"Заморозить",selected:editor.originalPlay.frozen){editor.originalPlay.toggleFreeze()}
+                    QChip(title:recorder.recording ? "Стоп запись":"Запись",selected:recorder.recording){if recorder.recording{finishRecording()}else{do{try recorder.start(editor,longEdge:UserDefaults.standard.integer(forKey:"recordEdge")==720 ? 720:1080);editor.recordTouch={point in recorder.touch(point)}}catch{editor.error=error.localizedDescription}}}
+                }.padding(12).qSurface(28,"surfaceContainerHigh")
+            } else if editor.penActive{
+                PenToolbar(editor:editor)
             } else { dock }
         }.animation(.spring(response:0.4,dampingFraction:0.75),value:panel)
     }
@@ -122,6 +134,9 @@ struct EditorScreen:View {
     private var menuContent:some View {
         ScrollView {VStack(spacing:0) {
             menuItem("Eye","Чистый предпросмотр · экраны и темы"){preview=true}
+            menuItem("Play","Анимация · ключи и шаблоны"){panel=nil;motion=true}
+            menuItem("Export","Видео MP4 / последовательность PNG"){video=true}
+            menuItem("Style","Перо · нарисовать контур"){panel=nil;editor.selection=[];editor.penActive=true}
             menuItem("Fit","Вписать в экран"){editor.fitVersion += 1}
             menuItem("Grid",editor.showGrid ? "Скрыть сетку":"Показать сетку"){editor.showGrid.toggle()}
             menuItem("Guides",editor.snap ? "Отключить привязки":"Включить привязки"){editor.snap.toggle()}
@@ -140,6 +155,7 @@ struct EditorScreen:View {
         }}.frame(maxHeight:560).padding(.vertical,8).qSurface(12,"surfaceContainerHigh").shadow(color:.black.opacity(0.2),radius:6,y:3)
     }
     private func menuItem(_ icon:String,_ title:String,_ action:@escaping()->Void)->some View { Button {menu=false;action()}label:{HStack(spacing:12){QIcon(id:icon);Text(title).font(qfont(14));Spacer()}.padding(.horizontal,12).frame(height:48)}.buttonStyle(.plain) }
+    private func finishRecording(){editor.recordTouch=nil;Task{@MainActor in do{shared=SharedFile(url:try await recorder.finish())}catch{editor.error=error.localizedDescription}}}
     private func export(_ kind:String) {
         do {
             if kind=="iosProject"{shared=SharedFile(url:try IOSProjectExport.make(editor.project,root:editor.store.root));return}

@@ -2,6 +2,14 @@ import SwiftUI
 import UIKit
 
 struct Node: Codable, Identifiable, Equatable {
+    var cornerRadii:[CGFloat]?
+    var outer=""
+    var appear=0
+    var appearSpring=2
+    var liquidDepth:CGFloat=1
+    var liquidPower:CGFloat=1
+    var liquidHighlight:CGFloat=1
+    var liquidHighlightWidth:CGFloat=1
     var liquid:CGFloat=0
     var fixW=false
     var fixH=false
@@ -53,6 +61,8 @@ struct Node: Codable, Identifiable, Equatable {
     var fillOpacity:CGFloat {get{min(1,max(0,extras?.fillOpacity ?? 1))}set{var x=extras ?? LayerExtras();x.fillOpacity=min(1,max(0,newValue));extras=x}}
     init() {}
     enum CodingKeys: String, CodingKey {
+        case cornerRadii="c4",outer,appear="ap",appearSpring="aps"
+        case liquidDepth="lqd",liquidPower="lqp",liquidHighlight="lqh",liquidHighlightWidth="lqhw"
         case androidTextAlign="tal",liquid="lq",fixW="tfw",fixH="tfh",textVAlign="tva",spans="sp"
         case extras = "ux"
         case id = "id"
@@ -99,6 +109,15 @@ struct Node: Codable, Identifiable, Equatable {
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        cornerRadii=try c.decodeIfPresent([CGFloat].self,forKey:.cornerRadii)
+        outer=try c.decodeIfPresent(String.self,forKey:.outer) ?? ""
+        appear=try c.decodeIfPresent(Int.self,forKey:.appear) ?? 0
+        appearSpring=try c.decodeIfPresent(Int.self,forKey:.appearSpring) ?? 2
+        liquidDepth=try c.decodeIfPresent(CGFloat.self,forKey:.liquidDepth) ?? 1
+        liquidPower=try c.decodeIfPresent(CGFloat.self,forKey:.liquidPower) ?? 1
+        liquidHighlight=try c.decodeIfPresent(CGFloat.self,forKey:.liquidHighlight) ?? 1
+        liquidHighlightWidth=try c.decodeIfPresent(CGFloat.self,forKey:.liquidHighlightWidth) ?? 1
+        guard (cornerRadii ?? []).allSatisfy(\.isFinite),[liquidDepth,liquidPower,liquidHighlight,liquidHighlightWidth].allSatisfy(\.isFinite) else{throw CocoaError(.fileReadCorruptFile)}
         liquid=try c.decodeIfPresent(CGFloat.self,forKey:.liquid) ?? 0
         fixW=try c.decodeIfPresent(Bool.self,forKey:.fixW) ?? false
         fixH=try c.decodeIfPresent(Bool.self,forKey:.fixH) ?? false
@@ -172,6 +191,7 @@ struct Page: Codable, Identifiable, Equatable {
     var nodes: [Node] = []
 }
 struct Project: Codable, Identifiable, Equatable {
+    var motion:MotionData?
     var v = 1
     var id = UUID().uuidString
     var name = "Новый проект"
@@ -188,11 +208,12 @@ struct Project: Codable, Identifiable, Equatable {
     var glassMode:Int?
     var studio:StudioDocument?
     var links: [InteractionLink] = []
-    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links,studio
+    enum CodingKeys: String, CodingKey { case v,id,name,w,h,bg,created,updated,nodes,tone,bgToken,pages,active,links,studio,motion
         case glassMode="glass" }
     init() {}
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy:CodingKeys.self)
+        motion=try c.decodeIfPresent(MotionData.self,forKey:.motion)
         id = try c.decode(String.self,forKey:.id)
         name = try c.decodeIfPresent(String.self,forKey:.name) ?? "Проект"
         w = try c.decode(CGFloat.self,forKey:.w); h = try c.decode(CGFloat.self,forKey:.h)

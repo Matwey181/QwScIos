@@ -7,9 +7,13 @@ import UIKit
         let box=moving.reduce(CGRect.null){$0.union($1.rect)},ids=Set(moving.map(\.id)),threshold=6/max(0.01,canvasScale)
         let others=editableNodes.filter{$0.visible && !ids.contains($0.id)}.map(\.rect)
         let studio=project.studio ?? StudioDocument()
-        var xs=[CGFloat(0),project.w/2,project.w]+studio.guidesX
-        var ys=[CGFloat(0),project.h/2,project.h]+studio.guidesY
-        for rect in others{xs += [rect.minX,rect.midX,rect.maxX];ys += [rect.minY,rect.midY,rect.maxY]}
+        var xs=studio.guidesX,ys=studio.guidesY
+        if studio.snapCanvasEdges != false{xs += [0,project.w];ys += [0,project.h]}
+        if studio.snapCanvasCenter != false{xs.append(project.w/2);ys.append(project.h/2)}
+        for rect in others{
+            if studio.snapLayerEdges != false{xs += [rect.minX,rect.maxX];ys += [rect.minY,rect.maxY]}
+            if studio.snapLayerCenters != false{xs.append(rect.midX);ys.append(rect.midY)}
+        }
         if studio.spacingSnap {
             if let left=others.filter({$0.maxX<=box.minX}).max(by:{$0.maxX<$1.maxX}),let right=others.filter({$0.minX>=box.maxX}).min(by:{$0.minX<$1.minX}) {xs.append((left.maxX+right.minX)/2)}
             if let top=others.filter({$0.maxY<=box.minY}).max(by:{$0.maxY<$1.maxY}),let bottom=others.filter({$0.minY>=box.maxY}).min(by:{$0.minY<$1.minY}) {ys.append((top.maxY+bottom.minY)/2)}

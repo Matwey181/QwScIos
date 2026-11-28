@@ -20,6 +20,13 @@ import SwiftUI
     @Published var snapGuidesY:[CGFloat]=[]
     @Published var canvasScale:CGFloat=1
     @Published var error:String?
+    @Published var penActive=false
+    @Published var penKnots:[PenKnot]=[]
+    @Published var penClosed=false
+    @Published var penSmooth=true
+    var penDragIndex:Int?
+    var penDraggingNew=false
+    var recordTouch:((CGPoint)->Void)?
     var undoStack:[Project]=[],redoStack:[Project]=[]
     let store:ProjectStore
     let renderer:DocumentRenderer

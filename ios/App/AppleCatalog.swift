@@ -2,14 +2,14 @@ import SwiftUI
 
 struct AppleCatalogBundle:Decodable{var light:[CatalogItem];var dark:[CatalogItem];var templates:[CatalogItem]}
 enum AppleCatalog{
-    static let bundle:AppleCatalogBundle=load("apple-catalog")
+    static let bundle:AppleCatalogBundle=AppleUpdateCatalog.extend(load("apple-catalog"))
     private static var preparedVariants:[String:CatalogItem]=[:]
     static func variant(_ item:CatalogItem,dark:Bool)->CatalogItem{
         let key=item.id+"|"+String(dark)+"|"+(UserDefaults.standard.string(forKey:"language") ?? "ru")
         if let cached=preparedVariants[key]{return cached}
-        let choices=item.id=="ios" ? bundle.templates:(dark ? bundle.dark:bundle.light)
+        let choices=bundle.templates.contains(where:{$0.id==item.id}) ? bundle.templates:(dark ? bundle.dark:bundle.light)
         guard var result=choices.first(where:{$0.id==item.id && $0.project.tone.dark==dark}) else{return item}
-        result=AppleNativeStyle.make(result)
+        if result.id=="ios" || !bundle.templates.contains(where:{$0.id==result.id}){result=AppleNativeStyle.make(result)}
         prepare(&result.project,id:result.id)
         if result.id=="ios"{DefaultLinks.allPages(&result.project)}else{DefaultLinks.install(&result.project,componentID:result.id)}
         preparedVariants[key]=result;return result
@@ -83,11 +83,18 @@ struct LiquidLayerControls:View{
         QToggle("Жидкое стекло",isOn:Binding(get:{node.liquid>0},set:{value in editor.change{$0.liquid=value ? 0.8:0;if value && $0.fillOpacity>0.7{$0.fillOpacity=0.25}}}))
         if node.liquid>0{
             QSlider(value:Binding(get:{Double(node.liquid)},set:{v in editor.change{$0.liquid=CGFloat(v)}}),range:0...1)
+            optical("Глубина линзы",\.liquidDepth,0.05...4)
+            optical("Сила преломления",\.liquidPower,0...4)
+            optical("Яркость блика",\.liquidHighlight,0...4)
+            optical("Ширина блика",\.liquidHighlightWidth,0.05...4)
             HStack{Button("Прозрачное"){preset(0.8,3,0.14)};Button("Жидкое"){preset(1,5,0.23)};Button("Матовое"){preset(0.4,22,0.5)}}.font(qfont(13))
             Text("Преломляет фон под слоем. Лучше всего видно поверх картинки или цветных объектов.").font(qfont(12))
         }
     }}
     private func preset(_ liquid:CGFloat,_ blur:CGFloat,_ opacity:CGFloat){editor.change{$0.liquid=liquid;$0.blur=blur;$0.fillOpacity=opacity}}
+    private func optical(_ title:String,_ key:WritableKeyPath<Node,CGFloat>,_ range:ClosedRange<Double>)->some View{
+        VStack(alignment:.leading,spacing:2){HStack{Text(title);Spacer();Text(String(format:"%.2f",Double(node[keyPath:key])))}.font(qfont(13));QSlider(value:Binding(get:{Double(node[keyPath:key])},set:{v in editor.change{$0[keyPath:key]=CGFloat(v)}}),range:range)}
+    }
 }
 struct ProjectGlassControls:View{
     @ObservedObject var editor:Editor

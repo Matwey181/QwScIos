@@ -49,10 +49,18 @@ import UIKit
         var request=values;request["op"]=operation
         let output=try self.request(request,project:project)
         var decoded=try JSONDecoder().decode(Project.self,from:JSONSerialization.data(withJSONObject:output))
-        func restore(_ node:Node)->Node {var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;n.extras=layerExtras[n.id] ?? n.extras;if let old=modernFields[n.id]{n.liquid=old.liquid;n.fixW=old.fixW;n.fixH=old.fixH;n.textVAlign=old.textVAlign;n.spans=old.spans;if AppleControls.isApple(old){n.widget=old.widget}};return n}
+        func restore(_ node:Node)->Node {
+            var n=node;n.textAlign=textAlignments[n.id] ?? n.textAlign;n.extras=layerExtras[n.id] ?? n.extras
+            if let old=modernFields[n.id]{
+                n.liquid=old.liquid;n.fixW=old.fixW;n.fixH=old.fixH;n.textVAlign=old.textVAlign;n.spans=old.spans
+                n.cornerRadii=old.cornerRadii;n.outer=old.outer;n.appear=old.appear;n.appearSpring=old.appearSpring
+                n.liquidDepth=old.liquidDepth;n.liquidPower=old.liquidPower;n.liquidHighlight=old.liquidHighlight;n.liquidHighlightWidth=old.liquidHighlightWidth
+                if AppleControls.isApple(old){n.widget=old.widget}
+            };return n
+        }
         decoded.nodes=decoded.nodes.map(restore)
         for i in decoded.pages.indices {decoded.pages[i].nodes=decoded.pages[i].nodes.map(restore)}
-        decoded.glassMode=projectGlassMode;decoded.studio=studioDocument;decoded.links=savedLinks
+        decoded.glassMode=projectGlassMode;decoded.studio=studioDocument;decoded.links=savedLinks;decoded.motion=nativeProject?.motion
         if ["apply","stop"].contains(operation),let base=nativeProject {
             AppleControls.apply(&decoded,base:base,values:values["shown"] as? [String:Double] ?? [:])
             decoded.syncPage()
@@ -81,6 +89,12 @@ import UIKit
     private var lastStep=0
     private var visibility:[String:Bool]=[:]
     private var back:[Int]=[]
+    var frozen=false
+    private var freezeTime=0.0
+    private var pausedDuration=0.0
+    private var lastMotionTime=0.0
+    private var firedJumps:Set<Int>=[]
+    private let appearances=LayerAppearanceRuntime()
     init(editor:Editor) { self.editor=editor }
     var display:Project? { rendered }
     func start() {
@@ -91,6 +105,7 @@ import UIKit
             for w in result["widgets"] as? [[String:Any]] ?? [] { if let group=w["group"] as? String { target[group]=(w["value"] as? NSNumber)?.doubleValue ?? 0;kinds[group]=w["kind"] as? String } }
             AppleControls.initial(editor.project,values:&target)
             shown=target;startTime=CACurrentMediaTime();lastFrameTime=startTime;editor.selection=[];editor.playing=true
+            frozen=false;pausedDuration=0;lastMotionTime=0;firedJumps=[];appearances.reset()
             links.onWidgetProgress = { [weak self] group,value in
                 guard let self else {return}
                 self.target[group]=value
@@ -110,17 +125,24 @@ import UIKit
         activeSourceID=nil;pressedSourceID=nil
         links.stop()
         guard let editor else { return }
-        do { let final=try OriginalCore.shared.project("stop",values:["shown":target]);if final.nodes != editor.project.nodes { editor.edit { $0.nodes=final.nodes } } } catch { editor.error=error.localizedDescription }
+        do { let final=try OriginalCore.shared.project("stop",values:["shown":frozen ? shown:target]);let nodes=frozen ? (rendered?.nodes ?? final.nodes):final.nodes;if nodes != editor.project.nodes { editor.edit { $0.nodes=nodes } } } catch { editor.error=error.localizedDescription }
         editor.playing=false;target=[:];shown=[:];rendered=nil
         editor.objectWillChange.send()
     }
     @objc private func frame() {
         guard editor != nil else { link?.invalidate();link=nil;return }
+        guard !frozen else{return}
         let now=CACurrentMediaTime()
         var changed=advanceWidgetAnimations(by:now-lastFrameTime)
         lastFrameTime=now
-        if links.tick() { changed=true }
+        if links.tick() || appearances.active { changed=true }
+        if let data=editor?.project.motion,!data.tracks.isEmpty || !data.jumps.isEmpty{changed=true}
         if changed { refresh() }
+    }
+    func toggleFreeze(){
+        let now=CACurrentMediaTime()
+        if frozen{pausedDuration+=now-freezeTime;lastFrameTime=now;frozen=false}else{freezeTime=now;frozen=true}
+        editor?.objectWillChange.send()
     }
     @discardableResult func advanceWidgetAnimations(by delta:Double)->Bool {
         var changed=kinds.values.contains("spin")
@@ -138,7 +160,22 @@ import UIKit
     }
     private func refresh() {
         guard let editor else { return }
-        do { var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":CACurrentMediaTime()-startTime]);result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n };rendered=links.displayed(result);editor.objectWillChange.send() }
+        do {
+            let elapsed=((frozen ? freezeTime:CACurrentMediaTime())-startTime-pausedDuration)*1000
+            var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":elapsed/1000])
+            result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n }
+            result=links.displayed(result)
+            if let motion=result.motion {
+                let duration=Double(max(1,motion.dur)),time=motion.loop ? elapsed.truncatingRemainder(dividingBy:duration):min(duration,elapsed)
+                if time<lastMotionTime{firedJumps=[]};lastMotionTime=time
+                for (i,jump) in motion.jumps.enumerated() where Double(jump.t)<=time && !firedJumps.contains(i){
+                    firedJumps.insert(i)
+                    if jump.from.isEmpty || (editor.project.pages.indices.contains(editor.project.active) && editor.project.pages[editor.project.active].id==jump.from){DispatchQueue.main.async{[weak self] in self?.navigate(jump.to)}}
+                }
+                result=MotionEvaluator.frame(result,time:time)
+            }
+            rendered=appearances.frame(result,time:elapsed/1000);editor.objectWillChange.send()
+        }
         catch { editor.error=error.localizedDescription;link?.invalidate();link=nil }
     }
     private func linked(_ node:Node,events:[String])->Bool {
@@ -154,6 +191,7 @@ import UIKit
         }
     }
     func press(_ p:CGPoint,down:Bool){
+        guard !frozen else{return}
         if down {
             guard let node=(rendered?.nodes ?? editor?.project.nodes ?? []).reversed().first(where:{$0.visible && $0.extras?.disabled != true && !$0.mask && $0.contains(p) && linked($0,events:["press","release","longPress","holdRepeat","cancelPress"])}) else{return}
             pressedSourceID=node.id;links.advanced.press(node.id,at:p,down:true);links.fire("press",sourceID:node.id)
@@ -184,6 +222,7 @@ import UIKit
         notifyWidget(group,value:target[group] ?? 0)
     }
     func tap(_ p:CGPoint) {
+        guard !frozen else{return}
         guard let editor else{return}
         let widget=hit(p)
         lastTapPoint=p;lastTapGroup=widget["group"] as? String ?? ""
@@ -227,6 +266,7 @@ import UIKit
         return Double(min(1,max(0,(p.x-x0)/max(1,x1-x0))))
     }
     func begin(_ p:CGPoint) {
+        guard !frozen else{return}
         activeHit=hit(p);initial=p;lastStep=0
         if let group=activeHit?["group"] as? String,(rendered?.nodes ?? []).contains(where:{$0.group==group && $0.extras?.disabled==true}){activeHit=nil;activeSourceID=nil;return}
         if let group=activeHit?["group"] as? String{links.scrub(group:group,true)}
@@ -262,6 +302,7 @@ import UIKit
         }
     }
     func end(_ p:CGPoint) {
+        guard !frozen else{return}
         links.advanced.endDrag()
         let dx=p.x-initial.x,dy=p.y-initial.y
         if let id=activeSourceID,abs(dx)>35 || abs(dy)>35{links.fire(abs(dx)>=abs(dy) ? (dx<0 ? "swipeLeft":"swipeRight"):(dy<0 ? "swipeUp":"swipeDown"),sourceID:id)}

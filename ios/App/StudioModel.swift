@@ -41,6 +41,10 @@ struct VisualState:Codable,Equatable,Identifiable {
     var pageID:String=""
 }
 struct StudioDocument:Codable,Equatable {
+    var snapCanvasEdges:Bool?
+    var snapCanvasCenter:Bool?
+    var snapLayerEdges:Bool?
+    var snapLayerCenters:Bool?
     var layouts:[AutoLayoutFrame]?=nil
     var colorStyles:[ProjectColorStyle]?=nil
     var textStyles:[ProjectTextStyle]?=nil

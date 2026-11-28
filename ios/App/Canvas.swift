@@ -66,6 +66,7 @@ struct EditorCanvas:UIViewRepresentable {
             ctx.strokePath();ctx.restoreGState()
         }
         editor.renderer.draw(editor.playing ? (editor.originalPlay.display ?? editor.project):AdvancedLinkEngine.markers(editor.canvasProject),in:ctx,background:false,includeReferences:!editor.playing)
+        if editor.penActive{editor.drawPen(in:ctx,scale:scale)}
         if !editor.playing {
             ctx.saveGState();ctx.setStrokeColor(UIColor.systemRed.withAlphaComponent(0.65).cgColor);ctx.setLineWidth(1.25/scale)
             for x in editor.smartGuidesX{ctx.move(to:CGPoint(x:x,y:0));ctx.addLine(to:CGPoint(x:x,y:editor.project.h))}
@@ -111,6 +112,7 @@ struct EditorCanvas:UIViewRepresentable {
     @objc func threeTap(){if gestureOn("REDO_TAP"){editor.redo()}}
     @objc func longPress(_ g:UILongPressGestureRecognizer){
         guard g.state == .began,!editor.playing else{return}
+        if editor.penActive{return}
         let point=document(g.location(in:self)),hits=editor.editableNodes.reversed().filter{$0.visible && !$0.locked && !$0.mask && $0.contains(point)}
         if hits.count>1{editor.overlapIDs=hits.map(\.id);editor.showLayerPicker=true}
         else if let hit=hits.first,gestureOn("LONG_LAYER"){editor.choose(hit);editor.requestPanel="style"}
@@ -118,9 +120,11 @@ struct EditorCanvas:UIViewRepresentable {
     }
     @objc func playTwoTap(_ g:UITapGestureRecognizer){if editor.playing{editor.originalPlay.gesture("twoTap",at:document(g.location(in:self)))}}
     @objc func playRotate(_ g:UIRotationGestureRecognizer){if editor.playing{editor.originalPlay.gesture("rotate",at:document(g.location(in:self)),value:Double(g.rotation*180 / .pi),began:g.state == .began)}}
-    @objc func doubleTap(_ g:UITapGestureRecognizer) {if editor.playing{editor.originalPlay.gesture("doubleTap",at:document(g.location(in:self)));return};let p=document(g.location(in:self));if let hit=editor.editableNodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
+    @objc func doubleTap(_ g:UITapGestureRecognizer) {if editor.penActive{editor.commitPen();return};if editor.playing{editor.originalPlay.gesture("doubleTap",at:document(g.location(in:self)));return};let p=document(g.location(in:self));if let hit=editor.editableNodes.reversed().first(where:{$0.visible && !$0.locked && $0.contains(p)}),gestureOn("DOUBLE_LAYER"){editor.selection=[hit.id];if hit.kind=="TEXT"{editor.requestTextEdit=hit.id}else{editor.requestPanel="style"}}else if gestureOn("DOUBLE_FIT"){zoom=1;pan = .zero;setNeedsDisplay()}}
     @objc func tap(_ g:UITapGestureRecognizer) {
         let point=document(g.location(in:self))
+        if editor.penActive{editor.penTap(point,threshold:16/scale);return}
+        if editor.playing{editor.recordTouch?(point)}
         if let key=editor.eyedropTarget {
             if let color=editor.renderer.sample(editor.canvasProject,at:point){RecentColors.shared.record(color);editor.change{n in n[keyPath:key]=color;if key==\Node.fill{n.fillToken = -1};if key==\Node.stroke{n.strokeToken = -1}}}
             editor.eyedropTarget=nil;return
@@ -146,6 +150,13 @@ struct EditorCanvas:UIViewRepresentable {
     }
     @objc func drag(_ g:UIPanGestureRecognizer) {
         let p=document(g.location(in:self))
+        if editor.penActive{
+            if g.state == .began{editor.penBegin(p,threshold:18/scale)}
+            if g.state == .changed{editor.penDrag(p)}
+            if g.state == .ended || g.state == .cancelled{editor.penEnd()}
+            setNeedsDisplay();return
+        }
+        if editor.playing{editor.recordTouch?(p)}
         if editor.playing { if g.state == .began { editor.originalPlay.begin(p) };if g.state == .changed { editor.originalPlay.drag(p) };if g.state == .ended || g.state == .cancelled { editor.originalPlay.end(p) };return }
         if g.state == .began {
             startPoint=p;mode="move";startNodes=editor.selected

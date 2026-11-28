@@ -1,6 +1,7 @@
 import SwiftUI
 
-func tr(_ key:String)->String { let language=UserDefaults.standard.string(forKey:"language") ?? "ru";let map:[String:String]=load(language=="en" ? "en":"ru");return map[key] ?? key }
+func tr(_ key:String)->String { let language=UserDefaults.standard.string(forKey:"language") ?? "ru";return QwelStrings.maps[language=="en" ? "en":"ru"]?[key] ?? key }
+private enum QwelStrings{static let maps:[String:[String:String]]=["ru":load("ru"),"en":load("en")]}
 struct SettingsView:View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.q) var q
@@ -29,7 +30,7 @@ struct SettingsView:View {
                     case "gest":gestures
                     case "export":QSettingsGroup("Масштаб PNG по умолчанию"){ForEach([1.0,2,3,4],id:\.self){n in QSetting("\(Int(n))x",selected:scale==n){scale=n}}}
                     case "fun":funny
-                    case "news":QSettingsGroup("Vexel 2.8.8 · iOS"){Text("Liquid Glass с преломлением фона и выбором режима. 24 компонента Apple и новый шаблон iOS. Цвета отдельных слов, градиент текста и настройки текстовой рамки. Размер компонентов и стиль интерфейса iOS.").font(qfont(16)).padding(20)}
+                    case "news":QSettingsGroup("Vexel 2.9.2 · iOS"){Text("Ключевые анимации: 63 шаблона, 45 кривых, пружины и морфинг. Экспорт MP4 и кадров PNG, запись режима игры. Перо с кривыми, отдельные углы, настройки линзы и бликов. iOS 26 Alert и Context Menu, пять новых шаблонов iOS. Независимые привязки и анимации появления слоёв.").font(qfont(16)).padding(20)}
                     default:root
                     }
                 }.padding(.horizontal,16).padding(.bottom,24)
@@ -38,7 +39,7 @@ struct SettingsView:View {
     }
     private var root:some View {
         Group {
-            VStack(spacing:0){QLogo().frame(width:88,height:88);Text("Vexel").font(qfont(28,.semibold)).padding(.top,12);Text("2.8.8 · iOS 0.12").font(qfont(14,.semibold)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity).padding(.top,8).padding(.bottom,12)
+            VStack(spacing:0){QLogo().frame(width:88,height:88);Text("Vexel").font(qfont(28,.semibold)).padding(.top,12);Text("2.9.2 · iOS 0.13").font(qfont(14,.semibold)).foregroundStyle(q.color("onSurfaceVariant"))}.frame(maxWidth:.infinity).padding(.top,8).padding(.bottom,12)
             QSettingsGroup {
                 QSetting("Внешний вид и стиль",subtitle:"Тема, акцент, шрифт, стекло",icon:"Style",chevron:true){page="look"}
                 QSetting("Язык",icon:"Text",value:language=="en" ? "English":"Русский"){page="lang"}

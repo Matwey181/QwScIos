@@ -40,6 +40,25 @@ enum AppleNativeStyle {
             nodes.append(box("Стеклянная плашка",0,0,width,height,radius,milk,liquid:0.5,blur:12))
         }
         switch item.id {
+        case "ios26-alert":
+            result.project.w=300;result.project.h=306
+            nodes=[box("Окно",0,0,300,306,38,dark ? 0xff2a2a2c:0xfffafafa),label(tr("comp_alert_title"),24,31,252,18,700),label(tr("comp_alert_msg1"),24,72,252,16),label(tr("comp_alert_msg2"),24,94,252,16)]
+            for (i,title) in [tr("comp_default"),tr("comp_destructive"),tr("cancel")].enumerated(){
+                let y=CGFloat(138+i*56),fill=i==0 ? blue:(dark ? Int64(0xff3a3a3c):Int64(0xffe3e3e3))
+                nodes += [box(title,12,y,276,48,24,fill),label(title,24,y+13,252,17,600,i==0 ? 0xffffffff:i==1 ? 0xffff3b30:ink,"center")]
+            }
+        case "ios26-menu":
+            result.project.w=250;result.project.h=612
+            nodes=[box("Контекстное меню",0,0,250,612,30,dark ? 0xe62c2c2e:0xe6ebebeb,liquid:0.65,blur:12),box("Быстрое действие",10,11,72,58,16,dark ? 0x26ffffff:0x1a000000)]
+            for i in 0..<3{let x=CGFloat(46+i*79);nodes += [symbol("star",x-11,17,22,i==2 ? 0xffff3b30:ink),label(i==2 ? tr("comp_destructive_short"):tr("comp_label"),x-35,48,70,11,500,i==2 ? 0xffff3b30:ink,"center")]}
+            for y in [CGFloat(80),251,315,516]{nodes.append(box("Разделитель",17,y,216,0.5,0,hairline))}
+            for (y,title,shortcut,disabled,destructive) in [(CGFloat(112),tr("comp_label"),"⌘ A",false,false),(155,tr("comp_disabled"),"⌘ B",true,false),(207,tr("comp_destructive_action"),"⌘ C",false,true),(283,tr("comp_action"),"",false,false),(580,tr("comp_action"),"⌘ Y",false,false)]{
+                let color=destructive ? Int64(0xffff3b30):disabled ? secondary:ink
+                var text=label(title,23,y-10,160,16,400,color);if disabled{var e=text.extras ?? LayerExtras();e.disabled=true;text.extras=e}
+                nodes += [text,label(shortcut,192,y-10,38,14,400,secondary,"right")]
+            }
+            for y in [CGFloat(338),539]{nodes.append(label(tr("comp_section"),23,y-8,204,12,400,secondary))}
+            for (y,title) in [(CGFloat(378),tr("comp_submenu")),(420,tr("comp_submenu")),(473,tr("comp_submenu_long"))]{nodes += [label(title,23,y-10,185,16),symbol("chevron.right",222,y-6,12,secondary)]}
         case "ios-btn-filled","ios-btn-tinted","ios-btn-plain","ios-btn-glass":
             let captionWidth=ceil(("Продолжить" as NSString).size(withAttributes:[.font:UIFont.systemFont(ofSize:17,weight:.semibold)]).width)+32
             let width=max(item.id=="ios-btn-plain" ? CGFloat(120):CGFloat(200),captionWidth)
@@ -141,8 +160,8 @@ enum AppleNativeStyle {
             nodes[i].fillToken = -1;nodes[i].strokeToken = -1
         }
         result.project.nodes=nodes;result.project.links=[];result.project.pages=[]
-        if ["ios-alert","ios-sheet"].contains(item.id){
-            for button in nodes where button.kind=="RECT" && ["ОК","Отмена","Готово"].contains(button.name){
+        if ["ios-alert","ios-sheet","ios26-alert","ios26-menu"].contains(item.id){
+            for button in nodes where button.kind=="RECT" && (item.id=="ios26-alert" ? button.h==48:["ОК","Отмена","Готово"].contains(button.name)){
                 for (event,scale,opacity) in [("press",0.97,0.8),("release",1.0,1.0)]{
                     for (property,value) in [("scale",scale),("opacity",opacity)]{
                         var link=InteractionLink();link.id=button.id+"-"+event+"-"+property

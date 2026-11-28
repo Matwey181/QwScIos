@@ -21,6 +21,7 @@ import SwiftUI
         change{n in
             n.fill=source.fill;n.fill2=source.fill2;n.stroke=source.stroke;n.strokeWidth=source.strokeWidth;n.fillToken = -1;n.strokeToken = -1
             n.fillOpacity=source.fillOpacity;n.opacity=source.opacity;n.corner=source.corner;n.gradKind=source.gradKind;n.gradAngle=source.gradAngle;n.shadowColor=source.shadowColor;n.shadowBlur=source.shadowBlur;n.shadowDx=source.shadowDx;n.shadowDy=source.shadowDy;n.liquid=source.liquid;n.blur=source.blur;n.softBlur=source.softBlur
+            n.cornerRadii=source.cornerRadii;n.liquidDepth=source.liquidDepth;n.liquidPower=source.liquidPower;n.liquidHighlight=source.liquidHighlight;n.liquidHighlightWidth=source.liquidHighlightWidth;n.appear=source.appear;n.appearSpring=source.appearSpring
             if n.kind=="TEXT"{n.font=source.font;n.fontSize=source.fontSize;n.weight=source.weight;n.textAlign=source.textAlign;var x=n.extras ?? LayerExtras();x.tracking=source.extras?.tracking ?? 0;x.lineSpacing=source.extras?.lineSpacing ?? 0;x.runs=[];x.textStyleID=nil;n.extras=x}
             if n.extras != nil{n.extras?.colorStyleID=nil}
         }

@@ -24,9 +24,14 @@ struct StudioLayout:View {
     @State private var x:CGFloat=100
     @State private var y:CGFloat=100
     @State private var gap:CGFloat=16
+    private func flag(_ key:WritableKeyPath<StudioDocument,Bool?>)->Binding<Bool>{Binding(get:{(editor.project.studio ?? StudioDocument())[keyPath:key] != false},set:{v in editor.studio{$0[keyPath:key]=v}})}
     var body:some View {VStack(spacing:16){
         StudioCard(title:"Умные привязки"){
             QToggle("Привязки к краям и центрам",isOn:$editor.snap)
+            QToggle("Края холста",isOn:flag(\.snapCanvasEdges))
+            QToggle("Центр холста",isOn:flag(\.snapCanvasCenter))
+            QToggle("Края слоёв",isOn:flag(\.snapLayerEdges))
+            QToggle("Центры слоёв",isOn:flag(\.snapLayerCenters))
             QToggle("Умная расстановка рядом",isOn:Binding(get:{editor.project.studio?.smartPlacement ?? true},set:{v in editor.studio{$0.smartPlacement=v};editor.smartGuidesX=[];editor.smartGuidesY=[]}))
             if editor.project.studio?.smartPlacement != false{QNumber(title:"Отступ между соседями",value:Binding(get:{editor.project.studio?.smartGap ?? 16},set:{v in editor.studio{$0.smartGap=max(0,v)}}))}
             QToggle("Равные промежутки",isOn:Binding(get:{editor.project.studio?.spacingSnap ?? true},set:{v in editor.studio{$0.spacingSnap=v}}))

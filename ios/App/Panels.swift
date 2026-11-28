@@ -57,6 +57,7 @@ struct InspectorPanel:View {
                     QToggle("Маска для нижнего слоя",isOn:bind(\.mask,false))
                 }
                 ProjectStyleControls(editor:editor)
+                InlineSection(title:"Углы и появление"){UpdateLayerControls(editor:editor,node:n)}
                 Button {
                     showInteractions=true
                 } label: {

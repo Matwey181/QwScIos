@@ -74,6 +74,15 @@ enum VectorPath {
             var t=CGAffineTransform(scaleX:n.w,y:n.h)
             return parse(source).copy(using:&t) ?? CGPath(rect:rect,transform:nil)
         }
+        if let corners=n.cornerRadii,corners.count==4 {
+            let r=corners.map{min(max(0,$0 < 0 ? n.corner:$0),min(n.w,n.h)/2)}
+            let p=CGMutablePath(),w=n.w,h=n.h,k:CGFloat=0.5522847498307936
+            p.move(to:CGPoint(x:r[0],y:0));p.addLine(to:CGPoint(x:w-r[1],y:0))
+            p.addCurve(to:CGPoint(x:w,y:r[1]),control1:CGPoint(x:w-r[1]+r[1]*k,y:0),control2:CGPoint(x:w,y:r[1]*(1-k)))
+            p.addLine(to:CGPoint(x:w,y:h-r[2]));p.addCurve(to:CGPoint(x:w-r[2],y:h),control1:CGPoint(x:w,y:h-r[2]+r[2]*k),control2:CGPoint(x:w-r[2]*(1-k),y:h))
+            p.addLine(to:CGPoint(x:r[3],y:h));p.addCurve(to:CGPoint(x:0,y:h-r[3]),control1:CGPoint(x:r[3]*(1-k),y:h),control2:CGPoint(x:0,y:h-r[3]*(1-k)))
+            p.addLine(to:CGPoint(x:0,y:r[0]));p.addCurve(to:CGPoint(x:r[0],y:0),control1:CGPoint(x:0,y:r[0]*(1-k)),control2:CGPoint(x:r[0]*(1-k),y:0));p.closeSubpath();return p
+        }
         let corner=min(max(0,n.corner),min(n.w,n.h)/2)
         return CGPath(roundedRect:rect,cornerWidth:corner,cornerHeight:corner,transform:nil)
     }
