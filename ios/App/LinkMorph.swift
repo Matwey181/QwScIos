@@ -7,10 +7,12 @@ struct LinkMorph {
     @MainActor private static var cache:[String:LinkMorph]=[:]
     private init(start:[Double],end:[Double]){self.start=start;self.end=end}
     @MainActor init?(from:String,to:String,size:CGSize=CGSize(width:1,height:1)) {
-        let key=from+">"+to+"@\(size.width)x\(size.height)"
+        let ratio=(size.width/max(0.001,size.height)*10000).rounded()/10000
+        let key=from+">"+to+"@\(ratio)"
         if let cached=Self.cache[key]{self=cached;return}
         guard let a=Catalog.shared.shapes.first(where:{$0.id==from}),let b=Catalog.shared.shapes.first(where:{$0.id==to}) else{return nil}
         self.init(fromPath:CapsuleGeometry.unitPath(a.id,width:size.width,height:size.height),toPath:CapsuleGeometry.unitPath(b.id,width:size.width,height:size.height))
+        if Self.cache.count>=256{Self.cache.removeAll(keepingCapacity:true)}
         Self.cache[key]=self
     }
     init(fromPath:CGPath,toPath:CGPath){

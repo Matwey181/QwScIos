@@ -9,12 +9,27 @@ on:
         type: boolean
         default: false
 concurrency:
-  group: qwel-ios-${{ github.ref }}
+  group: qwel-ios-native-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: write
 jobs:
+  prune-superseded-update-runs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Cancel superseded builds on this development branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run list --repo "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME" --limit 20 --json databaseId,status,workflowName,headSha > previous-runs.json
+          jq -r --arg head "$GITHUB_SHA" '.[] | select(.headSha != $head and (.status == "in_progress" or .status == "queued" or .status == "pending")) | select(.workflowName == "Build Qwel iOS" or .workflowName == "Check Apple component regressions") | .databaseId' previous-runs.json | while read -r RUN; do
+            gh run cancel "$RUN" --repo "$GITHUB_REPOSITORY" || true
+          done
   build:
+    needs: prune-superseded-update-runs
     runs-on: macos-15-intel
     timeout-minutes: 30
     steps:

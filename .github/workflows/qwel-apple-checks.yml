@@ -1,8 +1,5 @@
 name: Check Apple component regressions
 on:
-  push:
-    branches: [codex/qwel-ios]
-    paths: ['ios/**', '.github/workflows/qwel-apple-checks.yml']
   workflow_dispatch:
 permissions:
   contents: read

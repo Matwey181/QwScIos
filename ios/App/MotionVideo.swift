@@ -90,6 +90,7 @@ struct MotionVideoPanel:View {
     @State private var progress:Double?
     @State private var shared:SharedFile?
     @State private var task:Task<Void,Never>?
+    @State private var error:String?
     var body:some View{
         NavigationStack{ScrollView{VStack(alignment:.leading,spacing:20){
             Text("Видео проекта").font(qfont(28,.semibold))
@@ -104,6 +105,7 @@ struct MotionVideoPanel:View {
         .sheet(item:$shared){ShareSheet(urls:[$0.url])}
         .interactiveDismissDisabled(progress != nil)
         .onDisappear{task?.cancel()}
+        .alert("Ошибка экспорта",isPresented:Binding(get:{error != nil},set:{if !$0{error=nil}})){Button("OK"){error=nil}}message:{Text(error ?? "")}
     }
     private func export(){
         progress=0
@@ -130,7 +132,7 @@ struct MotionVideoPanel:View {
                 }
                 if let writer{shared=SharedFile(url:try await writer.finish())}
                 else{let zip=FileManager.default.temporaryDirectory.appendingPathComponent("Qwel-frames-\(UUID().uuidString).zip");try FileManager.default.zipItem(at:folder,to:zip);shared=SharedFile(url:zip)}
-            }catch{writer?.cancel();if !(error is CancellationError){editor.error=error.localizedDescription}}
+            }catch{writer?.cancel();if !(error is CancellationError){self.error=error.localizedDescription}}
         }
     }
 }

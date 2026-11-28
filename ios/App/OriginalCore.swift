@@ -125,9 +125,10 @@ import UIKit
     func stop() {
         link?.invalidate();link=nil
         activeSourceID=nil;pressedSourceID=nil
+        let frozenNodes=frozen ? links.displayed(cachedWidgets ?? editor?.project ?? Project()).nodes:nil
         links.stop()
         guard let editor else { return }
-        do { let final=try OriginalCore.shared.project("stop",values:["shown":frozen ? shown:target]);let nodes=frozen ? (rendered?.nodes ?? final.nodes):final.nodes;if nodes != editor.project.nodes { editor.edit { $0.nodes=nodes } } } catch { editor.error=error.localizedDescription }
+        do { let final=try OriginalCore.shared.project("stop",values:["shown":frozen ? shown:target]);let nodes=frozenNodes ?? final.nodes;if nodes != editor.project.nodes { editor.edit { $0.nodes=nodes } } } catch { editor.error=error.localizedDescription }
         editor.playing=false;target=[:];shown=[:];rendered=nil
         editor.objectWillChange.send()
     }
