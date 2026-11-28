@@ -62,6 +62,7 @@ import ZIPFoundation
         let result=MotionEvaluator.frame(current,time:local)
         guard index>0,local<min(700,duration*0.25)else{return result}
         var previous=project;previous.nodes=project.pages[index-1].nodes
+        if index-1==project.active{previous.nodes=project.nodes}
         previous=MotionEvaluator.frame(previous,time:duration)
         let p=CGFloat(MotionCurve.at(MotionCurve.emphasized,local/min(700,duration*0.25)))
         var out=result

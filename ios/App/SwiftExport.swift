@@ -96,6 +96,21 @@ enum SwiftExport {
         if pages.isEmpty {pages=[project.nodes]}
         else if pages.indices.contains(project.active) {pages[project.active]=project.nodes}
         let allNodes=pages.flatMap{$0}
+        let timelineSource=(try? JSONEncoder().encode(project).base64EncodedString()) ?? ""
+        var timelineMorphs:[String:[Double]]=[:]
+        for track in project.motion?.tracks ?? [] where track.prop=="shape" && !track.group{
+            guard let node=allNodes.first(where:{$0.id==track.ref})else{continue}
+            let keys=track.keys.sorted{$0.t<$1.t}
+            for (index,key) in keys.enumerated(){
+                for next in [key,keys[min(index+1,keys.count-1)]]{
+                    if let morph=LinkMorph(from:key.s,to:next.s,size:CGSize(width:node.w,height:node.h)){
+                        let prefix=node.id+"|"+key.s+"|"+next.s
+                        timelineMorphs[prefix+"|a"]=morph.start;timelineMorphs[prefix+"|b"]=morph.end
+                    }
+                }
+            }
+        }
+        let timelineMorphSource=timelineMorphs.isEmpty ? "[:]":"["+timelineMorphs.keys.sorted().map{literal($0)+": "+String(describing:timelineMorphs[$0]!)}.joined(separator:",")+"]"
         let effectiveLinks=project.links.flatMap{[$0]+($0.steps ?? [])}
         var functions:[String]=[],cases:[String]=[]
         let rulesSource=rules(project),baseSource=bases(project,pages)
@@ -141,7 +156,8 @@ enum SwiftExport {
                         view="ZStack(alignment: .topLeading) { Color.clear; embeddedImage(\(literal(bytes.base64EncodedString()))).resizable().frame(width: \(width), height: \(height)).offset(x: \((n.w-width)*extras.cropX), y: \((n.h-height)*extras.cropY)) }.frame(width: \(n.w), height: \(n.h)).clipped()"
                     }
                 } else {
-                    let shape=effectiveLinks.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" && n.cornerRadii==nil ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
+                    let animatedShape=effectiveLinks.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) || (project.motion?.tracks.contains(where:{$0.ref==n.id && $0.prop=="shape"}) ?? false)
+                    let shape=animatedShape ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" && n.cornerRadii==nil ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
                     var fill=nodeColor
                     if n.gradKind==2 {fill="RadialGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], center: .center, startRadius: 0, endRadius: \(max(n.w,n.h)/2))"}
                     else if n.gradKind==1 {
@@ -250,7 +266,7 @@ enum SwiftExport {
                 Group { switch currentPage { \(cases.joined(separator:"\n"))
                 default: Color.white.frame(width: \(project.w), height: \(project.h))
                 } }
-                .onAppear {graph.onNavigate={ id in if id=="back" {if let page=backPages.popLast(){currentPage=page}}else if let index=([\(pageIDs)] as [String]).firstIndex(of:id){backPages.append(currentPage);currentPage=index} };graph.start(rules,initial:initial)}
+                .onAppear {graph.onNavigate={ id in if id=="back" {if let page=backPages.popLast(){currentPage=page}}else if let index=([\(pageIDs)] as [String]).firstIndex(of:id){backPages.append(currentPage);currentPage=index} };graph.setTimeline(\(literal(timelineSource)),morphs:\(timelineMorphSource));graph.start(rules,initial:initial)}
                 .onDisappear {graph.stop()}
             }
             private func embeddedImage(_ base64: String) -> Image {
@@ -259,6 +275,7 @@ enum SwiftExport {
             \(functions.joined(separator:"\n"))
         }
         \(ExportedInteractionSource.code)
+        \(ExportedKeyframeSource.code)
         """
     }
 }

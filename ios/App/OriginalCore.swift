@@ -143,7 +143,7 @@ import UIKit
     }
     func toggleFreeze(){
         let now=CACurrentMediaTime()
-        if frozen{pausedDuration+=now-freezeTime;lastFrameTime=now;frozen=false}else{freezeTime=now;frozen=true}
+        if frozen{let delta=now-freezeTime;pausedDuration+=delta;links.resumeAfterFreeze(delta);lastFrameTime=now;frozen=false}else{freezeTime=now;frozen=true}
         editor?.objectWillChange.send()
     }
     @discardableResult func advanceWidgetAnimations(by delta:Double)->Bool {
@@ -203,6 +203,7 @@ import UIKit
         refresh()
     }
     func gesture(_ event:String,at point:CGPoint,value:Double?=nil,began:Bool=false){
+        guard !frozen else{return}
         guard let editor,let node=(rendered?.nodes ?? editor.project.nodes).reversed().first(where:{candidate in candidate.visible && candidate.extras?.disabled != true && candidate.contains(point) && (linked(candidate,events:[event]) || editor.project.links.contains{r in links.advanced.matches(r.sourceID,candidate.id) && (event=="pinch" && r.mode=="pinchObject" || event=="rotate" && r.mode=="rotateObject")} )}) else{return}
         if let value{links.advanced.transform(event,source:node.id,value:value,began:began)}
         links.fire(event,sourceID:node.id);refresh()

@@ -46,6 +46,9 @@ jobs:
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
           xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build/Simulator -parallel-testing-enabled NO -only-testing:QwelTests/MotionUpdateTests -only-testing:QwelTests/AppleComponentTests CODE_SIGNING_ALLOWED=NO test > motion-test.log 2>&1 || { tail -120 motion-test.log; exit 1; }
+          MOTION_EXPORT=$(find "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" -type f -name QwelMotionValidation.swift -print -quit)
+          test -n "$MOTION_EXPORT"
+          xcrun --sdk iphonesimulator swiftc -typecheck -target x86_64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" "$MOTION_EXPORT"
       - name: Test editor, rendering and project archives
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_tests }}
         run: |

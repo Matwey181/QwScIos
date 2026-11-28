@@ -4,6 +4,14 @@ import AVFoundation
 @testable import QwelIos
 
 final class MotionUpdateTests:XCTestCase {
+    @MainActor func testStandaloneMotionSource()throws{
+        var p=Project();var n=Node();n.kind="SHAPE";n.shapeId="circle";p.nodes=[n]
+        var motion=MotionData(),track=MotionTrack(ref:n.id,prop:"shape")
+        track.keys=[MotionKey(t:0,s:"circle",e:"sp:380,0.8"),MotionKey(t:1000,s:"star-8")];motion.tracks=[track];p.motion=motion
+        let code=SwiftExport.make(p,root:FileManager.default.temporaryDirectory)
+        XCTAssertTrue(code.contains("QwelKeyframePlayer"));XCTAssertTrue(code.contains("enum MotionCurve"));XCTAssertTrue(code.contains("graph.setTimeline"))
+        try code.write(to:FileManager.default.temporaryDirectory.appendingPathComponent("QwelMotionValidation.swift"),atomically:true,encoding:.utf8)
+    }
     func testRecoveredCatalogAndCurveEndpoints()throws{
         let catalog=MotionPresetCatalog.shared
         XCTAssertEqual(catalog.templates.count,63);XCTAssertEqual(catalog.curves.count,45)
@@ -13,6 +21,8 @@ final class MotionUpdateTests:XCTestCase {
         }
         XCTAssertGreaterThan(MotionCurve.at("sp:300,0.35",0.2),1)
         XCTAssertEqual(MotionCurve.at("st:4,1",0.49),0.25)
+        XCTAssertEqual(MotionCurve.at("st:4,0",0),0.25)
+        XCTAssertTrue(MotionCurve.at("bn:1e100,0.5",0.5).isFinite)
     }
     @MainActor func testAndroidMotionFormatAndRelativeTransforms()throws{
         let json=Data(#"{"tracks":[{"id":"t","group":false,"ref":"n","prop":"x","keys":[{"t":0,"v":0,"e":"lin"},{"t":1000,"v":100,"e":"lin"}]}],"dur":1000,"loop":false}"#.utf8)
@@ -45,5 +55,7 @@ final class MotionUpdateTests:XCTestCase {
         let asset=AVURLAsset(url:url);let tracks=try await asset.loadTracks(withMediaType:.video)
         let duration=try await asset.load(.duration)
         XCTAssertEqual(tracks.count,1);XCTAssertGreaterThan(duration.seconds,0)
+        let image=try await AVAssetImageGenerator(asset:asset).image(at:.zero)
+        XCTAssertEqual(image.image.width,64);XCTAssertEqual(image.image.height,64)
     }
 }

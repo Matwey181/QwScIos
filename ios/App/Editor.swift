@@ -106,6 +106,13 @@ import SwiftUI
         n.w=image.size.width*s;n.h=image.size.height*s;n.x=(project.w-n.w)/2;n.y=(project.h-n.h)/2;n.ratioLock=true
         edit { $0.nodes.append(n) };selection=[n.id]
     }
+    func addBackground(_ data:Data)throws{
+        guard let image=UIImage(data:data),let png=image.pngData(),image.size.width>0,image.size.height>0 else{throw CocoaError(.fileReadCorruptFile)}
+        let asset=UUID().uuidString+".png";try png.write(to:store.assets.appendingPathComponent(asset),options:.atomic)
+        var n=Node();n.kind="IMAGE";n.name="Изображение фона";n.asset=asset;n.w=project.w;n.h=project.h;n.locked=true;n.ratioLock=true
+        var extras=LayerExtras();extras.imageMode="fill";n.extras=extras
+        edit{$0.nodes.removeAll{$0.locked && $0.name=="Изображение фона"};$0.nodes.insert(n,at:0)};selection=[]
+    }
     func duplicate() {
         var groups:[String:String]=[:],instances:[String:String]=[:]
         let ids=Dictionary(uniqueKeysWithValues:selected.map{($0.id,UUID().uuidString)})
@@ -114,9 +121,10 @@ import SwiftUI
             if n.action.hasPrefix("toggle:"){n.action="toggle:"+(ids[String(n.action.dropFirst(7))] ?? String(n.action.dropFirst(7)))}
             if !n.group.isEmpty { if groups[n.group]==nil { groups[n.group]=UUID().uuidString+(n.group.contains("~") ? "~"+n.group.components(separatedBy:"~").last! : "") };n.group=groups[n.group]! };return n }
         let reactions=project.links.filter{ids[$0.sourceID] != nil}.map{old in var r=old;r.id=UUID().uuidString;r.sourceID=ids[r.sourceID] ?? r.sourceID;r.targetID=ids[r.targetID] ?? r.targetID;r.elapsedID=r.elapsedID.map{ids[$0] ?? $0};r.remainingID=r.remainingID.map{ids[$0] ?? $0};return r}
-        edit { $0.nodes += copies;$0.links+=reactions };selection=Set(copies.map(\.id))
+        let tracks=(project.motion?.tracks ?? []).filter{($0.group ? groups[$0.ref]:ids[$0.ref]) != nil}.map{original in var tr=original;tr.id=UUID().uuidString;tr.ref=(tr.group ? groups[tr.ref]:ids[tr.ref]) ?? tr.ref;return tr}
+        edit { $0.nodes += copies;$0.links+=reactions;if !tracks.isEmpty{$0.motion?.tracks+=tracks} };selection=Set(copies.map(\.id))
     }
-    func remove() { edit { $0.nodes.removeAll { selection.contains($0.id) } };selection=[] }
+    func remove() { edit { p in p.nodes.removeAll { selection.contains($0.id) };let groups=Set(p.nodes.map(\.group));p.motion?.tracks.removeAll{tr in tr.group ? !groups.contains(tr.ref):selection.contains(tr.ref)} };selection=[] }
     func group() { let id=UUID().uuidString;change { $0.group=id } }
     func ungroup() { change { $0.group="" } }
     func front(_ front:Bool) { edit { p in let selected=p.nodes.filter { selection.contains($0.id) };p.nodes.removeAll { selection.contains($0.id) };if front { p.nodes += selected } else { p.nodes=selected+p.nodes } } }

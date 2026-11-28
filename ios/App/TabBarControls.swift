@@ -8,8 +8,9 @@ struct TabBarControls:View {
         if !groups.isEmpty{VStack(alignment:.leading,spacing:6){Text("Вкладок: \(count)").font(qfont(14,.semibold));QSlider(value:Binding(get:{Double(count)},set:{value in let count=min(8,max(2,Int(value.rounded())));if count != self.count{resize(count)}}),range:2...8)}}
     }
     private func resize(_ count:Int){
+        let targetGroups=groups
         editor.edit{project in
-            for group in groups{
+            for group in targetGroups{
                 let nodes=project.nodes.filter{$0.group==group}
                 guard let rail=nodes.first(where:{$0.kind=="RECT" && $0.widget.isEmpty}),let indicator=nodes.first(where:{$0.widget.hasPrefix("pick:ind")})else{continue}
                 let dark=project.tone.dark,ink:Int64=dark ? 0xff98989f:0xff6c6c70,blue:Int64=dark ? 0xff0a84ff:0xff007aff
@@ -30,6 +31,6 @@ struct TabBarControls:View {
                 project.nodes.removeAll{$0.group==group};project.nodes.insert(contentsOf:replacement,at:min(index,project.nodes.count))
             }
         }
-        editor.selection=Set(editor.project.nodes.filter{groups.contains($0.group)}.map(\.id))
+        editor.selection=Set(editor.project.nodes.filter{targetGroups.contains($0.group)}.map(\.id))
     }
 }

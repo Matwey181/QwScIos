@@ -60,6 +60,12 @@ import QuartzCore
     var onWidgetProgress: ((String, Double) -> Void)?
 
     var active: Bool { !motions.isEmpty || !echoes.isEmpty || !pending.isEmpty || playback.active || advanced.active }
+    func resumeAfterFreeze(_ delta:Double){
+        for i in motions.indices{motions[i].start+=delta}
+        for i in echoes.indices{echoes[i].started+=delta}
+        for i in pending.indices{pending[i].at+=delta}
+        paused=paused.mapValues{$0+delta};playback.resumeAfterFreeze(delta);advanced.resumeAfterFreeze(delta)
+    }
 
     func start(_ document: Project,widgetValues:[String:Double]=[:]) {
         advanced.reset()

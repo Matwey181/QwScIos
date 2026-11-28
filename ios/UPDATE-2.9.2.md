@@ -25,6 +25,7 @@ Implemented natively for iOS:
   including fonts, blur and cached glass.
 - Pen tool with editable knots, curve handles, open/closed paths and undoable
   commit; two-finger canvas navigation remains available.
+- Configurable polygon/star tool and a locked, crop-to-fill background image.
 - Independent rectangle corners and four glass optics parameters, retained by
   JSON archives and the legacy Kotlin/JS widget bridge.
 - Visibility appearance effects and four motion choices.
@@ -37,9 +38,10 @@ Implemented natively for iOS:
 Platform adaptations: Android AGSL uses a Core Image implementation on iOS; the
 Apple component catalog uses the public system font and SF Symbols. MP4 does not
 record microphone/system audio. This is a native port, not a binary patch or an
-assertion of pixel-identical rendering. Standalone Compose/SwiftUI code export
-still uses the existing interaction exporter; keyframe timelines are retained in
-the editable `.qwel` document and exported to MP4/PNG.
+assertion of pixel-identical rendering. SwiftUI export embeds the keyframe
+player and curve evaluators; timelines are retained in the editable `.qwel`
+document and exported to MP4/PNG. Compose export uses the existing Android v44
+generator and does not yet generate the new 2.9.2 timeline playback code.
 
 Validation: the CI workflow builds the arm64 IPA and runs motion/model/video
 round-trip checks plus the existing Apple widget/rendering regression suite.

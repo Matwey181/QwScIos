@@ -25,6 +25,7 @@ import QuartzCore
         }
     }
     func stop(){tracks=[:]}
+    func resumeAfterFreeze(_ delta:Double){for id in Array(tracks.keys){tracks[id]?.last+=delta}}
     func stop(_ id:String){tracks.removeValue(forKey:id)}
     func ensure(_ rule:InteractionLink,group:String,position:Double){
         guard tracks[rule.id]==nil else{return}

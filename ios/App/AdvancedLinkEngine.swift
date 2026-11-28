@@ -16,6 +16,11 @@ import AVFoundation
     private var checkpointOwners:[String:Set<String>]=[:]
     private var activePoints:[String:Set<String>]=[:]
     var needsDisplay=false
+    func resumeAfterFreeze(_ delta:Double){
+        heldAt+=delta;lastRepeat=lastRepeat.mapValues{$0+delta}
+        typing=typing.mapValues{($0.0,$0.1+delta,$0.2,$0.3)}
+        for id in Array(morphs.keys){morphs[id]?.start+=delta}
+    }
     var active:Bool{held != nil || !typing.isEmpty || morphs.values.contains{CACurrentMediaTime() < $0.start+max(0.01,$0.rule.duration)} || !followers.isEmpty}
     func reset(){checkpointUndos=[:];checkpointOwners=[:];activePoints=[:];transformStarts=[:];once=[];hits=[:];stages=[:];selected=[];held=nil;typing=[:];players.values.forEach{$0.stop()};players=[:];replacements=[:];morphs=[:];followers=[:];inside=[:]}
     func stop(_ id:String){if let owners=checkpointOwners.removeValue(forKey:id){for owner in owners{runtime?.stopAdvancedLink(owner)}};checkpointUndos.removeValue(forKey:id);activePoints.removeValue(forKey:id);typing.removeValue(forKey:id);players[id]?.stop();players.removeValue(forKey:id);morphs.removeValue(forKey:id);followers.removeValue(forKey:id)}

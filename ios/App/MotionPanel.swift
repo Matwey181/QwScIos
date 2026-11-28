@@ -87,7 +87,7 @@ struct MotionPanel:View {
             }
             if let key=selectedKey,let tr=selectedTrack{
                 StudioCard(title:"Ключ \(key.t) мс"){
-                    QNumber(title:"Время, мс",value:Binding(get:{CGFloat(key.t)},set:{v in updateKey{ $0.t=min(data.dur,max(0,Int(v)));keyTime=$0.t }}))
+                    QNumber(title:"Время, мс",value:Binding(get:{CGFloat(key.t)},set:{v in let t=min(data.dur,max(0,Int(v)));updateKey{ $0.t=t };keyTime=t}))
                     if tr.prop=="fill"{ColorPicker("Цвет",selection:Binding(get:{Color(argb:key.c)},set:{v in updateKey{$0.c=UIColor(v).argb}}))}
                     else if tr.prop=="shape"{LinkChoiceField(title:"Форма",selection:Binding(get:{key.s},set:{v in updateKey{$0.s=v}}),items:Catalog.shared.shapes.map{($0.id,$0.name)})}
                     else{QNumber(title:"Значение",value:Binding(get:{CGFloat(key.v)},set:{v in updateKey{$0.v=Double(v)}}))}
@@ -138,7 +138,7 @@ struct MotionPanel:View {
             QToggle("Повторять",isOn:Binding(get:{data.loop},set:{v in edit{$0.loop=v}}))
             if editor.project.pages.count>1{
                 Text("Переход по времени").font(qfont(18,.semibold))
-                ForEach(editor.project.pages){page in Button("В \(String(format:"%.2f",time/1000)) с → \(page.name)"){edit{$0.jumps.append(MotionJump(t:Int(time),from:editor.project.pages[editor.project.active].id,to:page.id))}}}.font(qfont(14))
+                ForEach(editor.project.pages){page in Button("В \(String(format:"%.2f",time/1000)) с → \(page.name)"){addJump(page.id)}}.font(qfont(14))
                 ForEach(Array(data.jumps.enumerated()),id:\.offset){index,jump in HStack{Text("\(jump.t) мс → \(editor.project.pages.first{$0.id==jump.to}?.name ?? jump.to)");Spacer();Button(role:.destructive){edit{$0.jumps.remove(at:index)}}label:{Image(systemName:"trash")}}}
             }
             LinkPill(title:"Экспорт MP4 / последовательности PNG",icon:"film"){playing=false;exportVideo=true}
@@ -146,6 +146,7 @@ struct MotionPanel:View {
         }
     }
     private func edit(_ change:(inout MotionData)->Void){editor.edit{p in var m=p.motion ?? MotionData();change(&m);p.motion=m}}
+    private func addJump(_ destination:String){let source=editor.project.pages[editor.project.active].id,jump=MotionJump(t:Int(time),from:source,to:destination);edit{$0.jumps.append(jump)}}
     private func targetName(_ tr:MotionTrack)->String{tr.group ? "Группа":editor.project.nodes.first{$0.id==tr.ref}?.name ?? "Слой"}
     private func moveTarget(_ translation:CGPoint,state:UIGestureRecognizer.State){
         guard !target.isEmpty,!playing else{return}
@@ -179,13 +180,13 @@ struct MotionPanel:View {
     }
     private func previousKey(){playing=false;time=Double(data.tracks.flatMap(\.keys).map(\.t).filter{Double($0)<time-0.5}.max() ?? 0)}
     private func nextKey(){playing=false;time=Double(data.tracks.flatMap(\.keys).map(\.t).filter{Double($0)>time+0.5}.min() ?? data.dur)}
-    private func presetTitle(_ p:MotionPresetCatalog.Template)->String{let key="tpl_"+p.id.replacingOccurrences(of:"-",with:"_");let value=tr(key);return value==key ? p.name:value}
+    private func presetTitle(_ p:MotionPresetCatalog.Template)->String{let key="tpl_"+p.id;let value=tr(key);return value==key ? p.name:value}
     private func apply(_ preset:MotionPresetCatalog.Template){
         guard let node=editor.project.nodes.first(where:{$0.id==target})else{return}
         if preset.id=="morph" && node.kind != "SHAPE"{return}
         if ["corner-pop","press"].contains(preset.id) && node.kind != "RECT"{return}
         let start=Int(time),isGroup=group && !node.group.isEmpty
-        let tracks=preset.tracks.map{original in var tr=original;tr.id=UUID().uuidString;tr.ref=isGroup ? node.group:node.id;tr.group=isGroup;tr.keys=tr.keys.map{key in var k=key;k.t+=start;if tr.prop=="cr"{k.v=k.v/16*Double(node.corner)};if tr.prop=="shape",k.s=="circle"{k.s=node.shapeId};return k};return tr}
+        let tracks=preset.tracks.filter{!(preset.id=="press" && node.corner<=0 && $0.prop=="cr")}.map{original in var tr=original;tr.id=UUID().uuidString;tr.ref=isGroup ? node.group:node.id;tr.group=isGroup;tr.keys=tr.keys.map{key in var k=key;k.t+=start;if tr.prop=="cr"{k.v=preset.id=="corner-pop" && key.t>0 && key.t<preset.duration ? max(2.2*Double(node.corner),24):k.v/16*Double(node.corner)};if tr.prop=="shape",k.s=="circle"{k.s=node.shapeId};return k};return tr}
         edit{m in m.tracks+=tracks;m.dur=max(m.dur,start+preset.duration)}
         trackID=tracks.first?.id;keyTime=tracks.first?.keys.first?.t;playing=true;lastDate=nil
     }

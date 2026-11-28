@@ -26,7 +26,7 @@ struct MotionTrack:Codable,Equatable,Identifiable {
     func segment(_ time:Double)->(MotionKey,MotionKey,Double)? {
         let sorted=keys.sorted{$0.t<$1.t}
         guard let first=sorted.first,let last=sorted.last else{return nil}
-        if time<=Double(first.t){return(first,first,0)}
+        if time<Double(first.t){return(first,first,0)}
         if time>=Double(last.t){return(last,last,0)}
         for i in 0..<(sorted.count-1) where time<Double(sorted[i+1].t){
             let a=sorted[i],b=sorted[i+1]
@@ -64,7 +64,7 @@ enum MotionCurve {
         return(lo+hi)/2
     }
     static func spring(_ k:Double,_ z:Double,_ t:Double)->Double{
-        let w=sqrt(max(0.01,k)),z=max(0.01,z)
+        let w=sqrt(min(20000,max(1,k))),z=min(5,max(0.02,z))
         if z<0.9999{let wd=w*sqrt(1-z*z);return 1-exp(-z*w*t)*(cos(wd*t)+z*w/wd*sin(wd*t))}
         if z<=1.0001{return 1-exp(-w*t)*(w*t+1)}
         let q=w*sqrt(z*z-1),a = -z*w+q,b = -z*w-q
@@ -78,10 +78,12 @@ enum MotionCurve {
         let value=min(12,max(0.05,last+1/240));settleCache.setObject(NSNumber(value:value),forKey:key);return value
     }
     static func at(_ encoded:String,_ progress:Double)->Double{
-        let t=min(1,max(0,progress));if t<=0{return 0};if t>=1{return 1}
+        let t=min(1,max(0,progress))
         let bits=encoded.split(separator:":",maxSplits:1),kind=String(bits.first ?? "lin")
         let p=bits.count>1 ? bits[1].split(separator:",").compactMap{Double($0)}:[]
         guard p.allSatisfy(\.isFinite)else{return t}
+        if t<=0{return kind=="st" && p.count==2 && p[1]==0 ? 1/min(64,max(1,p[0])):0}
+        if t>=1{return 1}
         switch kind {
         case "bz" where p.count==4:return bez(0,p[1],p[3],1,solve(0,p[0],p[2],1,t))
         case "ch" where p.count>=6:
@@ -89,9 +91,9 @@ enum MotionCurve {
             for i in stride(from:0,through:p.count-6,by:6){if t<=p[i+4] || i+6>=p.count{return bez(y,p[i+1],p[i+3],p[i+5],solve(x,p[i],p[i+2],p[i+4],t))};x=p[i+4];y=p[i+5]};return t
         case "sp" where p.count==2:return spring(p[0],p[1],t*settle(p[0],p[1]))
         case "el" where p.count==2:return pow(2,-min(20,max(2,p[1]))*t)*sin(min(10,max(0.5,p[0]))*2 * .pi*t - .pi/2)+1
-        case "st" where p.count==2:let n=min(120,max(1,p[0]));return min(1,max(0,(floor(t*n)+(p[1]==0 ? 1:0))/n))
+        case "st" where p.count==2:let n=min(64,max(1,p[0]));return min(1,max(0,(floor(t*n)+(p[1]==0 ? 1:0))/n))
         case "bn" where p.count==2:
-            let n=min(20,max(1,Int(p[0]))),e=min(0.95,max(0.05,p[1]))
+            let n=Int(min(8,max(1,p[0]))),e=min(0.9,max(0.1,p[1]))
             let total=(1...n).reduce(1.0){$0+2*pow(e,Double($1))}
             var x=t*total;if x<=1{return x*x};x-=1
             for i in 1...n{let size=2*pow(e,Double(i));if x<=size{return 1-pow(e,Double(2*i))+pow(x-size/2,2)};x-=size};return 1

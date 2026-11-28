@@ -73,6 +73,8 @@ private struct QwelEcho: Identifiable {
     var repeats:Bool = false
 }
 @MainActor private final class QwelExportRuntime: NSObject, ObservableObject {
+    private let timeline=QwelKeyframePlayer()
+    func setTimeline(_ source:String,morphs:[String:[Double]]){timeline.configure(source,morphs);timeline.onNavigate={ [weak self] id in self?.onNavigate?(id) };timeline.tick(CACurrentMediaTime())}
     @Published private var version: Int = 0
     private struct Clock {var rule:QwelRule;var position:Double;var last:Double;var running:Bool;var scrubbing=false}
     private var clocks:[String:Clock]=[:]
@@ -132,6 +134,7 @@ private struct QwelEcho: Identifiable {
     }
     @objc private func frame() {
         let now=CACurrentMediaTime()
+        timeline.tick(now)
         let clockChanged=advanceClocks(now)
         let due=pending.filter{$0.at<=now && paused[$0.rule.id]==nil}
         pending.removeAll{$0.at<=now && paused[$0.rule.id]==nil}
@@ -155,7 +158,7 @@ private struct QwelEcho: Identifiable {
         for id in Set(completed.map(\.target)) {
             emit("finished",source:id)
         }
-        if clockChanged || !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty || !due.isEmpty {
+        if timeline.active || clockChanged || !motions.isEmpty || !echoes.isEmpty || !completed.isEmpty || !due.isEmpty {
             version &+= 1
         }
     }
@@ -283,7 +286,7 @@ private struct QwelEcho: Identifiable {
             if ["fill","stroke","fill2","shadowColor"].contains(property) {return Double(mixColor(Int64(m.from),Int64(m.to),eased))}
             return m.from + (m.to-m.from)*eased
         }
-        return current[idKey] ?? fallback
+        return current[idKey] ?? timeline.values[idKey] ?? fallback
     }
     func styledLabel(_ id:String,base fallback:String,runs:[QwelTextSpan])->Text {
         let value=label(id,base:fallback),string=value as NSString
@@ -383,6 +386,7 @@ private struct QwelEcho: Identifiable {
         return UnitPoint(x:0.5+cos(angle)*k,y:0.5+sin(angle)*k)
     }
     func morphPath(_ id:String,base:Path,width:CGFloat,height:CGFloat)->Path {
+        if let path=timeline.paths[id]{return path}
         guard let rule=rules.last(where:{$0.enabled && $0.target==id && $0.property=="morph"}),rule.morphFrom.count==rule.morphTo.count,rule.morphFrom.count>=8 else{return base}
         let t=value(id,"morph",base:0),a=rule.morphFrom,b=rule.morphTo
         func point(_ i:Int)->CGPoint {CGPoint(x:(a[i]+(b[i]-a[i])*t)*width,y:(a[i+1]+(b[i+1]-a[i+1])*t)*height)}
