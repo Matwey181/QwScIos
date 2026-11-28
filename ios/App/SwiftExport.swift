@@ -1,0 +1,264 @@
+import UIKit
+
+/// Exports editable vector layers and all saved interaction links as one
+/// self-contained SwiftUI file. No Qwel runtime is required by the target app.
+enum SwiftExport {
+    static func literal(_ text:String)->String {
+        "\""+text.unicodeScalars.map { c -> String in
+            switch c.value {
+            case 34:return "\\\""
+            case 92:return "\\\\"
+            case 10:return "\\n"
+            case 13:return "\\r"
+            case 9:return "\\t"
+            case 0..<32:return "\\u{\(String(c.value,radix:16))}"
+            default:return String(c)
+            }
+        }.joined()+"\""
+    }
+    static func color(_ value:Int64)->String {
+        let v=UInt32(truncatingIfNeeded:value)
+        return "Color(.sRGB, red: \(Double((v>>16)&255)/255), green: \(Double((v>>8)&255)/255), blue: \(Double(v&255)/255), opacity: \(Double(v>>24)/255))"
+    }
+    static func path(_ node:Node)->String {
+        var commands:[String]=[]
+        func point(_ p:CGPoint)->String {"CGPoint(x: \(p.x), y: \(p.y))"}
+        VectorPath.local(node).applyWithBlock { pointer in
+            let e=pointer.pointee,p=e.points
+            switch e.type {
+            case .moveToPoint:commands.append("p.move(to: \(point(p[0])))")
+            case .addLineToPoint:commands.append("p.addLine(to: \(point(p[0])))")
+            case .addQuadCurveToPoint:commands.append("p.addQuadCurve(to: \(point(p[1])), control: \(point(p[0])))")
+            case .addCurveToPoint:commands.append("p.addCurve(to: \(point(p[2])), control1: \(point(p[0])), control2: \(point(p[1])))")
+            case .closeSubpath:commands.append("p.closeSubpath()")
+            @unknown default:break
+            }
+        }
+        return "Path { p in "+commands.joined(separator:"; ")+" }"
+    }
+
+    private static func stateNumbers(_ nodes:[Node])->[String:Double]{
+        var result:[String:Double]=[:]
+        for n in nodes {
+            let values:[String:Double]=["liquid":Double(n.liquid),"x":Double(n.x),"y":Double(n.y),"width":Double(n.w),"height":Double(n.h),"rotation":Double(n.rotation),"opacity":Double(n.opacity),"fillOpacity":Double(n.fillOpacity),"disabled":n.extras?.disabled==true ? 1:0,"fill":Double(n.fill),"stroke":Double(n.stroke),"strokeWidth":Double(n.strokeWidth),"fontSize":Double(n.fontSize),"corner":Double(n.corner),"blur":Double(n.softBlur),"visible":n.visible ? 1:0,"weight":Double(n.weight)]
+            for (key,value) in values{result[n.id+"|"+key]=value}
+        }
+        return result
+    }
+    private static func dictionary(_ values:[String:Double])->String {values.isEmpty ? "[:]":"["+values.keys.sorted().map{literal($0)+": "+String(values[$0]!)}.joined(separator:",")+"]"}
+    private static func strings(_ values:[String:String])->String {values.isEmpty ? "[:]":"["+values.keys.sorted().map{literal($0)+": "+literal(values[$0]!)}.joined(separator:",")+"]"}
+    @MainActor private static func rules(_ project:Project)->String {
+        func encode(_ link:InteractionLink)->String {
+            let all=project.pages.flatMap(\.nodes)+project.nodes
+            let source=all.first{$0.id==link.sourceID}
+            let aliases=link.exactSource != true && source?.group.isEmpty==false ? Array(Set(all.filter{$0.group==source?.group}.map(\.id))):[]
+            let node=all.first{$0.id==link.targetID}
+            let targetAliases=node?.group.isEmpty==false ? Array(Set(all.filter{$0.group==node?.group}.map(\.id))):[link.targetID]
+            let morph=link.property=="morph" ? LinkMorph(from:node?.shapeId ?? "",to:link.shapeID ?? "star-8",size:CGSize(width:node?.w ?? 1,height:node?.h ?? 1)):nil
+            let state=project.studio?.states.first{$0.id==link.stateID}
+            let numbers=stateNumbers(state?.nodes ?? [])
+            let stateLabels=Dictionary((state?.nodes ?? []).filter{$0.kind=="TEXT"}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
+            let reverseLabels=Dictionary(all.filter{stateLabels[$0.id] != nil}.map{($0.id,$0.text)},uniquingKeysWith:{_,new in new})
+            return "QwelRule(source: \(literal(link.sourceID)), event: \(literal(link.event)), target: \(literal(link.targetID)), mode: \(literal(link.mode)), property: \(literal(link.property)), value: \(link.value), from: \(link.from), to: \(link.to), duration: \(link.duration), delay: \(link.delay), easing: \(literal(link.easing)), text: \(literal(link.text)), color: \(link.color), repeats: \(link.repeats), enabled: \(link.enabled), id: \(literal(link.id)), pauseOnRepeat: \(link.pauseOnRepeat ?? false), alternate: \(link.alternate ?? false), reverseText: \(link.reverseText.map{literal($0)} ?? "nil"), sourceAliases: [\(aliases.map{literal($0)}.joined(separator:","))], morphFrom: \(morph?.start ?? []), morphTo: \(morph?.end ?? []), autoplay: \(link.autoplay ?? false), elapsedEnabled: \(link.elapsedEnabled ?? false), remainingEnabled: \(link.remainingEnabled ?? false), elapsedID: \(literal(link.elapsedID ?? "")), remainingID: \(literal(link.remainingID ?? "")), clockFormat: \(literal(link.clockFormat ?? "clock")), targetAliases: [\(targetAliases.map{literal($0)}.joined(separator:","))], steps: [\((link.steps ?? []).map{encode($0)}.joined(separator:","))], stepTiming: \(literal(link.stepTiming ?? "after")), resumeAfterSeek: \(link.resumeAfterSeek ?? true), stateNumbers: \(dictionary(numbers)), stateTexts: \(strings(stateLabels)), reverseTexts: \(strings(reverseLabels)), control: \(literal(link.control ?? "")), destination: \(literal(link.destination ?? "back")))"
+        }
+        return project.links.map{encode($0)}.joined(separator:",\n")
+    }
+    private static func bases(_ project:Project,_ pages:[[Node]])->String {
+        let links:[InteractionLink]=project.links.flatMap{[$0]+($0.steps ?? [])}
+        let targets:[String]=links.map(\.targetID)
+        let toggles:[String]=project.nodes.compactMap {node in
+            node.action.hasPrefix("toggle:") ? String(node.action.dropFirst(7)):nil
+        }
+        let ids=Set(targets+toggles)
+        let stateIDs=Set(project.studio?.states.flatMap(\.nodes).map(\.id) ?? [])
+        let nodes=pages.flatMap{$0}.filter{ids.contains($0.id) || stateIDs.contains($0.id)}
+        let props: [(String,(Node)->Double)] = [
+            ("x",{Double($0.x)}),("y",{Double($0.y)}),
+            ("width",{Double($0.w)}),("height",{Double($0.h)}),
+            ("rotation",{Double($0.rotation)}),("opacity",{Double($0.opacity)}),("fillOpacity",{Double($0.fillOpacity)}),
+            ("scale",{_ in 1}),("groupScale",{_ in 1}),("groupTint",{_ in 0}),("progress",{_ in 0}),
+            ("fontSize",{Double($0.fontSize)}),("corner",{Double($0.corner)}),
+            ("blur",{Double($0.softBlur)}),("fill",{Double($0.fill)}),
+            ("visible",{$0.visible ? 1 : 0}), ("morph",{_ in 0}), ("echo",{_ in 0}),
+            ("stroke",{Double($0.stroke)}),("fill2",{Double($0.fill2)}),
+            ("shadowColor",{Double($0.shadowColor)}),("weight",{Double($0.weight)}),
+            ("strokeWidth",{Double($0.strokeWidth)}),("gradAngle",{Double($0.gradAngle)}),
+            ("shadowBlur",{Double($0.shadowBlur)}),("shadowDx",{Double($0.shadowDx)}),
+            ("shadowDy",{Double($0.shadowDy)}),("backgroundBlur",{Double($0.blur)})
+        ]
+        return nodes.flatMap { n in props.map { pair in
+            "\(literal(n.id+"|"+pair.0)): \(pair.1(n))"
+        }}.joined(separator:",\n")
+    }
+
+    @MainActor static func make(_ project:Project,root:URL)->String {
+        var pages=project.pages.map(\.nodes)
+        if pages.isEmpty {pages=[project.nodes]}
+        else if pages.indices.contains(project.active) {pages[project.active]=project.nodes}
+        let allNodes=pages.flatMap{$0}
+        let effectiveLinks=project.links.flatMap{[$0]+($0.steps ?? [])}
+        var functions:[String]=[],cases:[String]=[]
+        let rulesSource=rules(project),baseSource=bases(project,pages)
+        let pageIDs=project.pages.map{literal($0.id)}.joined(separator:",")
+        let dictionarySource=baseSource.isEmpty ? ":" : baseSource
+
+        for (page,nodes) in pages.enumerated() {
+            var layers:[String]=[]
+            for (i,n) in nodes.enumerated() where !n.mask && n.extras?.reference != true {
+                let name="layer\(page)_\(i)"
+                let identifier=literal(n.id)
+                let groupNodes=n.group.isEmpty ? [n]:nodes.filter{$0.group==n.group}
+                let groupBox=groupNodes.reduce(CGRect.null){$0.union($1.rect)}
+                let alignment=n.textAlign=="center" ? "center":n.textAlign=="right" ? "trailing":"leading"
+                var view:String
+                let nodeColor="graph.fill(\(identifier), base: \(n.fill))"
+                if n.kind=="TEXT" {
+                    let runs=(n.extras?.runs ?? []).map{"QwelTextSpan(start: \($0.start), length: \($0.length), weight: \($0.weight), italic: \($0.italic), color: \($0.color.map(String.init) ?? "nil"))"}.joined(separator:",")
+                    let actualSize=(n.extras?.autoFit==true || n.fixH) ? TextLayout(n,font:DocumentRenderer(root:root).font(n)).resolvedFont.pointSize:n.fontSize
+                    var textBase="graph.styledLabel(\(identifier), base: \(literal(n.text)), runs: [\(runs)]).font(.system(size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize))), weight: (graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 700 ? .bold : graph.value(\(identifier), \"weight\", base: \(n.weight)) >= 500 ? .medium : .regular))).foregroundStyle(\(nodeColor)).multilineTextAlignment(.\(alignment))"
+                    if n.gradKind != 0{let gradient=n.gradKind==2 ? "RadialGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], center: .center, startRadius: 0, endRadius: \(max(n.w,n.h)/2))":"LinearGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], startPoint: .topLeading, endPoint: .bottomTrailing)";textBase += ".overlay(\(gradient).mask(\(textBase)))"}
+                    let fontName=DocumentRenderer(root:root).font(n).fontName
+                    let selectedFont=n.font.isEmpty ? textBase:textBase+".font(.custom(\(literal(fontName)), size: CGFloat(graph.value(\(identifier), \"fontSize\", base: \(actualSize)))))"
+                    let typography=selectedFont+".tracking(\(n.extras?.tracking ?? 0)).lineSpacing(\(n.extras?.lineSpacing ?? 0))"
+                    if TextLayout.isAndroidCatalogText(n) {
+                        // Android's template text is measured with a 0.55 character
+                        // estimate and renders only explicit newlines. Its compact
+                        // frame must not cause extra line breaks in exported SwiftUI.
+                        view=typography+".fixedSize(horizontal: true, vertical: true).frame(width: \(n.w), height: \(n.h), alignment: .\(alignment))"
+                    } else {
+                        view=typography+".frame(width: \(n.w), alignment: .\(alignment)).fixedSize(horizontal: false, vertical: true)"
+                    }
+                } else if n.kind=="IMAGE" && n.asset.hasPrefix("sf:") {
+                    let weight=n.weight>=600 ? "semibold":n.weight>=500 ? "medium":"regular"
+                    view="Image(systemName: \(literal(String(n.asset.dropFirst(3))))).resizable().scaledToFit().font(.system(size: \(n.fontSize), weight: .\(weight))).foregroundStyle(\(nodeColor))"
+                } else if n.kind=="IMAGE" {
+                    let bytes=(try? Data(contentsOf:root.appendingPathComponent("assets").appendingPathComponent(n.asset))) ?? Data()
+                    view="embeddedImage(\(literal(bytes.base64EncodedString()))).resizable()"
+                    if let extras=n.extras,extras.imageMode != "stretch",let image=UIImage(data:bytes){
+                        let sx=n.w/max(1,image.size.width),sy=n.h/max(1,image.size.height)
+                        let ratio=(extras.imageMode=="fit" ? min(sx,sy):max(sx,sy))*max(0.1,extras.imageZoom)
+                        let width=image.size.width*ratio,height=image.size.height*ratio
+                        view="ZStack(alignment: .topLeading) { Color.clear; embeddedImage(\(literal(bytes.base64EncodedString()))).resizable().frame(width: \(width), height: \(height)).offset(x: \((n.w-width)*extras.cropX), y: \((n.h-height)*extras.cropY)) }.frame(width: \(n.w), height: \(n.h)).clipped()"
+                    }
+                } else {
+                    let shape=effectiveLinks.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
+                    var fill=nodeColor
+                    if n.gradKind==2 {fill="RadialGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], center: .center, startRadius: 0, endRadius: \(max(n.w,n.h)/2))"}
+                    else if n.gradKind==1 {
+                        let angle=n.gradAngle * .pi/180,dx=cos(angle)/2,dy=sin(angle)/2
+                        fill="LinearGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], startPoint: graph.gradientPoint(\(identifier), base: \(n.gradAngle), end: false), endPoint: graph.gradientPoint(\(identifier), base: \(n.gradAngle), end: true))"
+                    }
+                    view="\(shape).fill(\(fill), style: FillStyle(eoFill: \(n.evenOdd))).opacity(graph.value(\(identifier), \"fillOpacity\", base: \(n.fillOpacity)))"
+                    if n.strokeWidth>0 || effectiveLinks.contains(where:{$0.targetID==n.id && ["stroke","strokeWidth"].contains($0.property)}) {view += ".overlay { \(shape).stroke(graph.fill(\(identifier), base: \(n.stroke), property: \"stroke\"), lineWidth: CGFloat(graph.value(\(identifier), \"strokeWidth\", base: \(n.strokeWidth)))) }"}
+                }
+                view += ".frame(width: \(n.w), height: \(n.h), alignment: .topLeading)"
+                if n.liquid>0{view += ".background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: \(n.kind=="ELLIPSE" ? min(n.w,n.h)/2:n.corner))).overlay(RoundedRectangle(cornerRadius: \(n.kind=="ELLIPSE" ? min(n.w,n.h)/2:n.corner)).stroke(Color.white.opacity(0.35), lineWidth: 0.6))"}
+                if n.shadowBlur>0 || effectiveLinks.contains(where:{$0.targetID==n.id && $0.property.hasPrefix("shadow")}) {view += ".shadow(color: graph.fill(\(identifier), base: \(n.shadowColor), property: \"shadowColor\"), radius: CGFloat(graph.value(\(identifier), \"shadowBlur\", base: \(n.shadowBlur))), x: CGFloat(graph.value(\(identifier), \"shadowDx\", base: \(n.shadowDx))), y: CGFloat(graph.value(\(identifier), \"shadowDy\", base: \(n.shadowDy))))"}
+                view += ".blur(radius: CGFloat(graph.value(\(identifier), \"blur\", base: \(n.softBlur))))"
+                // Animate all supported geometry directly; never place an invisible
+                // rectangle over the exported artwork to fake its gestures.
+                let sx="graph.value(\(identifier), \"width\", base: \(n.w)) / \(max(0.001,n.w)) * graph.value(\(identifier), \"scale\", base: 1) * graph.value(\(identifier), \"progress\", base: 1)"
+                let sy="graph.value(\(identifier), \"height\", base: \(n.h)) / \(max(0.001,n.h)) * graph.value(\(identifier), \"scale\", base: 1)"
+                view += ".scaleEffect(x: CGFloat(\(sx) * graph.groupValue(\(identifier), \"groupScale\", base: 1)), y: CGFloat(\(sy) * graph.groupValue(\(identifier), \"groupScale\", base: 1)))"
+                view += ".rotationEffect(.degrees(graph.value(\(identifier), \"rotation\", base: \(n.rotation))))"
+                view += ".opacity(graph.visible(\(identifier), base: \(n.visible)) ? graph.value(\(identifier), \"opacity\", base: \(n.opacity)) : 0)"
+                view += ".allowsHitTesting(graph.visible(\(identifier), base: \(n.visible)) && graph.value(\(identifier), \"disabled\", base: \(n.extras?.disabled==true ? 1:0)) < 0.5)"
+
+                // Echo is an animated geometric outline around the original layer.
+                if effectiveLinks.contains(where:{$0.targetID==n.id && ($0.mode=="echo" || $0.property=="echo")}) {
+                    view += ".overlay { if let echo=graph.echo(\(identifier)) { RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).stroke(\(nodeColor).opacity(graph.value(\(identifier), \"echo\", base: 0)>0 ? min(1,graph.value(\(identifier), \"echo\", base: 0))*0.3:max(0,1-echo)), lineWidth: 2).scaleEffect(1+echo*0.32) } }"
+                }
+
+                var sources=Set([n.id])
+                if !n.group.isEmpty {
+                    for groupMember in allNodes where groupMember.group==n.group {
+                        sources.insert(groupMember.id)
+                    }
+                }
+                let tapRules=project.links.filter{$0.enabled && $0.event=="tap" && sources.contains($0.sourceID)}
+                let dragRules=project.links.filter{$0.enabled && ["dragStart","drag","dragEnd","valueChanged"].contains($0.event) && sources.contains($0.sourceID)}
+                let interactiveProgress=n.widget.hasPrefix("slider:") || n.widget.hasPrefix("progress:")
+                let holds=project.links.contains{$0.enabled && ["press","release"].contains($0.event) && sources.contains($0.sourceID)}
+                if holds {view += ".onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { down in graph.press(source: \(identifier), down: down) }, perform: {})"}
+                var tapCalls=Array(Set(tapRules.map(\.sourceID))).sorted().map{
+                    "graph.emit(\"tap\", source: \(literal($0)))"
+                }
+                if n.action=="back" {
+                    tapCalls.append("if let last=backPages.popLast() {currentPage=last}")
+                } else if n.action.hasPrefix("goto:") {
+                    let target=String(n.action.dropFirst(5))
+                    if let index=project.pages.firstIndex(where:{$0.id==target}) {
+                        tapCalls.append("backPages.append(currentPage); currentPage=\(index)")
+                    }
+                } else if n.action.hasPrefix("toggle:") {
+                    tapCalls.append("graph.toggle(target: \(literal(String(n.action.dropFirst(7)))))")
+                } else if n.action.hasPrefix("url:") {
+                    let url=String(n.action.dropFirst(4))
+                    tapCalls.append("if let u=URL(string: \(literal(url))), [\"http\",\"https\"].contains(u.scheme ?? \"\") {UIApplication.shared.open(u)}")
+                }
+                if !tapCalls.isEmpty {
+                    view += ".contentShape(Rectangle()).onTapGesture { \(tapCalls.joined(separator:"; ")) }"
+                }
+                if !dragRules.isEmpty || interactiveProgress {
+                    var fractions:[String:String]=[:]
+                    let dragSources=Set(dragRules.map(\.sourceID)).union(interactiveProgress ? [n.id]:[])
+                    for source in dragSources {
+                        let sourceNode=allNodes.first(where:{$0.id==source}) ?? n
+                        let grouped=sourceNode.group.isEmpty ? [sourceNode] :
+                            allNodes.filter{$0.group==sourceNode.group}
+                        let minX=grouped.map(\.x).min() ?? n.x
+                        let maxX=grouped.map{$0.x+$0.w}.max() ?? n.x+n.w
+                        fractions[source]="Double(min(1,max(0,(gesture.location.x + \(n.x) - \(minX))/\(max(1,maxX-minX)))))"
+                    }
+                    let sources=Array(dragSources).sorted()
+                    let change=sources.map { source in
+                        "graph.dragChanged(source: \(literal(source)), fraction: \(fractions[source] ?? "0"))"
+                    }.joined(separator:"; ")
+                    let end=sources.map { source in
+                        "graph.dragEnded(source: \(literal(source)), fraction: \(fractions[source] ?? "0"))"
+                    }.joined(separator:"; ")
+                    view += ".simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { gesture in \(change) }.onEnded { gesture in \(end) })"
+                }
+                view += ".position(x: CGFloat(graph.groupPosition(\(identifier), axis: \"x\", base: \(n.x), half: \(n.w/2), center: \(groupBox.midX))), y: CGFloat(graph.groupPosition(\(identifier), axis: \"y\", base: \(n.y), half: \(n.h/2), center: \(groupBox.midY))))"
+
+                if i+1<nodes.count,nodes[i+1].mask,nodes[i+1].visible {
+                    let mask=nodes[i+1]
+                    view += ".frame(width: \(project.w), height: \(project.h)).mask { \(path(mask)).fill(style: FillStyle(eoFill: \(mask.evenOdd))).frame(width: \(mask.w), height: \(mask.h)).rotationEffect(.degrees(\(mask.rotation))).position(x: \(mask.center.x), y: \(mask.center.y)) }"
+                }
+                functions.append("private var \(name): some View { \(view) }")
+                layers.append(name)
+            }
+            cases.append("case \(page): ZStack(alignment: .topLeading) { \(color(project.bg)); \(layers.joined(separator:"; ")) }.frame(width: \(project.w), height: \(project.h)).clipped()")
+        }
+        return """
+        import SwiftUI
+        import UIKit
+        import QuartzCore
+        // Editable vector layout + fully embedded interaction / animation engine.
+        public struct QwelExportedView: View {
+            public let page: Int
+            @State private var currentPage: Int
+            @State private var backPages: [Int] = []
+            @StateObject private var graph = QwelExportRuntime()
+            public init(page: Int = 0) {
+                self.page = page
+                _currentPage = State(initialValue: page)
+            }
+            private var rules: [QwelRule] { [\(rulesSource)] }
+            private var initial: [String:Double] { [\(dictionarySource)] }
+            public var body: some View {
+                Group { switch currentPage { \(cases.joined(separator:"\n"))
+                default: Color.white.frame(width: \(project.w), height: \(project.h))
+                } }
+                .onAppear {graph.onNavigate={ id in if id=="back" {if let page=backPages.popLast(){currentPage=page}}else if let index=([\(pageIDs)] as [String]).firstIndex(of:id){backPages.append(currentPage);currentPage=index} };graph.start(rules,initial:initial)}
+                .onDisappear {graph.stop()}
+            }
+            private func embeddedImage(_ base64: String) -> Image {
+                Image(uiImage: UIImage(data: Data(base64Encoded: base64) ?? Data()) ?? UIImage())
+            }
+            \(functions.joined(separator:"\n"))
+        }
+        \(ExportedInteractionSource.code)
+        """
+    }
+}

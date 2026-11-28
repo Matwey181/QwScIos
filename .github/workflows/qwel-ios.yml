@@ -1,0 +1,72 @@
+name: Build Qwel iOS
+on:
+  push:
+    branches: [codex/qwel-ios]
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: Run simulator tests
+        type: boolean
+        default: false
+concurrency:
+  group: qwel-ios-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          cd ios
+          xcodegen generate
+      - name: Build arm64 IPA
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/Device CODE_SIGNING_ALLOWED=NO build > build-device.log 2>&1 || { python3 -c 'from pathlib import Path; print("\n".join(l for l in Path("build-device.log").read_text().splitlines() if "error:" in l))'; tail -60 build-device.log; exit 1; }
+          mkdir -p build/Payload
+          cp -R build/Device/Build/Products/Release-iphoneos/QwelIos.app build/Payload/
+          cd build
+          zip -qr Qwel.ipa Payload
+          shasum -a 256 Qwel.ipa > Qwel.ipa.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Qwel-IPA
+          path: |
+            build/Qwel.ipa
+            build/Qwel.ipa.sha256
+      - name: Test editor, rendering and project archives
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_tests }}
+        run: |
+          set -o pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["udid"] for a in d["devices"].values() for x in a if "iPhone" in x["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build/Simulator -parallel-testing-enabled NO -resultBundlePath build/Tests.xcresult CODE_SIGNING_ALLOWED=NO test > test.log 2>&1 || { tail -200 test.log; exit 1; }
+          SWIFT_EXPORT=$(find "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" -type f -name QwelExportValidation.swift -print -quit)
+          test -n "$SWIFT_EXPORT"
+          xcrun --sdk iphonesimulator swiftc -typecheck -target arm64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" "$SWIFT_EXPORT"
+          MORPH_EXPORT=$(find "$HOME/Library/Developer/CoreSimulator/Devices/$DEVICE/data" -type f -name QwelMorphValidation.swift -print -quit)
+          test -n "$MORPH_EXPORT"
+          xcrun --sdk iphonesimulator swiftc -typecheck -target arm64-apple-ios17.0-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" "$MORPH_EXPORT"
+          xcrun simctl launch "$DEVICE" com.matwey181.qwelios
+          xcrun simctl io "$DEVICE" screenshot build/Qwel-iOS.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Qwel-test-results
+          path: |
+            build/Tests.xcresult
+            build/Qwel-iOS.png
+            build-device.log
+            test.log
+      - name: Publish downloadable IPA
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "qwel-ios-${GITHUB_RUN_NUMBER}" build/Qwel.ipa build/Qwel.ipa.sha256 --target "$GITHUB_SHA" --title "Qwel iOS — build ${GITHUB_RUN_NUMBER}" --prerelease --notes 'iOS port of Qwel v44. Unsigned arm64 IPA for sideloading with iLoader, SideStore or AltStore. Original Android catalog: 81 components, 15 templates and 42 shapes. See ios/README.md for scope and validation.'

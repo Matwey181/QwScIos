@@ -1,0 +1,184 @@
+import UIKit
+import CoreImage
+import CoreText
+
+final class DocumentRenderer {
+    let root:URL
+    private let images=NSCache<NSString,UIImage>()
+    private var glassPass=false
+    private let backdrops=LiquidGlassRenderer.Cache()
+    private var glassScene:(nodes:[Node],size:CGSize,bg:Int64,mode:Int,references:Bool,scale:CGFloat,image:UIImage)?
+    var backdropRenderCount:Int {backdrops.renderCount}
+    var backdropCacheHits:Int {backdrops.hits}
+    static func needsBackdrop(_ project:Project,includeReferences:Bool=false)->Bool {
+        var hasLowerLayer=false
+        for node in project.nodes where node.visible && !node.mask && (includeReferences || node.extras?.reference != true) {
+            if (node.liquid>0 || node.blur>0) && hasLowerLayer{return true}
+            hasLowerLayer=true
+        }
+        return false
+    }
+    private var textLayouts:[String:(Node,TextLayout)]=[:]
+    private var fonts:[String:UIFont]=[:]
+    static func backdropScale(_ project:Project,transform:CGAffineTransform)->CGFloat {
+        min(2,4096/max(project.w,project.h),max(0.01,min(hypot(transform.a,transform.b),hypot(transform.c,transform.d))))
+    }
+    // Font measurements and component previews must not allocate one CIContext
+    // per renderer. Initialize the shared graphics resource only for real effects.
+    private static let sharedCI=CIContext(options:[.cacheIntermediates:true])
+    private var ci:CIContext {Self.sharedCI}
+    init(root:URL) { self.root=root }
+    func font(_ n:Node)->UIFont {
+        let key="\(n.font)|\(n.fontSize)|\(n.weight)"
+        if let font=fonts[key]{return font}
+        let result=resolveFont(n)
+        if fonts.count>512{fonts.removeAll(keepingCapacity:true)}
+        fonts[key]=result;return result
+    }
+    private func resolveFont(_ n:Node)->UIFont {
+        if n.font.hasPrefix("asset:") {
+            let family=String(n.font.dropFirst(6))
+            let face=n.weight>=700 ? "Bold":n.weight>=600 ? "SemiBold":n.weight>=500 ? "Medium":n.weight<=300 ? "Light":"Regular"
+            if let font=UIFont(name:family+"-"+face,size:max(1,n.fontSize)){return font}
+        }
+        if !n.font.isEmpty, let provider=CGDataProvider(url:root.appendingPathComponent("fonts").appendingPathComponent(n.font) as CFURL),let cg=CGFont(provider) {
+            return CTFontCreateWithGraphicsFont(cg,max(1,n.fontSize),nil,nil) as UIFont
+        }
+        let weight:UIFont.Weight = n.weight>=700 ? .bold : n.weight>=600 ? .semibold : n.weight>=500 ? .medium : n.weight<=300 ? .light : .regular
+        return UIFont.systemFont(ofSize:max(1,n.fontSize),weight:weight)
+    }
+    private static let systemSymbols:NSCache<NSString,UIImage>={let cache=NSCache<NSString,UIImage>();cache.countLimit=256;cache.totalCostLimit=16*1024*1024;return cache}()
+    static func symbolImage(_ node:Node)->UIImage? {
+        guard node.asset.hasPrefix("sf:") else{return nil}
+        let key="\(node.asset)|\(node.w)|\(node.h)|\(node.fill)|\(node.weight)" as NSString
+        if let image=systemSymbols.object(forKey:key){return image}
+        let name=String(node.asset.dropFirst(3))
+        let weight:UIImage.SymbolWeight=node.weight>=700 ? .bold:node.weight>=600 ? .semibold:node.weight>=500 ? .medium:.regular
+        let config=UIImage.SymbolConfiguration(pointSize:max(16,max(node.w,node.h)*2),weight:weight)
+        guard let image=UIImage(systemName:name,withConfiguration:config)?.withTintColor(UIColor(argb:node.fill),renderingMode:.alwaysOriginal) else{return nil}
+        systemSymbols.setObject(image,forKey:key,cost:Int(image.size.width*image.size.height*4));return image
+    }
+    func image(_ name:String)->UIImage? {
+        if let im=images.object(forKey:name as NSString) { return im }
+        guard !name.contains("/"),let im=UIImage(contentsOfFile:root.appendingPathComponent("assets").appendingPathComponent(name).path) else { return nil }
+        images.setObject(im,forKey:name as NSString,cost:Int(im.size.width*im.size.height*4));return im
+    }
+    func draw(_ p:Project,in ctx:CGContext,background:Bool=true,includeReferences:Bool=false) {
+        UIGraphicsPushContext(ctx);defer { UIGraphicsPopContext() }
+        if !glassPass && Self.needsBackdrop(p,includeReferences:includeReferences){
+            let scale=Self.backdropScale(p,transform:ctx.ctm),size=CGSize(width:p.w,height:p.h)
+            let mode=p.glassMode ?? UserDefaults.standard.integer(forKey:"liquidMode")
+            if let cached=glassScene,cached.size==size,cached.bg==p.bg,cached.mode==mode,cached.references==includeReferences,cached.scale==scale,cached.nodes==p.nodes {
+                cached.image.draw(in:CGRect(origin:.zero,size:size));return
+            }
+            glassPass=true;defer{glassPass=false}
+            let format=UIGraphicsImageRendererFormat();format.scale=scale;format.opaque=false
+            let image=UIGraphicsImageRenderer(size:size,format:format).image{target in draw(p,in:target.cgContext,background:true,includeReferences:includeReferences)}
+            glassScene=(p.nodes,size,p.bg,mode,includeReferences,scale,image)
+            image.draw(in:CGRect(origin:.zero,size:size));return
+        }
+
+        if background { ctx.setFillColor(UIColor(argb:p.bg).cgColor);ctx.fill(CGRect(x:0,y:0,width:p.w,height:p.h)) }
+        var i=0
+        while i<p.nodes.count {
+            let n=p.nodes[i]
+            guard n.visible && (includeReferences || n.extras?.reference != true) else { i += 1;continue }
+            if n.mask { i += 1;continue }
+            ctx.saveGState()
+            if i+1<p.nodes.count,p.nodes[i+1].mask,p.nodes[i+1].visible {
+                ctx.addPath(VectorPath.world(p.nodes[i+1]));ctx.clip(using:p.nodes[i+1].evenOdd ? .evenOdd:.winding)
+            }
+            let mode=p.glassMode ?? UserDefaults.standard.integer(forKey:"liquidMode")
+            if n.liquid>0 || n.blur>0 {
+                let lower=Array(p.nodes.prefix(i)).filter{$0.visible && (includeReferences || $0.extras?.reference != true)}
+                // Refraction and blur cannot change a uniformly colored page.
+                // This also keeps single alerts out of the bitmap/CI pipeline.
+                if lower.contains(where:{!$0.mask}) {
+                    LiquidGlassRenderer.draw(n,mode:mode,in:ctx,using:ci,cache:backdrops,lower:lower,background:p.bg,pageSize:CGSize(width:p.w,height:p.h))
+                }
+            }
+            draw(n,in:ctx)
+            ctx.restoreGState();i += 1
+        }
+    }
+    func draw(_ n:Node,in ctx:CGContext,applyBlur:Bool=true) {
+        guard n.w>0,n.h>0 else { return }
+        ctx.saveGState();defer { ctx.restoreGState() }
+        ctx.setAlpha(min(1,max(0,n.opacity)))
+        ctx.translateBy(x:n.center.x,y:n.center.y);ctx.rotate(by:n.rotation * .pi/180);ctx.translateBy(x:-n.w/2,y:-n.h/2)
+        if n.shadowBlur>0 { ctx.setShadow(offset:CGSize(width:n.shadowDx,height:n.shadowDy),blur:n.shadowBlur,color:UIColor(argb:n.shadowColor).cgColor) }
+        if applyBlur && n.softBlur>0 && n.w*n.h<16_000_000 {
+            let margin=min(200,n.softBlur*3)
+            let format=UIGraphicsImageRendererFormat();format.scale=1
+            let im=UIGraphicsImageRenderer(size:CGSize(width:n.w+2*margin,height:n.h+2*margin),format:format).image { target in
+                target.cgContext.translateBy(x:margin-n.x,y:margin-n.y)
+                var copy=n;copy.rotation=0;copy.softBlur=0;copy.opacity=1
+                draw(copy,in:target.cgContext,applyBlur:false)
+            }
+            if let cg=im.cgImage {
+                let input=CIImage(cgImage:cg)
+                if let f=CIFilter(name:"CIGaussianBlur",parameters:[kCIInputImageKey:input,kCIInputRadiusKey:min(100,n.softBlur)]),let result=f.outputImage,let output=ci.createCGImage(result,from:input.extent) {
+                    UIImage(cgImage:output).draw(in:CGRect(x:-margin,y:-margin,width:n.w+2*margin,height:n.h+2*margin));return
+                }
+            }
+        }
+        let rect=CGRect(x:0,y:0,width:n.w,height:n.h)
+        if n.kind=="TEXT" {
+            // Position changes do not invalidate glyph layout during animations.
+            var key=n;key.x=0;key.y=0;key.rotation=0;key.opacity=1
+            let layout:TextLayout
+            if let cached=textLayouts[n.id],cached.0==key{layout=cached.1}
+            else{layout=TextLayout(n,font:font(n));if textLayouts.count>1024{textLayouts.removeAll(keepingCapacity:true)};textLayouts[n.id]=(key,layout)}
+            layout.draw();return
+        }
+        if n.kind=="IMAGE" {
+            if let image=n.asset.hasPrefix("sf:") ? Self.symbolImage(n):image(n.asset){
+                let extras=n.extras ?? LayerExtras()
+                if extras.imageMode=="stretch"{image.draw(in:rect)}else{
+                    let sx=n.w/max(1,image.size.width),sy=n.h/max(1,image.size.height)
+                    let ratio=(extras.imageMode=="fit" ? min(sx,sy):max(sx,sy))*max(0.1,extras.imageZoom)
+                    let size=CGSize(width:image.size.width*ratio,height:image.size.height*ratio)
+                    let target=CGRect(x:(n.w-size.width)*extras.cropX,y:(n.h-size.height)*extras.cropY,width:size.width,height:size.height)
+                    ctx.clip(to:rect);image.draw(in:target)
+                }
+            };return
+        }
+        let path=VectorPath.local(n)
+        if n.shadowBlur>0 && n.fillOpacity<1 {
+            ctx.saveGState()
+            let margin=max(100,n.shadowBlur*4+abs(n.shadowDx)+abs(n.shadowDy))
+            ctx.addRect(rect.insetBy(dx:-margin,dy:-margin));ctx.addPath(path);ctx.clip(using:.evenOdd)
+            ctx.addPath(path);ctx.setFillColor(UIColor(argb:n.fill).cgColor);ctx.fillPath();ctx.restoreGState()
+            ctx.setShadow(offset:.zero,blur:0,color:nil)
+        }
+        ctx.setAlpha(min(1,max(0,n.opacity))*n.fillOpacity)
+        ctx.addPath(path)
+        if n.gradKind != 0,let gradient=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:[UIColor(argb:n.fill).cgColor,UIColor(argb:n.fill2).cgColor] as CFArray,locations:[0,1]) {
+            ctx.saveGState();ctx.clip(using:n.evenOdd ? .evenOdd:.winding)
+            if n.gradKind==2 { ctx.drawRadialGradient(gradient,startCenter:CGPoint(x:n.w/2,y:n.h/2),startRadius:0,endCenter:CGPoint(x:n.w/2,y:n.h/2),endRadius:max(n.w,n.h)/2,options:[.drawsAfterEndLocation]) }
+            else { let a=n.gradAngle * .pi/180,dx=cos(a)*n.w/2,dy=sin(a)*n.h/2
+                ctx.drawLinearGradient(gradient,start:CGPoint(x:n.w/2-dx,y:n.h/2-dy),end:CGPoint(x:n.w/2+dx,y:n.h/2+dy),options:[.drawsBeforeStartLocation,.drawsAfterEndLocation]) }
+            ctx.restoreGState()
+        } else { ctx.setFillColor(UIColor(argb:n.fill).cgColor);ctx.drawPath(using:n.evenOdd ? .eoFill:.fill) }
+        ctx.setAlpha(min(1,max(0,n.opacity)))
+        LiquidGlassRenderer.rim(n,in:ctx)
+        if n.strokeWidth>0 { ctx.addPath(path);ctx.setStrokeColor(UIColor(argb:n.stroke).cgColor);ctx.setLineWidth(n.strokeWidth);ctx.setLineJoin(.round);ctx.setLineCap(.round);ctx.strokePath() }
+    }
+    func sample(_ p:Project,at point:CGPoint)->Int64? {
+        guard point.x>=0,point.y>=0,point.x<p.w,point.y<p.h,let data=png(p,scale:1,includeReferences:true),let cg=UIImage(data:data)?.cgImage,let crop=cg.cropping(to:CGRect(x:floor(point.x),y:floor(point.y),width:1,height:1)) else{return nil}
+        var bytes=[UInt8](repeating:0,count:4)
+        guard let context=CGContext(data:&bytes,width:1,height:1,bitsPerComponent:8,bytesPerRow:4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else{return nil}
+        context.draw(crop,in:CGRect(x:0,y:0,width:1,height:1))
+        let a=UInt32(bytes[3]);func channel(_ i:Int)->UInt32{a==0 ? 0:min(255,UInt32(bytes[i])*255/a)}
+        return Int64(Int32(bitPattern:a<<24|channel(0)<<16|channel(1)<<8|channel(2)))
+    }
+    func png(_ p:Project,scale:CGFloat=2,includeReferences:Bool=false)->Data? {
+        guard p.w*p.h*scale*scale<=40_000_000 else { return nil }
+        let f=UIGraphicsImageRendererFormat();f.scale=scale;f.opaque=false
+        return UIGraphicsImageRenderer(size:CGSize(width:p.w,height:p.h),format:f).pngData { target in draw(p,in:target.cgContext,includeReferences:includeReferences) }
+    }
+    func preview(_ p:Project)->UIImage {
+        let scale=min(1,320/max(p.w,p.h)),f=UIGraphicsImageRendererFormat();f.scale=1
+        return UIGraphicsImageRenderer(size:CGSize(width:max(1,p.w*scale),height:max(1,p.h*scale)),format:f).image { target in target.cgContext.scaleBy(x:scale,y:scale);draw(p,in:target.cgContext) }
+    }
+}

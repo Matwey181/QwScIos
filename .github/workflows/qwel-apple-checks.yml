@@ -1,0 +1,42 @@
+name: Check Apple component regressions
+on:
+  push:
+    branches: [codex/qwel-ios]
+    paths: ['ios/**', '.github/workflows/qwel-apple-checks.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apple-components:
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          cd ios
+          xcodegen generate
+      - name: Check Apple text, playback, persistence and backdrop sizing
+        run: |
+          set -o pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["udid"] for a in d["devices"].values() for x in a if "iPhone" in x["name"]))')
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          TEST_STATUS=0
+          xcodebuild -project ios/QwelIos.xcodeproj -scheme QwelIos -configuration Debug -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build/AppleSimulator -parallel-testing-enabled NO -only-testing:QwelTests/AppleComponentTests -resultBundlePath build/AppleTests.xcresult CODE_SIGNING_ALLOWED=NO test > apple-tests.log 2>&1 || TEST_STATUS=$?
+          if [ "$TEST_STATUS" -eq 0 ]; then tail -45 apple-tests.log; else tail -180 apple-tests.log; fi
+          APP_DATA=$(xcrun simctl get_app_container "$DEVICE" com.matwey181.qwelios data 2>/dev/null || true)
+          for IMAGE in QwelNativeLight.png QwelNativeDark.png; do
+            if [ -f "$APP_DATA/Documents/$IMAGE" ]; then cp "$APP_DATA/Documents/$IMAGE" build/; fi
+          done
+          exit "$TEST_STATUS"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Apple-component-results
+          path: |
+            apple-tests.log
+            build/AppleTests.xcresult
+            build/QwelNativeLight.png
+            build/QwelNativeDark.png
