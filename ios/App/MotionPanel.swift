@@ -24,6 +24,8 @@ struct MotionPanel:View {
     @State private var trackID:String?
     @State private var keyTime:Int?
     @State private var exportVideo=false
+    @State private var autoKey=true
+    @State private var dragBase=CGPoint.zero
     private let timer=Timer.publish(every:1/60,on:.main,in:.common).autoconnect()
     private var data:MotionData{editor.project.motion ?? MotionData()}
     private var selectedTrack:MotionTrack?{data.tracks.first{$0.id==trackID}}
@@ -31,7 +33,7 @@ struct MotionPanel:View {
     var body:some View {
         VStack(spacing:0){
             HStack{QIconButton(icon:"Back",label:"Готово"){dismiss()};Text("Анимация").font(qfont(22,.semibold));Spacer();QIconButton(icon:"Export",label:"Видео"){playing=false;exportVideo=true}}
-            MotionPreview(project:MotionEvaluator.frame(editor.project,time:time),renderer:editor.renderer).frame(maxHeight:230).padding(10)
+            MotionPreview(project:MotionEvaluator.frame(editor.project,time:time),renderer:editor.renderer,onDrag:{translation,state in moveTarget(translation,state:state)}).frame(maxHeight:230).padding(10)
             HStack(spacing:12){
                 QIconButton(icon:playing ? "Stop":"Play",label:"Воспроизведение"){playing.toggle();lastDate=nil;if time>=Double(data.dur){time=0}}
                 Text(String(format:"%.2f / %.2f с",time/1000,Double(data.dur)/1000)).font(qfont(14,.semibold)).monospacedDigit()
@@ -61,6 +63,7 @@ struct MotionPanel:View {
     private var tracksContent:some View{
         VStack(alignment:.leading,spacing:14){
             LinkChoiceField(title:"Объект",selection:$target,items:editor.project.nodes.map{($0.id,$0.name.isEmpty ? "Слой":$0.name)})
+            QToggle("Автоключ при перетаскивании превью",isOn:$autoKey)
             if let n=editor.project.nodes.first(where:{$0.id==target}),!n.group.isEmpty{QToggle("Анимировать всю группу",isOn:$group)}
             LinkChoiceField(title:"Свойство",selection:$property,items:MotionData.properties)
             LinkPill(title:"Добавить ключ в текущей позиции",icon:"diamond.fill",prominent:true){addKey()}.disabled(target.isEmpty)
@@ -135,7 +138,7 @@ struct MotionPanel:View {
             QToggle("Повторять",isOn:Binding(get:{data.loop},set:{v in edit{$0.loop=v}}))
             if editor.project.pages.count>1{
                 Text("Переход по времени").font(qfont(18,.semibold))
-                ForEach(editor.project.pages){page in Button("В \(String(format:"%.2f",time/1000)) с → \(page.name)"){edit{$0.jumps.append(MotionJump(t:Int(time),from:editor.project.pages[editor.project.active].id,to:page.id))}}.font(qfont(14))
+                ForEach(editor.project.pages){page in Button("В \(String(format:"%.2f",time/1000)) с → \(page.name)"){edit{$0.jumps.append(MotionJump(t:Int(time),from:editor.project.pages[editor.project.active].id,to:page.id))}}}.font(qfont(14))
                 ForEach(Array(data.jumps.enumerated()),id:\.offset){index,jump in HStack{Text("\(jump.t) мс → \(editor.project.pages.first{$0.id==jump.to}?.name ?? jump.to)");Spacer();Button(role:.destructive){edit{$0.jumps.remove(at:index)}}label:{Image(systemName:"trash")}}}
             }
             LinkPill(title:"Экспорт MP4 / последовательности PNG",icon:"film"){playing=false;exportVideo=true}
@@ -144,6 +147,24 @@ struct MotionPanel:View {
     }
     private func edit(_ change:(inout MotionData)->Void){editor.edit{p in var m=p.motion ?? MotionData();change(&m);p.motion=m}}
     private func targetName(_ tr:MotionTrack)->String{tr.group ? "Группа":editor.project.nodes.first{$0.id==tr.ref}?.name ?? "Слой"}
+    private func moveTarget(_ translation:CGPoint,state:UIGestureRecognizer.State){
+        guard !target.isEmpty,!playing else{return}
+        let ref=target,t=Int(time)
+        if state == .began{
+            editor.checkpoint()
+            if autoKey{dragBase=CGPoint(x:data.tracks.last{$0.ref==ref && $0.prop=="x" && !$0.group}?.value(time,0) ?? 0,y:data.tracks.last{$0.ref==ref && $0.prop=="y" && !$0.group}?.value(time,0) ?? 0)}
+            else if let n=editor.project.nodes.first(where:{$0.id==ref}){dragBase=CGPoint(x:n.x,y:n.y)}
+        }
+        if autoKey{
+            var m=data
+            for (prop,value) in [("x",Double(dragBase.x+translation.x)),("y",Double(dragBase.y+translation.y))]{
+                if let i=m.tracks.firstIndex(where:{$0.ref==ref && $0.prop==prop && !$0.group}){m.tracks[i].keys.removeAll{$0.t==t};m.tracks[i].keys.append(MotionKey(t:t,v:value,e:MotionCurve.standard));m.tracks[i].keys.sort{$0.t<$1.t}}
+                else{var tr=MotionTrack(ref:ref,prop:prop);if t>0{tr.keys.append(MotionKey(t:0,v:0,e:MotionCurve.standard))};tr.keys.append(MotionKey(t:t,v:value,e:MotionCurve.standard));m.tracks.append(tr)}
+            }
+            editor.project.motion=m
+        }else if let i=editor.project.nodes.firstIndex(where:{$0.id==ref}){editor.project.nodes[i].x=dragBase.x+translation.x;editor.project.nodes[i].y=dragBase.y+translation.y}
+        if state == .ended || state == .cancelled{editor.saveSoon()}
+    }
     private func updateKey(_ change:(inout MotionKey)->Void){guard let id=trackID,let t=keyTime else{return};edit{m in guard let i=m.tracks.firstIndex(where:{$0.id==id}),let j=m.tracks[i].keys.firstIndex(where:{$0.t==t})else{return};change(&m.tracks[i].keys[j]);m.tracks[i].keys.sort{$0.t<$1.t}}}
     private func addKey(){
         guard let node=editor.project.nodes.first(where:{$0.id==target})else{return}
@@ -181,10 +202,15 @@ struct MotionCurvePreview:View {
 }
 struct MotionPreview:UIViewRepresentable {
     var project:Project;var renderer:DocumentRenderer
-    func makeUIView(context:Context)->MotionPreviewView{MotionPreviewView()}
-    func updateUIView(_ view:MotionPreviewView,context:Context){view.project=project;view.renderer=renderer;view.setNeedsDisplay()}
+    var onDrag:((CGPoint,UIGestureRecognizer.State)->Void)?=nil
+    func makeUIView(context:Context)->MotionPreviewView{MotionPreviewView(frame:.zero)}
+    func updateUIView(_ view:MotionPreviewView,context:Context){view.project=project;view.renderer=renderer;view.onDrag=onDrag;view.setNeedsDisplay()}
 }
 final class MotionPreviewView:UIView {
     var project=Project();var renderer:DocumentRenderer?
+    var onDrag:((CGPoint,UIGestureRecognizer.State)->Void)?
+    override init(frame:CGRect){super.init(frame:frame);isOpaque=false;addGestureRecognizer(UIPanGestureRecognizer(target:self,action:#selector(drag(_:))))}
+    required init?(coder:NSCoder){fatalError()}
+    @objc private func drag(_ gesture:UIPanGestureRecognizer){let s=max(0.001,min(bounds.width/project.w,bounds.height/project.h)),p=gesture.translation(in:self);onDrag?(CGPoint(x:p.x/s,y:p.y/s),gesture.state)}
     override func draw(_ rect:CGRect){guard let c=UIGraphicsGetCurrentContext(),let renderer else{return};let s=min(bounds.width/project.w,bounds.height/project.h);c.saveGState();c.translateBy(x:(bounds.width-project.w*s)/2,y:(bounds.height-project.h*s)/2);c.scaleBy(x:s,y:s);renderer.draw(project,in:c);c.restoreGState()}
 }

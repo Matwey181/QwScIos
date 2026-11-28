@@ -95,6 +95,8 @@ import UIKit
     private var lastMotionTime=0.0
     private var firedJumps:Set<Int>=[]
     private let appearances=LayerAppearanceRuntime()
+    private var cachedWidgets:Project?
+    private var cachedValues:[String:Double]=[:]
     init(editor:Editor) { self.editor=editor }
     var display:Project? { rendered }
     func start() {
@@ -105,7 +107,7 @@ import UIKit
             for w in result["widgets"] as? [[String:Any]] ?? [] { if let group=w["group"] as? String { target[group]=(w["value"] as? NSNumber)?.doubleValue ?? 0;kinds[group]=w["kind"] as? String } }
             AppleControls.initial(editor.project,values:&target)
             shown=target;startTime=CACurrentMediaTime();lastFrameTime=startTime;editor.selection=[];editor.playing=true
-            frozen=false;pausedDuration=0;lastMotionTime=0;firedJumps=[];appearances.reset()
+            frozen=false;pausedDuration=0;lastMotionTime=0;firedJumps=[];appearances.reset();cachedWidgets=nil;cachedValues=[:]
             links.onWidgetProgress = { [weak self] group,value in
                 guard let self else {return}
                 self.target[group]=value
@@ -162,7 +164,9 @@ import UIKit
         guard let editor else { return }
         do {
             let elapsed=((frozen ? freezeTime:CACurrentMediaTime())-startTime-pausedDuration)*1000
-            var result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":elapsed/1000])
+            var result:Project
+            if let cached=cachedWidgets,cachedValues==shown,!kinds.values.contains("spin"){result=cached}
+            else{result=try OriginalCore.shared.project("apply",values:["shown":shown,"time":elapsed/1000]);cachedWidgets=result;cachedValues=shown}
             result.nodes=result.nodes.map { n in var n=n;n.visible=visibility[n.id] ?? n.visible;return n }
             result=links.displayed(result)
             if let motion=result.motion {
@@ -170,7 +174,7 @@ import UIKit
                 if time<lastMotionTime{firedJumps=[]};lastMotionTime=time
                 for (i,jump) in motion.jumps.enumerated() where Double(jump.t)<=time && !firedJumps.contains(i){
                     firedJumps.insert(i)
-                    if jump.from.isEmpty || (editor.project.pages.indices.contains(editor.project.active) && editor.project.pages[editor.project.active].id==jump.from){DispatchQueue.main.async{[weak self] in self?.navigate(jump.to)}}
+                    if jump.from.isEmpty || (editor.project.pages.indices.contains(editor.project.active) && editor.project.pages[editor.project.active].id==jump.from){DispatchQueue.main.async{[weak self] in self?.navigate(jump.to,preserveMotion:true)}}
                 }
                 result=MotionEvaluator.frame(result,time:time)
             }
@@ -204,8 +208,10 @@ import UIKit
         links.fire(event,sourceID:node.id);refresh()
     }
     func hit(_ p:CGPoint)->[String:Any] { (try? OriginalCore.shared.request(["op":"hit","x":p.x,"y":p.y,"pad":8])) ?? [:] }
-    private func navigate(_ destination:String){
+    private func navigate(_ destination:String,preserveMotion:Bool=false){
         guard let editor else{return}
+        let clock=startTime,paused=pausedDuration,jumps=firedJumps,time=lastMotionTime
+        defer{if preserveMotion{startTime=clock;pausedDuration=paused;firedJumps=jumps;lastMotionTime=time}}
         if destination=="back"{guard let page=back.popLast() else{return};stop();editor.page(page);start()}
         else if let page=editor.project.pages.firstIndex(where:{$0.id==destination}){let previous=editor.project.active;stop();back.append(previous);editor.page(page);start()}
     }
@@ -283,6 +289,7 @@ import UIKit
         if ["slider","progress"].contains(activeHit?["kind"] as? String ?? "") { tap(p) }
     }
     func drag(_ p:CGPoint) {
+        guard !frozen else{return}
         links.advanced.drag(CGPoint(x:p.x-initial.x,y:p.y-initial.y))
         if let id=activeSourceID {
             links.fire("drag",sourceID:id,fraction:dragFraction(p,sourceID:id))

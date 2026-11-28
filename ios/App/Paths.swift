@@ -107,8 +107,13 @@ enum VectorPath {
         return parts.joined(separator:" ")
     }
     static func node(_ path:CGPath,style:Node)->Node? {
-        let box=path.boundingBoxOfPath
-        guard !box.isNull,box.width>0.0001,box.height>0.0001 else { return nil }
+        var box=path.boundingBoxOfPath
+        guard !box.isNull else{return nil}
+        if style.strokeWidth>0{
+            if box.width<=0.0001{box.origin.x-=0.5;box.size.width=1}
+            if box.height<=0.0001{box.origin.y-=0.5;box.size.height=1}
+        }
+        guard box.width>0.0001,box.height>0.0001 else { return nil }
         var t=CGAffineTransform(a:1/box.width,b:0,c:0,d:1/box.height,tx:-box.minX/box.width,ty:-box.minY/box.height)
         guard let unit=path.copy(using:&t) else { return nil }
         var n=style;n.id=UUID().uuidString;n.kind="PATH";n.name="Контур";n.x=box.minX;n.y=box.minY;n.w=box.width;n.h=box.height;n.rotation=0;n.path=string(unit);n.group="";n.mask=false

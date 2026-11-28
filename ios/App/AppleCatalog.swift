@@ -5,11 +5,12 @@ enum AppleCatalog{
     static let bundle:AppleCatalogBundle=AppleUpdateCatalog.extend(load("apple-catalog"))
     private static var preparedVariants:[String:CatalogItem]=[:]
     static func variant(_ item:CatalogItem,dark:Bool)->CatalogItem{
-        let key=item.id+"|"+String(dark)+"|"+(UserDefaults.standard.string(forKey:"language") ?? "ru")
+        let key=item.id+"|"+item.category+"|"+String(dark)+"|"+(UserDefaults.standard.string(forKey:"language") ?? "ru")
         if let cached=preparedVariants[key]{return cached}
-        let choices=bundle.templates.contains(where:{$0.id==item.id}) ? bundle.templates:(dark ? bundle.dark:bundle.light)
+        let isTemplate=item.id=="ios" || item.category != "apple" && bundle.templates.contains(where:{$0.id==item.id && $0.category==item.category})
+        let choices=isTemplate ? bundle.templates:(dark ? bundle.dark:bundle.light)
         guard var result=choices.first(where:{$0.id==item.id && $0.project.tone.dark==dark}) else{return item}
-        if result.id=="ios" || !bundle.templates.contains(where:{$0.id==result.id}){result=AppleNativeStyle.make(result)}
+        if result.id=="ios" || !isTemplate{result=AppleNativeStyle.make(result)}
         prepare(&result.project,id:result.id)
         if result.id=="ios"{DefaultLinks.allPages(&result.project)}else{DefaultLinks.install(&result.project,componentID:result.id)}
         preparedVariants[key]=result;return result
@@ -151,7 +152,9 @@ enum AppleControls {
                 let low=Int(floor(selection)),high=min(items.count-1,low+1),fraction=CGFloat(selection-Double(low))
                 if let indicator=nodes.first(where:{$0.widget=="pick:ind"}),let i=indices[indicator.id],let a=boxes[low],let b=boxes[high]{
                     project.nodes[i]=indicator
-                    project.nodes[i].x=a.midX+(b.midX-a.midX)*fraction-indicator.w/2
+                    let stretch=sin(fraction * .pi)*min(indicator.w*0.16,12)
+                    project.nodes[i].w=indicator.w+stretch
+                    project.nodes[i].x=a.midX+(b.midX-a.midX)*fraction-project.nodes[i].w/2
                 }
                 for (index,members) in items {
                     for member in members {

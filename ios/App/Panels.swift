@@ -11,6 +11,7 @@ struct InspectorPanel:View {
     var body:some View {
         VStack(alignment:.leading,spacing:14) {
             if let n=node {
+                TabBarControls(editor:editor)
                 if editor.selected.count==1 {
                     QTextField(title:"Имя слоя",text:bind(\.name,""))
                     AppearanceActions(editor:editor)

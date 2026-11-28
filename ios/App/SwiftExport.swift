@@ -141,7 +141,7 @@ enum SwiftExport {
                         view="ZStack(alignment: .topLeading) { Color.clear; embeddedImage(\(literal(bytes.base64EncodedString()))).resizable().frame(width: \(width), height: \(height)).offset(x: \((n.w-width)*extras.cropX), y: \((n.h-height)*extras.cropY)) }.frame(width: \(n.w), height: \(n.h)).clipped()"
                     }
                 } else {
-                    let shape=effectiveLinks.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
+                    let shape=effectiveLinks.contains(where:{$0.enabled && $0.targetID==n.id && $0.property=="morph"}) ? "graph.morphPath(\(identifier), base: \(path(n)), width: \(n.w), height: \(n.h))":n.kind=="RECT" && n.cornerRadii==nil ? "RoundedRectangle(cornerRadius: CGFloat(graph.value(\(identifier), \"corner\", base: \(n.corner)))).path(in: CGRect(x: 0, y: 0, width: \(n.w), height: \(n.h)))":path(n)
                     var fill=nodeColor
                     if n.gradKind==2 {fill="RadialGradient(colors: [\(nodeColor), graph.fill(\(identifier), base: \(n.fill2), property: \"fill2\")], center: .center, startRadius: 0, endRadius: \(max(n.w,n.h)/2))"}
                     else if n.gradKind==1 {

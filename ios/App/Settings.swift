@@ -18,6 +18,7 @@ struct SettingsView:View {
     @AppStorage("hints") private var hints=true
     @AppStorage("pngScale") private var scale=2.0
     @AppStorage("pets") private var pets=0
+    @AppStorage("recordEdge") private var recordEdge=1080
     var title:String { ["":"Настройки","look":"Внешний вид и стиль","lang":"Язык","gest":"Жесты и обучение","export":"Экспорт","fun":"Смешнявки","news":"Что нового"][page] ?? "Настройки" }
     var body:some View {
         VStack(spacing:0) {
@@ -28,7 +29,9 @@ struct SettingsView:View {
                     case "look":look
                     case "lang":QSettingsGroup {QSetting("Авто",selected:language=="auto"){language="auto"};QSetting("Русский",selected:language=="ru"){language="ru"};QSetting("English",selected:language=="en"){language="en"}}
                     case "gest":gestures
-                    case "export":QSettingsGroup("Масштаб PNG по умолчанию"){ForEach([1.0,2,3,4],id:\.self){n in QSetting("\(Int(n))x",selected:scale==n){scale=n}}}
+                    case "export":
+                        QSettingsGroup("Масштаб PNG по умолчанию"){ForEach([1.0,2,3,4],id:\.self){n in QSetting("\(Int(n))x",selected:scale==n){scale=n}}}
+                        QSettingsGroup("Размер записи режима игры"){ForEach([720,1080,1440,2160],id:\.self){n in QSetting("\(n) px",selected:recordEdge==n){recordEdge=n}}}
                     case "fun":funny
                     case "news":QSettingsGroup("Vexel 2.9.2 · iOS"){Text("Ключевые анимации: 63 шаблона, 45 кривых, пружины и морфинг. Экспорт MP4 и кадров PNG, запись режима игры. Перо с кривыми, отдельные углы, настройки линзы и бликов. iOS 26 Alert и Context Menu, пять новых шаблонов iOS. Независимые привязки и анимации появления слоёв.").font(qfont(16)).padding(20)}
                     default:root

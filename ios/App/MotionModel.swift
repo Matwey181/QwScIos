@@ -100,7 +100,7 @@ enum MotionCurve {
     }
 }
 
-enum MotionEvaluator {
+@MainActor enum MotionEvaluator {
     struct Transform {
         var x=0.0,y=0.0,sx=1.0,sy=1.0,rot=0.0,op=1.0
         var corner:Double?,blur:Double?,w:Double?,h:Double?,fill:Int64?

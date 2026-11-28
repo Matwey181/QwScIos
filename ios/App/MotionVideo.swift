@@ -52,7 +52,7 @@ import ZIPFoundation
     func cancel(){cancelled=true;writer.cancelWriting();try? FileManager.default.removeItem(at:url)}
 }
 
-enum PageVideoFrames {
+@MainActor enum PageVideoFrames {
     static func frame(_ project:Project,time:Double,allPages:Bool)->Project{
         let duration=Double(project.motion?.dur ?? 3000)
         guard allPages,project.pages.count>1 else{return MotionEvaluator.frame(project,time:time)}

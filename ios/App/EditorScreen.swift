@@ -89,7 +89,7 @@ struct EditorScreen:View {
                 HStack(spacing:8){
                     QChip(title:"Выйти"){editor.togglePlay()}
                     QChip(title:editor.originalPlay.frozen ? "Продолжить":"Заморозить",selected:editor.originalPlay.frozen){editor.originalPlay.toggleFreeze()}
-                    QChip(title:recorder.recording ? "Стоп запись":"Запись",selected:recorder.recording){if recorder.recording{finishRecording()}else{do{try recorder.start(editor,longEdge:UserDefaults.standard.integer(forKey:"recordEdge")==720 ? 720:1080);editor.recordTouch={point in recorder.touch(point)}}catch{editor.error=error.localizedDescription}}}
+                    QChip(title:recorder.recording ? "Стоп запись":"Запись",selected:recorder.recording){if recorder.recording{finishRecording()}else{do{let edge=UserDefaults.standard.integer(forKey:"recordEdge");try recorder.start(editor,longEdge:[720,1080,1440,2160].contains(edge) ? edge:1080);editor.recordTouch={point in recorder.touch(point)}}catch{editor.error=error.localizedDescription}}}
                 }.padding(12).qSurface(28,"surfaceContainerHigh")
             } else if editor.penActive{
                 PenToolbar(editor:editor)

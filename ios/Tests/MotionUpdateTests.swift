@@ -14,7 +14,7 @@ final class MotionUpdateTests:XCTestCase {
         XCTAssertGreaterThan(MotionCurve.at("sp:300,0.35",0.2),1)
         XCTAssertEqual(MotionCurve.at("st:4,1",0.49),0.25)
     }
-    func testAndroidMotionFormatAndRelativeTransforms()throws{
+    @MainActor func testAndroidMotionFormatAndRelativeTransforms()throws{
         let json=Data(#"{"tracks":[{"id":"t","group":false,"ref":"n","prop":"x","keys":[{"t":0,"v":0,"e":"lin"},{"t":1000,"v":100,"e":"lin"}]}],"dur":1000,"loop":false}"#.utf8)
         let motion=try JSONDecoder().decode(MotionData.self,from:json)
         var p=Project(),n=Node();n.id="n";n.x=10;n.y=20;n.w=80;n.h=40;p.nodes=[n];p.motion=motion

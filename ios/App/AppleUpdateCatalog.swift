@@ -8,7 +8,7 @@ enum AppleUpdateCatalog {
         for dark in [false,true]{
             for (id,name,w,h) in [("ios26-alert","iOS 26 · Alert",300,306),("ios26-menu","iOS 26 · Context Menu",250,612)]{
                 var p=Project();p.w=CGFloat(w);p.h=CGFloat(h);p.tone.dark=dark
-                let item=AppleNativeStyle.make(CatalogItem(id:id,name:name,category:"iOS",project:p))
+                let item=AppleNativeStyle.make(CatalogItem(id:id,name:name,category:"apple",project:p))
                 if dark{bundle.dark.insert(item,at:0)}else{bundle.light.insert(item,at:0)}
             }
         }
